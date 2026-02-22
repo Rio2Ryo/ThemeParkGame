@@ -1,0 +1,784 @@
+// ============================================================
+// ThemeParkGame - BuildPanelUI
+// 建設インターフェース：カテゴリタブ、アイテム一覧、詳細表示、
+// 配置プレビュー、グリッドスナップ、コスト判定
+// ============================================================
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+using ThemeParkGame.Core;
+
+namespace ThemeParkGame.UI
+{
+    /// <summary>
+    /// 建設パネルUI。
+    /// プレイヤーがアトラクションや施設をパーク内に配置するための
+    /// 全操作を管理する建設インターフェース。
+    /// </summary>
+    public class BuildPanelUI : MonoBehaviour
+    {
+        // ============================================================
+        // カテゴリタブ
+        // ============================================================
+
+        [Header("カテゴリタブ")]
+        [SerializeField] private Transform categoryTabContainer;
+        [SerializeField] private GameObject categoryTabPrefab;
+
+        /// <summary>カテゴリタブの定義（表示順序を制御）</summary>
+        [Serializable]
+        public struct CategoryTabDefinition
+        {
+            public string displayName;
+            public BuildCategory category;
+            public Sprite icon;
+        }
+
+        [SerializeField] private CategoryTabDefinition[] categoryDefinitions;
+
+        /// <summary>
+        /// 建設カテゴリ。AttractionCategory + FacilityType を統合した
+        /// ビルドパネル専用の分類。
+        /// </summary>
+        public enum BuildCategory
+        {
+            // アトラクションカテゴリ（AttractionCategory対応）
+            GForce,
+            VerticalRotation,
+            HorizontalRotation,
+            Observation,
+            ShowAttraction,
+            RideAttraction,
+            // 施設カテゴリ（FacilityType対応）
+            FoodShop,
+            DrinkShop,
+            SouvenirShop,
+            Toilet,
+            Bench,
+            TrashCan,
+            InfoBoard,
+            Pathway,
+            Decoration,
+            StaffRoom,
+            ResearchLab
+        }
+
+        // ============================================================
+        // アイテムグリッド
+        // ============================================================
+
+        [Header("アイテムグリッド")]
+        [SerializeField] private Transform itemGridContainer;
+        [SerializeField] private GameObject itemCardPrefab;
+        [SerializeField] private ScrollRect itemGridScrollRect;
+
+        // ============================================================
+        // アイテム詳細パネル
+        // ============================================================
+
+        [Header("アイテム詳細パネル")]
+        [SerializeField] private GameObject detailPanel;
+        [SerializeField] private TextMeshProUGUI detailNameText;
+        [SerializeField] private TextMeshProUGUI detailCostText;
+        [SerializeField] private TextMeshProUGUI detailDescriptionText;
+        [SerializeField] private Image detailThumbnail;
+
+        [Header("アイテム詳細 - ステータスバー")]
+        [SerializeField] private Slider detailExcitementBar;
+        [SerializeField] private Slider detailIntensityBar;
+        [SerializeField] private Slider detailNauseaBar;
+        [SerializeField] private Slider detailCapacityBar;
+        [SerializeField] private TextMeshProUGUI detailExcitementValue;
+        [SerializeField] private TextMeshProUGUI detailIntensityValue;
+        [SerializeField] private TextMeshProUGUI detailNauseaValue;
+        [SerializeField] private TextMeshProUGUI detailCapacityValue;
+
+        // ============================================================
+        // 配置プレビュー
+        // ============================================================
+
+        [Header("配置プレビュー")]
+        [SerializeField] private Material validPlacementMaterial;
+        [SerializeField] private Material invalidPlacementMaterial;
+        [SerializeField] private float gridSize = 1f;
+        [SerializeField] private LayerMask groundLayer;
+
+        // ============================================================
+        // 確認/キャンセルボタン
+        // ============================================================
+
+        [Header("操作ボタン")]
+        [SerializeField] private Button confirmButton;
+        [SerializeField] private Button cancelButton;
+        [SerializeField] private Button rotateButton;
+        [SerializeField] private TextMeshProUGUI confirmButtonText;
+
+        // ============================================================
+        // テーマゾーンフィルタ
+        // ============================================================
+
+        [Header("テーマゾーンフィルタ")]
+        [SerializeField] private TMP_Dropdown themeZoneDropdown;
+
+        // ============================================================
+        // 内部状態
+        // ============================================================
+
+        /// <summary>現在選択中のカテゴリ</summary>
+        private BuildCategory _selectedCategory = BuildCategory.GForce;
+
+        /// <summary>現在選択中のアイテムデータ</summary>
+        private BuildItemData _selectedItem;
+
+        /// <summary>配置プレビュー用のゲームオブジェクト</summary>
+        private GameObject _placementPreview;
+
+        /// <summary>配置プレビューの現在の回転角度（Y軸）</summary>
+        private float _previewRotation;
+
+        /// <summary>配置が有効かどうか</summary>
+        private bool _isPlacementValid;
+
+        /// <summary>配置モードが有効かどうか</summary>
+        private bool _isInPlacementMode;
+
+        /// <summary>現在のテーマゾーンフィルタ（nullの場合は全表示）</summary>
+        private ThemeZone? _currentZoneFilter;
+
+        /// <summary>生成されたタブボタンのキャッシュ</summary>
+        private readonly Dictionary<BuildCategory, Button> _tabButtons = new();
+
+        /// <summary>生成されたアイテムカードのキャッシュ</summary>
+        private readonly List<GameObject> _spawnedItemCards = new();
+
+        // ============================================================
+        // Unity ライフサイクル
+        // ============================================================
+
+        private void OnEnable()
+        {
+            BindButtons();
+            InitializeCategoryTabs();
+            InitializeThemeZoneFilter();
+            SelectCategory(_selectedCategory);
+            HideDetailPanel();
+        }
+
+        private void OnDisable()
+        {
+            CancelPlacement();
+        }
+
+        private void Update()
+        {
+            if (_isInPlacementMode)
+            {
+                UpdatePlacementPreview();
+                HandlePlacementInput();
+            }
+        }
+
+        // ============================================================
+        // 初期化
+        // ============================================================
+
+        /// <summary>ボタンのイベントをバインドする</summary>
+        private void BindButtons()
+        {
+            confirmButton?.onClick.AddListener(OnConfirmClicked);
+            cancelButton?.onClick.AddListener(OnCancelClicked);
+            rotateButton?.onClick.AddListener(OnRotateClicked);
+        }
+
+        /// <summary>カテゴリタブを生成する</summary>
+        private void InitializeCategoryTabs()
+        {
+            if (categoryTabContainer == null || categoryTabPrefab == null) return;
+
+            // 既存タブをクリア
+            foreach (Transform child in categoryTabContainer)
+            {
+                Destroy(child.gameObject);
+            }
+            _tabButtons.Clear();
+
+            // カテゴリ定義が設定されていない場合はデフォルトを使用
+            if (categoryDefinitions == null || categoryDefinitions.Length == 0)
+            {
+                categoryDefinitions = GenerateDefaultCategoryDefinitions();
+            }
+
+            foreach (var def in categoryDefinitions)
+            {
+                GameObject tabObj = Instantiate(categoryTabPrefab, categoryTabContainer);
+                Button tabButton = tabObj.GetComponent<Button>();
+                TextMeshProUGUI tabText = tabObj.GetComponentInChildren<TextMeshProUGUI>();
+                Image tabIcon = tabObj.transform.Find("Icon")?.GetComponent<Image>();
+
+                if (tabText != null) tabText.text = def.displayName;
+                if (tabIcon != null && def.icon != null) tabIcon.sprite = def.icon;
+
+                BuildCategory capturedCategory = def.category;
+                tabButton?.onClick.AddListener(() => SelectCategory(capturedCategory));
+
+                if (tabButton != null)
+                {
+                    _tabButtons[def.category] = tabButton;
+                }
+            }
+        }
+
+        /// <summary>デフォルトのカテゴリタブ定義を生成する</summary>
+        private CategoryTabDefinition[] GenerateDefaultCategoryDefinitions()
+        {
+            return new CategoryTabDefinition[]
+            {
+                new() { displayName = "G系",     category = BuildCategory.GForce },
+                new() { displayName = "縦回転",   category = BuildCategory.VerticalRotation },
+                new() { displayName = "横回転",   category = BuildCategory.HorizontalRotation },
+                new() { displayName = "展望",     category = BuildCategory.Observation },
+                new() { displayName = "見せ物",   category = BuildCategory.ShowAttraction },
+                new() { displayName = "乗り物",   category = BuildCategory.RideAttraction },
+                new() { displayName = "フード",   category = BuildCategory.FoodShop },
+                new() { displayName = "ドリンク", category = BuildCategory.DrinkShop },
+                new() { displayName = "おみやげ", category = BuildCategory.SouvenirShop },
+                new() { displayName = "トイレ",   category = BuildCategory.Toilet },
+                new() { displayName = "ベンチ",   category = BuildCategory.Bench },
+                new() { displayName = "ゴミ箱",   category = BuildCategory.TrashCan },
+                new() { displayName = "案内板",   category = BuildCategory.InfoBoard },
+                new() { displayName = "通路",     category = BuildCategory.Pathway },
+                new() { displayName = "装飾",     category = BuildCategory.Decoration },
+                new() { displayName = "休憩室",   category = BuildCategory.StaffRoom },
+                new() { displayName = "研究所",   category = BuildCategory.ResearchLab },
+            };
+        }
+
+        /// <summary>テーマゾーンフィルタのドロップダウンを初期化する</summary>
+        private void InitializeThemeZoneFilter()
+        {
+            if (themeZoneDropdown == null) return;
+
+            themeZoneDropdown.ClearOptions();
+
+            var options = new List<string> { "全テーマ" };
+            options.Add("ロストキングダム");
+            options.Add("ハロウィーンワールド");
+            options.Add("ワンダーランド");
+            options.Add("スペースゾーン");
+
+            themeZoneDropdown.AddOptions(options);
+            themeZoneDropdown.onValueChanged.AddListener(OnThemeZoneFilterChanged);
+        }
+
+        // ============================================================
+        // カテゴリ選択
+        // ============================================================
+
+        /// <summary>カテゴリを選択してアイテム一覧を更新する</summary>
+        public void SelectCategory(BuildCategory category)
+        {
+            _selectedCategory = category;
+
+            // タブのビジュアル更新
+            UpdateTabVisuals(category);
+
+            // アイテムグリッド更新
+            PopulateItemGrid(category);
+
+            // 詳細パネルをリセット
+            HideDetailPanel();
+
+            // 配置モードをキャンセル
+            CancelPlacement();
+        }
+
+        /// <summary>タブのビジュアルを選択状態に更新する</summary>
+        private void UpdateTabVisuals(BuildCategory activeCategory)
+        {
+            foreach (var kvp in _tabButtons)
+            {
+                if (kvp.Value == null) continue;
+
+                // 選択中のタブを強調表示
+                ColorBlock colors = kvp.Value.colors;
+                colors.normalColor = kvp.Key == activeCategory
+                    ? new Color(0.3f, 0.7f, 1f, 1f)
+                    : Color.white;
+                kvp.Value.colors = colors;
+            }
+        }
+
+        // ============================================================
+        // アイテムグリッド
+        // ============================================================
+
+        /// <summary>選択カテゴリのアイテムカードをグリッドに配置する</summary>
+        private void PopulateItemGrid(BuildCategory category)
+        {
+            ClearItemGrid();
+
+            if (itemGridContainer == null || itemCardPrefab == null) return;
+
+            // BuildItemDatabase から該当カテゴリのアイテムを取得
+            List<BuildItemData> items = BuildItemDatabase.GetItemsByCategory(category);
+
+            // テーマゾーンフィルタ適用
+            if (_currentZoneFilter.HasValue)
+            {
+                items = items.Where(item =>
+                    item.CompatibleZones.Contains(_currentZoneFilter.Value)
+                ).ToList();
+            }
+
+            float currentMoney = GameManager.Instance?.EconomyManager?.CurrentMoney ?? 0f;
+
+            foreach (var itemData in items)
+            {
+                GameObject cardObj = Instantiate(itemCardPrefab, itemGridContainer);
+                _spawnedItemCards.Add(cardObj);
+
+                SetupItemCard(cardObj, itemData, currentMoney);
+            }
+        }
+
+        /// <summary>アイテムカードの表示を設定する</summary>
+        private void SetupItemCard(GameObject cardObj, BuildItemData itemData, float currentMoney)
+        {
+            TextMeshProUGUI nameText = cardObj.transform.Find("NameText")?.GetComponent<TextMeshProUGUI>();
+            TextMeshProUGUI costText = cardObj.transform.Find("CostText")?.GetComponent<TextMeshProUGUI>();
+            Image thumbnail = cardObj.transform.Find("Thumbnail")?.GetComponent<Image>();
+            Image lockOverlay = cardObj.transform.Find("LockOverlay")?.GetComponent<Image>();
+            Button cardButton = cardObj.GetComponent<Button>();
+            CanvasGroup canvasGroup = cardObj.GetComponent<CanvasGroup>();
+
+            // 名前とコスト
+            if (nameText != null) nameText.text = itemData.DisplayName;
+            if (costText != null) costText.text = $"¥{itemData.Cost:N0}";
+
+            // サムネイル
+            if (thumbnail != null && itemData.Thumbnail != null)
+            {
+                thumbnail.sprite = itemData.Thumbnail;
+            }
+
+            // ロック状態の判定
+            bool isUnlocked = itemData.IsUnlocked;
+            bool canAfford = currentMoney >= itemData.Cost;
+
+            if (lockOverlay != null)
+            {
+                lockOverlay.gameObject.SetActive(!isUnlocked);
+            }
+
+            // 購入不可の場合はグレーアウト
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = (isUnlocked && canAfford) ? 1f : 0.4f;
+            }
+
+            // コストテキストの色（購入不可の場合は赤）
+            if (costText != null && isUnlocked)
+            {
+                costText.color = canAfford ? Color.white : Color.red;
+            }
+
+            // ボタンイベント
+            if (cardButton != null)
+            {
+                cardButton.interactable = isUnlocked;
+                BuildItemData capturedItem = itemData;
+                cardButton.onClick.AddListener(() => OnItemCardClicked(capturedItem));
+            }
+        }
+
+        /// <summary>アイテムグリッドをクリアする</summary>
+        private void ClearItemGrid()
+        {
+            foreach (var card in _spawnedItemCards)
+            {
+                if (card != null) Destroy(card);
+            }
+            _spawnedItemCards.Clear();
+        }
+
+        // ============================================================
+        // アイテム詳細パネル
+        // ============================================================
+
+        /// <summary>アイテムカードがクリックされた時の処理</summary>
+        private void OnItemCardClicked(BuildItemData itemData)
+        {
+            _selectedItem = itemData;
+            ShowDetailPanel(itemData);
+        }
+
+        /// <summary>アイテム詳細パネルを表示する</summary>
+        private void ShowDetailPanel(BuildItemData itemData)
+        {
+            if (detailPanel == null) return;
+
+            detailPanel.SetActive(true);
+
+            if (detailNameText != null) detailNameText.text = itemData.DisplayName;
+            if (detailCostText != null) detailCostText.text = $"建設費: ¥{itemData.Cost:N0}";
+            if (detailDescriptionText != null) detailDescriptionText.text = itemData.Description;
+            if (detailThumbnail != null && itemData.Thumbnail != null)
+            {
+                detailThumbnail.sprite = itemData.Thumbnail;
+            }
+
+            // ステータスバー更新
+            SetStatBar(detailExcitementBar, detailExcitementValue, "興奮度", itemData.Excitement);
+            SetStatBar(detailIntensityBar, detailIntensityValue, "激しさ", itemData.Intensity);
+            SetStatBar(detailNauseaBar, detailNauseaValue, "酔い度", itemData.Nausea);
+            SetStatBar(detailCapacityBar, detailCapacityValue, "定員", itemData.Capacity, 50f);
+
+            // 確認ボタンの状態更新
+            UpdateConfirmButton(itemData);
+        }
+
+        /// <summary>ステータスバーを設定する</summary>
+        private void SetStatBar(Slider bar, TextMeshProUGUI valueText, string label, float value, float maxValue = 10f)
+        {
+            if (bar != null)
+            {
+                bar.maxValue = maxValue;
+                bar.value = value;
+            }
+            if (valueText != null)
+            {
+                valueText.text = $"{label}: {value:F1}";
+            }
+        }
+
+        /// <summary>詳細パネルを非表示にする</summary>
+        private void HideDetailPanel()
+        {
+            if (detailPanel != null)
+            {
+                detailPanel.SetActive(false);
+            }
+            _selectedItem = null;
+        }
+
+        /// <summary>確認ボタンの有効/無効とテキストを更新する</summary>
+        private void UpdateConfirmButton(BuildItemData itemData)
+        {
+            if (confirmButton == null) return;
+
+            float currentMoney = GameManager.Instance?.EconomyManager?.CurrentMoney ?? 0f;
+            bool canAfford = currentMoney >= itemData.Cost;
+
+            confirmButton.interactable = canAfford && itemData.IsUnlocked;
+
+            if (confirmButtonText != null)
+            {
+                confirmButtonText.text = canAfford
+                    ? "配置する"
+                    : "資金不足";
+            }
+        }
+
+        // ============================================================
+        // テーマゾーンフィルタ
+        // ============================================================
+
+        /// <summary>テーマゾーンフィルタが変更された時の処理</summary>
+        private void OnThemeZoneFilterChanged(int index)
+        {
+            if (index == 0)
+            {
+                // 全テーマ（フィルタなし）
+                _currentZoneFilter = null;
+            }
+            else
+            {
+                // index-1 がThemeZoneの列挙値に対応
+                _currentZoneFilter = (ThemeZone)(index - 1);
+            }
+
+            // アイテムグリッドを再構築
+            PopulateItemGrid(_selectedCategory);
+        }
+
+        // ============================================================
+        // 配置プレビュー
+        // ============================================================
+
+        /// <summary>確認ボタン押下 - 配置モードを開始する</summary>
+        private void OnConfirmClicked()
+        {
+            if (_selectedItem == null) return;
+
+            float currentMoney = GameManager.Instance?.EconomyManager?.CurrentMoney ?? 0f;
+            if (currentMoney < _selectedItem.Cost)
+            {
+                Debug.LogWarning("[BuildPanelUI] 資金が不足しています");
+                return;
+            }
+
+            StartPlacementMode(_selectedItem);
+        }
+
+        /// <summary>キャンセルボタン押下</summary>
+        private void OnCancelClicked()
+        {
+            if (_isInPlacementMode)
+            {
+                CancelPlacement();
+            }
+            else
+            {
+                HideDetailPanel();
+            }
+        }
+
+        /// <summary>回転ボタン押下</summary>
+        private void OnRotateClicked()
+        {
+            if (!_isInPlacementMode || _placementPreview == null) return;
+
+            _previewRotation += 90f;
+            if (_previewRotation >= 360f) _previewRotation = 0f;
+            _placementPreview.transform.rotation = Quaternion.Euler(0f, _previewRotation, 0f);
+        }
+
+        /// <summary>配置モードを開始する</summary>
+        private void StartPlacementMode(BuildItemData itemData)
+        {
+            _isInPlacementMode = true;
+            _previewRotation = 0f;
+
+            // プレビューオブジェクトを生成
+            if (itemData.PreviewPrefab != null)
+            {
+                _placementPreview = Instantiate(itemData.PreviewPrefab);
+                ApplyPreviewMaterial(_placementPreview, validPlacementMaterial);
+            }
+
+            Debug.Log($"[BuildPanelUI] 配置モード開始: {itemData.DisplayName}");
+        }
+
+        /// <summary>配置プレビューを毎フレーム更新する</summary>
+        private void UpdatePlacementPreview()
+        {
+            if (_placementPreview == null) return;
+
+            // マウス位置からレイキャスト
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, groundLayer))
+            {
+                // グリッドスナップ
+                Vector3 snappedPos = SnapToGrid(hit.point);
+                _placementPreview.transform.position = snappedPos;
+
+                // 配置可否の判定
+                bool wasValid = _isPlacementValid;
+                _isPlacementValid = CheckPlacementValidity(snappedPos);
+
+                if (wasValid != _isPlacementValid)
+                {
+                    Material mat = _isPlacementValid ? validPlacementMaterial : invalidPlacementMaterial;
+                    ApplyPreviewMaterial(_placementPreview, mat);
+                }
+            }
+        }
+
+        /// <summary>配置入力を処理する</summary>
+        private void HandlePlacementInput()
+        {
+            // 左クリックで配置確定
+            if (Input.GetMouseButtonDown(0) && _isPlacementValid)
+            {
+                ConfirmPlacement();
+            }
+
+            // 右クリックまたはEscでキャンセル
+            if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape))
+            {
+                CancelPlacement();
+            }
+
+            // Rキーで回転
+            if (Input.GetKeyDown(KeyCode.R))
+            {
+                OnRotateClicked();
+            }
+        }
+
+        /// <summary>座標をグリッドにスナップする</summary>
+        private Vector3 SnapToGrid(Vector3 position)
+        {
+            float x = Mathf.Round(position.x / gridSize) * gridSize;
+            float z = Mathf.Round(position.z / gridSize) * gridSize;
+            return new Vector3(x, position.y, z);
+        }
+
+        /// <summary>指定位置への配置が有効かどうかを判定する</summary>
+        private bool CheckPlacementValidity(Vector3 position)
+        {
+            // 他のオブジェクトとの衝突判定
+            if (_selectedItem == null) return false;
+
+            Vector3 halfExtents = _selectedItem.PlacementSize * 0.5f;
+            Collider[] overlaps = Physics.OverlapBox(
+                position + Vector3.up * halfExtents.y,
+                halfExtents,
+                Quaternion.Euler(0f, _previewRotation, 0f)
+            );
+
+            // 自身のプレビューコライダーは除外
+            foreach (var col in overlaps)
+            {
+                if (col.gameObject != _placementPreview &&
+                    col.gameObject.layer != LayerMask.NameToLayer("Ground"))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>プレビューオブジェクトにマテリアルを適用する</summary>
+        private void ApplyPreviewMaterial(GameObject obj, Material material)
+        {
+            if (obj == null || material == null) return;
+
+            var renderers = obj.GetComponentsInChildren<Renderer>();
+            foreach (var renderer in renderers)
+            {
+                Material[] mats = new Material[renderer.materials.Length];
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    mats[i] = material;
+                }
+                renderer.materials = mats;
+            }
+        }
+
+        /// <summary>配置を確定する</summary>
+        private void ConfirmPlacement()
+        {
+            if (_selectedItem == null || _placementPreview == null) return;
+
+            Vector3 position = _placementPreview.transform.position;
+            Quaternion rotation = _placementPreview.transform.rotation;
+
+            // プレビューを削除
+            Destroy(_placementPreview);
+            _placementPreview = null;
+            _isInPlacementMode = false;
+
+            // 実際のオブジェクトを配置
+            if (_selectedItem.ActualPrefab != null)
+            {
+                Instantiate(_selectedItem.ActualPrefab, position, rotation);
+            }
+
+            // コスト支払い
+            GameManager.Instance?.EconomyManager?.SpendMoney(_selectedItem.Cost);
+
+            // 建設イベント発火
+            GameEvents.FireAttractionBuilt(_selectedItem.ItemId);
+
+            Debug.Log($"[BuildPanelUI] 配置完了: {_selectedItem.DisplayName} at {position}");
+
+            // アイテムグリッドを再更新（資金反映）
+            PopulateItemGrid(_selectedCategory);
+        }
+
+        /// <summary>配置をキャンセルする</summary>
+        private void CancelPlacement()
+        {
+            if (_placementPreview != null)
+            {
+                Destroy(_placementPreview);
+                _placementPreview = null;
+            }
+            _isInPlacementMode = false;
+            _isPlacementValid = false;
+        }
+    }
+
+    // ============================================================
+    // BuildItemData - 建設アイテムのデータクラス
+    // ============================================================
+
+    /// <summary>
+    /// 建設可能なアイテムのデータ構造。
+    /// ScriptableObjectから読み込むか、データベースから動的に取得される。
+    /// </summary>
+    [Serializable]
+    public class BuildItemData
+    {
+        /// <summary>アイテム固有ID</summary>
+        public int ItemId;
+
+        /// <summary>表示名（日本語）</summary>
+        public string DisplayName;
+
+        /// <summary>説明文（日本語）</summary>
+        public string Description;
+
+        /// <summary>建設コスト</summary>
+        public float Cost;
+
+        /// <summary>カテゴリ</summary>
+        public BuildPanelUI.BuildCategory Category;
+
+        /// <summary>対応テーマゾーン</summary>
+        public ThemeZone[] CompatibleZones;
+
+        /// <summary>サムネイル画像</summary>
+        public Sprite Thumbnail;
+
+        /// <summary>プレビュー用プレハブ（半透明）</summary>
+        public GameObject PreviewPrefab;
+
+        /// <summary>実体プレハブ</summary>
+        public GameObject ActualPrefab;
+
+        /// <summary>興奮度 (0-10)</summary>
+        public float Excitement;
+
+        /// <summary>激しさ (0-10)</summary>
+        public float Intensity;
+
+        /// <summary>酔い度 (0-10)</summary>
+        public float Nausea;
+
+        /// <summary>定員</summary>
+        public float Capacity;
+
+        /// <summary>配置サイズ（グリッド単位）</summary>
+        public Vector3 PlacementSize = Vector3.one;
+
+        /// <summary>アンロック済みかどうか（研究完了/初期解放）</summary>
+        public bool IsUnlocked;
+    }
+
+    // ============================================================
+    // BuildItemDatabase - 建設アイテムデータベース（スタブ）
+    // ============================================================
+
+    /// <summary>
+    /// 建設アイテムのマスタデータを管理する静的クラス。
+    /// 実装時にScriptableObjectベースのデータベースに差し替える。
+    /// </summary>
+    public static class BuildItemDatabase
+    {
+        /// <summary>カテゴリに一致するアイテム一覧を取得する</summary>
+        public static List<BuildItemData> GetItemsByCategory(BuildPanelUI.BuildCategory category)
+        {
+            // TODO: ScriptableObjectデータベースから実データを取得
+            // 現在はParkManager/ResearchManagerと連携して
+            // アンロック状態を含むリストを返す想定
+            return new List<BuildItemData>();
+        }
+    }
+}

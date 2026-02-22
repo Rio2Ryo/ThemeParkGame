@@ -1,0 +1,334 @@
+{
+  "scenarios": [
+    {
+      "id": "scenario_france",
+      "country": "France",
+      "nameJa": "フランス - パリの夢",
+      "difficulty": "Easy",
+      "startingMoney": 150000,
+      "startingZone": "Wonderland",
+      "description": "花の都パリにテーマパークを建設しよう。穏やかな気候と観光客の多さで、初心者に最適なシナリオ。まずはワンダーランドゾーンを完成させよう。",
+      "mapSize": "Medium",
+      "startingStaff": 3,
+      "weatherBias": "Sunny",
+      "timeLimitMonths": 0,
+      "objectives": [
+        {
+          "type": "visitorCount",
+          "target": 300,
+          "description": "来場者数を300人に到達させる"
+        },
+        {
+          "type": "parkRating",
+          "target": 40,
+          "description": "パーク評価を40以上にする"
+        },
+        {
+          "type": "attractionCount",
+          "target": 5,
+          "description": "アトラクションを5つ以上建設する"
+        }
+      ]
+    },
+    {
+      "id": "scenario_egypt",
+      "country": "Egypt",
+      "nameJa": "エジプト - 砂漠の楽園",
+      "difficulty": "Easy",
+      "startingMoney": 130000,
+      "startingZone": "LostKingdom",
+      "description": "灼熱の砂漠にオアシスのようなテーマパークを。暑さ対策が重要。ロストキングダムのテーマにぴったりの環境でパークを発展させよう。",
+      "mapSize": "Medium",
+      "startingStaff": 3,
+      "weatherBias": "Hot",
+      "timeLimitMonths": 0,
+      "objectives": [
+        {
+          "type": "visitorCount",
+          "target": 250,
+          "description": "来場者数を250人に到達させる"
+        },
+        {
+          "type": "annualProfit",
+          "target": 100000,
+          "description": "年間利益を10万に到達させる"
+        },
+        {
+          "type": "happinessAverage",
+          "target": 55,
+          "description": "来場者の平均満足度を55以上にする"
+        }
+      ]
+    },
+    {
+      "id": "scenario_india",
+      "country": "India",
+      "nameJa": "インド - 神秘の遊園地",
+      "difficulty": "Normal",
+      "startingMoney": 120000,
+      "startingZone": "LostKingdom",
+      "description": "神秘的なインドの地にテーマパークを。雨季と乾季の激しい天候変化に対応しながら、来場者を集めよう。",
+      "mapSize": "Large",
+      "startingStaff": 4,
+      "weatherBias": "Rainy",
+      "timeLimitMonths": 36,
+      "objectives": [
+        {
+          "type": "visitorCount",
+          "target": 500,
+          "description": "来場者数を500人に到達させる"
+        },
+        {
+          "type": "parkRating",
+          "target": 55,
+          "description": "パーク評価を55以上にする"
+        },
+        {
+          "type": "attractionCount",
+          "target": 8,
+          "description": "アトラクションを8つ以上建設する"
+        },
+        {
+          "type": "annualProfit",
+          "target": 150000,
+          "description": "年間利益を15万に到達させる"
+        }
+      ]
+    },
+    {
+      "id": "scenario_china",
+      "country": "China",
+      "nameJa": "中国 - 龍の遊園地",
+      "difficulty": "Normal",
+      "startingMoney": 110000,
+      "startingZone": "LostKingdom",
+      "description": "巨大な中国市場でテーマパーク帝国を築こう。来場者数は多いが、価格に敏感な客層が多い。コスト管理が成功の鍵。",
+      "mapSize": "Large",
+      "startingStaff": 4,
+      "weatherBias": "Cloudy",
+      "timeLimitMonths": 36,
+      "objectives": [
+        {
+          "type": "visitorCount",
+          "target": 700,
+          "description": "来場者数を700人に到達させる"
+        },
+        {
+          "type": "annualProfit",
+          "target": 200000,
+          "description": "年間利益を20万に到達させる"
+        },
+        {
+          "type": "happinessAverage",
+          "target": 60,
+          "description": "来場者の平均満足度を60以上にする"
+        }
+      ]
+    },
+    {
+      "id": "scenario_japan",
+      "country": "Japan",
+      "nameJa": "日本 - 究極のおもてなし",
+      "difficulty": "Normal",
+      "startingMoney": 100000,
+      "startingZone": "Wonderland",
+      "description": "品質にこだわる日本の来場者を満足させよう。清潔さとサービスの質が厳しく評価される。スタッフの教育が重要。",
+      "mapSize": "Medium",
+      "startingStaff": 5,
+      "weatherBias": "Cloudy",
+      "timeLimitMonths": 24,
+      "objectives": [
+        {
+          "type": "happinessAverage",
+          "target": 75,
+          "description": "来場者の平均満足度を75以上にする"
+        },
+        {
+          "type": "parkRating",
+          "target": 65,
+          "description": "パーク評価を65以上にする"
+        },
+        {
+          "type": "visitorCount",
+          "target": 400,
+          "description": "来場者数を400人に到達させる"
+        }
+      ]
+    },
+    {
+      "id": "scenario_uk",
+      "country": "UnitedKingdom",
+      "nameJa": "イギリス - 雨の中の挑戦",
+      "difficulty": "Hard",
+      "startingMoney": 80000,
+      "startingZone": "HalloweenWorld",
+      "description": "雨の多いイギリスでのテーマパーク経営は至難の業。天候に左右されにくい屋内アトラクションの活用がカギ。",
+      "mapSize": "Small",
+      "startingStaff": 3,
+      "weatherBias": "Rainy",
+      "timeLimitMonths": 24,
+      "objectives": [
+        {
+          "type": "annualProfit",
+          "target": 250000,
+          "description": "年間利益を25万に到達させる"
+        },
+        {
+          "type": "parkRating",
+          "target": 60,
+          "description": "パーク評価を60以上にする"
+        },
+        {
+          "type": "attractionCount",
+          "target": 10,
+          "description": "アトラクションを10個以上建設する"
+        },
+        {
+          "type": "happinessAverage",
+          "target": 65,
+          "description": "来場者の平均満足度を65以上にする"
+        }
+      ]
+    },
+    {
+      "id": "scenario_us",
+      "country": "UnitedStates",
+      "nameJa": "アメリカ - エンタメの本場",
+      "difficulty": "Hard",
+      "startingMoney": 90000,
+      "startingZone": "SpaceZone",
+      "description": "テーマパーク大国アメリカで競争に勝ち抜け。来場者の期待値が非常に高く、常に新鮮な体験を求められる。",
+      "mapSize": "Large",
+      "startingStaff": 4,
+      "weatherBias": "Sunny",
+      "timeLimitMonths": 30,
+      "objectives": [
+        {
+          "type": "visitorCount",
+          "target": 1000,
+          "description": "来場者数を1000人に到達させる"
+        },
+        {
+          "type": "attractionCount",
+          "target": 15,
+          "description": "アトラクションを15個以上建設する"
+        },
+        {
+          "type": "parkRating",
+          "target": 70,
+          "description": "パーク評価を70以上にする"
+        },
+        {
+          "type": "annualProfit",
+          "target": 300000,
+          "description": "年間利益を30万に到達させる"
+        }
+      ]
+    },
+    {
+      "id": "scenario_brazil",
+      "country": "Brazil",
+      "nameJa": "ブラジル - カーニバルパーク",
+      "difficulty": "Normal",
+      "startingMoney": 100000,
+      "startingZone": "Wonderland",
+      "description": "情熱の国ブラジルでカーニバルのようなテーマパークを。エンターテイナーの活用とカラフルな装飾で来場者を魅了しよう。",
+      "mapSize": "Medium",
+      "startingStaff": 4,
+      "weatherBias": "Hot",
+      "timeLimitMonths": 30,
+      "objectives": [
+        {
+          "type": "visitorCount",
+          "target": 600,
+          "description": "来場者数を600人に到達させる"
+        },
+        {
+          "type": "happinessAverage",
+          "target": 70,
+          "description": "来場者の平均満足度を70以上にする"
+        },
+        {
+          "type": "attractionCount",
+          "target": 10,
+          "description": "アトラクションを10個以上建設する"
+        }
+      ]
+    },
+    {
+      "id": "scenario_australia",
+      "country": "Australia",
+      "nameJa": "オーストラリア - 大自然の中のパーク",
+      "difficulty": "Hard",
+      "startingMoney": 75000,
+      "startingZone": "LostKingdom",
+      "description": "広大なオーストラリアの大地にテーマパークを。猛暑と広い敷地の管理が課題。限られた予算で効率的な経営を目指せ。",
+      "mapSize": "Large",
+      "startingStaff": 3,
+      "weatherBias": "Hot",
+      "timeLimitMonths": 24,
+      "objectives": [
+        {
+          "type": "annualProfit",
+          "target": 350000,
+          "description": "年間利益を35万に到達させる"
+        },
+        {
+          "type": "visitorCount",
+          "target": 800,
+          "description": "来場者数を800人に到達させる"
+        },
+        {
+          "type": "parkRating",
+          "target": 75,
+          "description": "パーク評価を75以上にする"
+        },
+        {
+          "type": "happinessAverage",
+          "target": 70,
+          "description": "来場者の平均満足度を70以上にする"
+        }
+      ]
+    },
+    {
+      "id": "scenario_russia",
+      "country": "Russia",
+      "nameJa": "ロシア - 極寒のテーマパーク",
+      "difficulty": "Hard",
+      "startingMoney": 70000,
+      "startingZone": "HalloweenWorld",
+      "description": "極寒のロシアでテーマパーク経営に挑め。厳しい冬は来場者が激減し、暖房費がかさむ。短い夏で稼ぎ切る戦略が必要。",
+      "mapSize": "Medium",
+      "startingStaff": 3,
+      "weatherBias": "Snowy",
+      "timeLimitMonths": 24,
+      "objectives": [
+        {
+          "type": "annualProfit",
+          "target": 400000,
+          "description": "年間利益を40万に到達させる"
+        },
+        {
+          "type": "parkRating",
+          "target": 70,
+          "description": "パーク評価を70以上にする"
+        },
+        {
+          "type": "attractionCount",
+          "target": 12,
+          "description": "アトラクションを12個以上建設する"
+        },
+        {
+          "type": "happinessAverage",
+          "target": 65,
+          "description": "来場者の平均満足度を65以上にする"
+        },
+        {
+          "type": "visitorCount",
+          "target": 600,
+          "description": "来場者数を600人に到達させる"
+        }
+      ]
+    }
+  ]
+}

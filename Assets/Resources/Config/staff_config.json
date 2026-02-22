@@ -1,0 +1,93 @@
+{
+  "staffTypes": {
+    "Mechanic": {
+      "nameJa": "メカニック",
+      "description": "アトラクションの修理・点検を担当。故障率の低下と安全性の向上に貢献。",
+      "baseSalary": 3500,
+      "trainingCostPerLevel": 2000,
+      "maxSkillLevel": 5,
+      "fatigueRate": 0.08,
+      "restRecoveryRate": 0.15,
+      "strikeThreshold": 0.85,
+      "effectRadius": 12,
+      "skills": {
+        "repairSpeed": "修理速度が向上し、ダウンタイムを短縮",
+        "inspectionQuality": "点検精度が向上し、故障の予防確率が上昇",
+        "multitask": "同時に担当できるアトラクション数が増加"
+      }
+    },
+    "Cleaner": {
+      "nameJa": "スイーパー",
+      "description": "パーク内の清掃を担当。ゴミの回収と嘔吐物の処理で清潔度を維持。",
+      "baseSalary": 2500,
+      "trainingCostPerLevel": 1500,
+      "maxSkillLevel": 5,
+      "fatigueRate": 0.1,
+      "restRecoveryRate": 0.18,
+      "strikeThreshold": 0.8,
+      "effectRadius": 10,
+      "skills": {
+        "cleaningSpeed": "清掃速度が向上",
+        "coverage": "巡回範囲が広がる",
+        "vomitHandling": "嘔吐物の処理速度が向上"
+      }
+    },
+    "Entertainer": {
+      "nameJa": "エンターテイナー",
+      "description": "パーク内でパフォーマンスを行い、来場者の満足度を向上。待ち列の退屈を軽減。",
+      "baseSalary": 3000,
+      "trainingCostPerLevel": 1800,
+      "maxSkillLevel": 5,
+      "fatigueRate": 0.12,
+      "restRecoveryRate": 0.14,
+      "strikeThreshold": 0.75,
+      "effectRadius": 8,
+      "skills": {
+        "performance": "パフォーマンスの質が向上し、満足度ボーナスが増加",
+        "crowdAttraction": "より多くの来場者を惹きつける",
+        "queueEntertainment": "待ち列での退屈軽減効果が向上"
+      }
+    },
+    "Guard": {
+      "nameJa": "ガードマン",
+      "description": "パーク内の治安を維持。破壊行為の防止と迷子の案内を担当。",
+      "baseSalary": 3200,
+      "trainingCostPerLevel": 1800,
+      "maxSkillLevel": 5,
+      "fatigueRate": 0.07,
+      "restRecoveryRate": 0.16,
+      "strikeThreshold": 0.82,
+      "effectRadius": 15,
+      "skills": {
+        "patrol": "巡回効率が向上",
+        "deterrence": "破壊行為の抑止力が向上",
+        "guidance": "迷子の来場者への案内能力が向上"
+      }
+    },
+    "Scientist": {
+      "nameJa": "サイエンティスト",
+      "description": "研究所で新技術・新アトラクションの研究開発を担当。研究速度と品質に影響。",
+      "baseSalary": 5000,
+      "trainingCostPerLevel": 3000,
+      "maxSkillLevel": 5,
+      "fatigueRate": 0.06,
+      "restRecoveryRate": 0.12,
+      "strikeThreshold": 0.9,
+      "effectRadius": 0,
+      "skills": {
+        "researchSpeed": "研究速度が向上",
+        "innovation": "研究成果の品質が向上し、アップグレード効果が増加",
+        "efficiency": "研究コストが軽減される"
+      }
+    }
+  },
+  "globalSettings": {
+    "maxStaffPerPark": 50,
+    "salaryPaymentInterval": "monthly",
+    "strikeWarningThreshold": 0.7,
+    "strikeDurationHours": 24,
+    "trainingDurationHours": 8,
+    "fatigueVisualThreshold": 0.6,
+    "autoRestThreshold": 0.9
+  }
+}

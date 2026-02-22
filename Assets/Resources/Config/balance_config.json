@@ -1,0 +1,174 @@
+{
+  "economyBalance": {
+    "entranceFeeDefault": 1000,
+    "entranceFeeMin": 0,
+    "entranceFeeMax": 5000,
+    "optimalAttractionFeeMultiplier": 0.04,
+    "optimalShopPriceMultiplier": 1.6,
+    "attractionFeeHappinessImpact": 0.3,
+    "shopPriceHappinessImpact": 0.2,
+    "monthlyLoanInterestRate": 0.02,
+    "maxLoanAmount": 500000,
+    "bankruptcyThreshold": -200000
+  },
+  "visitorSpawning": {
+    "visitorSpawnBaseRate": 5,
+    "visitorSpawnFameMultiplier": 0.15,
+    "visitorSpawnWeatherModifiers": {
+      "Sunny": 1.2,
+      "Cloudy": 1.0,
+      "Rainy": 0.5,
+      "Snowy": 0.3,
+      "Hot": 0.8
+    },
+    "visitorSpawnWeekendMultiplier": 1.5,
+    "visitorSpawnSeasonModifiers": {
+      "spring": 1.1,
+      "summer": 1.4,
+      "autumn": 1.0,
+      "winter": 0.7
+    },
+    "maxDailyVisitors": 500,
+    "spawnIntervalSeconds": 10
+  },
+  "weatherSystem": {
+    "weatherChangeIntervalHours": 4,
+    "weatherTransitionDurationMinutes": 15,
+    "weatherForecastAccuracy": 0.8,
+    "rainBreakdownMultiplier": 1.3,
+    "snowSpeedMultiplier": 0.7,
+    "hotNauseaMultiplier": 1.2
+  },
+  "maintenanceSystem": {
+    "breakdownCheckIntervalHours": 1,
+    "breakdownRepairBaseTimeMinutes": 30,
+    "breakdownSafetyPenalty": 5,
+    "neglectedMaintenanceMultiplier": 1.5,
+    "upgradeBreakdownReduction": 0.15,
+    "ageBreakdownIncrease": 0.005
+  },
+  "parkRating": {
+    "baseRating": 50,
+    "maxRating": 100,
+    "ratingDecayRate": 0.5,
+    "attractionVarietyBonus": 2.0,
+    "cleanlinessWeight": 0.2,
+    "safetyWeight": 0.25,
+    "funWeight": 0.3,
+    "valueForMoneyWeight": 0.15,
+    "themedConsistencyWeight": 0.1
+  },
+  "certificateRequirements": {
+    "Fame": {
+      "bronze": { "totalVisitors": 500, "parkRating": 40 },
+      "silver": { "totalVisitors": 2000, "parkRating": 55 },
+      "gold": { "totalVisitors": 5000, "parkRating": 70 }
+    },
+    "Safety": {
+      "bronze": { "daysWithoutAccident": 30, "mechanicCount": 2 },
+      "silver": { "daysWithoutAccident": 90, "mechanicCount": 4 },
+      "gold": { "daysWithoutAccident": 180, "mechanicCount": 6 }
+    },
+    "Comfort": {
+      "bronze": { "toiletRatio": 0.02, "benchRatio": 0.03, "cleanlinessAvg": 50 },
+      "silver": { "toiletRatio": 0.03, "benchRatio": 0.05, "cleanlinessAvg": 65 },
+      "gold": { "toiletRatio": 0.05, "benchRatio": 0.08, "cleanlinessAvg": 80 }
+    },
+    "Excitement": {
+      "bronze": { "attractionCount": 5, "avgExcitement": 4 },
+      "silver": { "attractionCount": 10, "avgExcitement": 6 },
+      "gold": { "attractionCount": 18, "avgExcitement": 7.5 }
+    },
+    "Mood": {
+      "bronze": { "happinessAvg": 55, "decorationCount": 10 },
+      "silver": { "happinessAvg": 65, "decorationCount": 25 },
+      "gold": { "happinessAvg": 80, "decorationCount": 50 }
+    }
+  },
+  "goldenTicketObjectives": [
+    {
+      "tier": 1,
+      "nameJa": "ブロンズチケット",
+      "description": "パークの基盤を築く",
+      "requirements": {
+        "parkRating": 40,
+        "visitorCount": 200,
+        "attractionCount": 4,
+        "monthlyProfit": 10000
+      }
+    },
+    {
+      "tier": 2,
+      "nameJa": "シルバーチケット",
+      "description": "成長するパークを証明する",
+      "requirements": {
+        "parkRating": 55,
+        "visitorCount": 500,
+        "attractionCount": 8,
+        "monthlyProfit": 30000,
+        "certificateCount": 3
+      }
+    },
+    {
+      "tier": 3,
+      "nameJa": "ゴールドチケット",
+      "description": "一流テーマパークへの道",
+      "requirements": {
+        "parkRating": 70,
+        "visitorCount": 1000,
+        "attractionCount": 14,
+        "monthlyProfit": 60000,
+        "certificateCount": 7,
+        "happinessAvg": 70
+      }
+    },
+    {
+      "tier": 4,
+      "nameJa": "プラチナチケット",
+      "description": "世界に誇るテーマパーク",
+      "requirements": {
+        "parkRating": 85,
+        "visitorCount": 1800,
+        "attractionCount": 20,
+        "monthlyProfit": 100000,
+        "certificateCount": 12,
+        "happinessAvg": 80,
+        "allZonesUnlocked": true
+      }
+    },
+    {
+      "tier": 5,
+      "nameJa": "ダイヤモンドチケット",
+      "description": "伝説のテーマパーク",
+      "requirements": {
+        "parkRating": 95,
+        "visitorCount": 2000,
+        "attractionCount": 24,
+        "monthlyProfit": 200000,
+        "certificateCount": 15,
+        "happinessAvg": 90,
+        "allZonesUnlocked": true,
+        "vipSatisfaction": 85
+      }
+    }
+  ],
+  "timeSystem": {
+    "gameSpeedOptions": [1, 2, 4, 8],
+    "minutesPerGameDay": 10,
+    "daysPerGameMonth": 30,
+    "monthsPerGameYear": 12,
+    "parkOpenHour": 9,
+    "parkCloseHour": 22
+  },
+  "upgradeSystem": {
+    "level2CostMultiplier": 2.0,
+    "level3CostMultiplier": 3.5,
+    "level2CapacityBonus": 0.25,
+    "level3CapacityBonus": 0.5,
+    "level2ExcitementBonus": 0.5,
+    "level3ExcitementBonus": 1.0,
+    "level2MaintenanceIncrease": 1.3,
+    "level3MaintenanceIncrease": 1.6,
+    "upgradeConstructionDays": 3
+  }
+}
