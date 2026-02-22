@@ -250,6 +250,15 @@ namespace ThemeParkGame.Visitor
         /// <summary>
         /// 現在のパラメータに基づいて次の行動を決定する。
         /// 【ゲームデザイン】欲求駆動型意思決定。最も切迫した欲求を優先する。
+        ///
+        /// 優先順位:
+        /// 1. トイレ（生理的に最も緊急）
+        /// 2. 空腹 → フードショップ（渇きより不快度が高い場合優先）
+        /// 3. 渇き → ドリンクショップ
+        /// 4. 興奮低下 → アトラクション（残高+価格許容度を考慮）
+        /// 5. 疲労/退屈 → ベンチで休憩
+        /// 6. お土産欲求 → スーベニアショップ（一定確率で発生）
+        /// 7. Idle → 散策/マップ確認
         /// </summary>
         private void MakeDecision()
         {
@@ -271,7 +280,7 @@ namespace ThemeParkGame.Visitor
                 return;
             }
 
-            // 優先度1: トイレ欲求
+            // 優先度1: トイレ欲求（最も緊急）
             if (parameters.NeedsToilet)
             {
                 if (currentState != VisitorBehaviorState.WalkingToToilet &&
@@ -282,20 +291,20 @@ namespace ThemeParkGame.Visitor
                         TransitionTo(VisitorBehaviorState.WalkingToToilet);
                         return;
                     }
-                    // トイレが見つからない場合、感情バブルで表示
                     if (emotionBubble != null)
                         emotionBubble.ShowBubble(EmotionBubbleType.LookingForToilet, EmotionBubbleColor.Green);
                 }
                 return;
             }
 
-            // 優先度2: 空腹（渇きより優先度が高い場合）
+            // 優先度2: 空腹（渇きより不快度が高い場合優先）
             if (parameters.IsHungry && parameters.Hunger >= parameters.Thirst)
             {
                 if (currentState != VisitorBehaviorState.WalkingToShop &&
                     currentState != VisitorBehaviorState.Eating)
                 {
-                    if (parameters.HasMoney && TryFindAndNavigateTo(FacilityType.FoodShop))
+                    if (CanAffordShop(FacilityType.FoodShop) &&
+                        TryFindAffordableShop(FacilityType.FoodShop))
                     {
                         targetFacilityType = FacilityType.FoodShop;
                         TransitionTo(VisitorBehaviorState.WalkingToShop);
@@ -313,7 +322,8 @@ namespace ThemeParkGame.Visitor
                 if (currentState != VisitorBehaviorState.WalkingToShop &&
                     currentState != VisitorBehaviorState.Drinking)
                 {
-                    if (parameters.HasMoney && TryFindAndNavigateTo(FacilityType.DrinkShop))
+                    if (CanAffordShop(FacilityType.DrinkShop) &&
+                        TryFindAffordableShop(FacilityType.DrinkShop))
                     {
                         targetFacilityType = FacilityType.DrinkShop;
                         TransitionTo(VisitorBehaviorState.WalkingToShop);
@@ -338,14 +348,30 @@ namespace ThemeParkGame.Visitor
                 }
             }
 
-            // 優先度5: 疲労時の休憩
-            if (parameters.IsBored && parameters.Happiness < 50f)
+            // 優先度5: 疲労時の休憩（幸福度低下 AND 興奮度低下）
+            if (parameters.Happiness < 60f && parameters.Excitement < 30f)
             {
                 if (currentState != VisitorBehaviorState.Resting)
                 {
                     if (TryFindAndNavigateTo(FacilityType.Bench))
                     {
                         TransitionTo(VisitorBehaviorState.Resting);
+                        return;
+                    }
+                }
+            }
+
+            // 優先度6: お土産欲求（一定条件で発動）
+            // 幸福度が高い時にお土産を買いたくなる。VIPとCoupleは確率が高い。
+            if (ShouldBuySouvenir())
+            {
+                if (currentState != VisitorBehaviorState.WalkingToShop)
+                {
+                    if (CanAffordShop(FacilityType.SouvenirShop) &&
+                        TryFindAffordableShop(FacilityType.SouvenirShop))
+                    {
+                        targetFacilityType = FacilityType.SouvenirShop;
+                        TransitionTo(VisitorBehaviorState.WalkingToShop);
                         return;
                     }
                 }
@@ -367,6 +393,146 @@ namespace ThemeParkGame.Visitor
                     }
                 }
             }
+        }
+
+        // ---- 価格許容度 & ショップ選択 ----
+
+        /// <summary>
+        /// VisitorType別の価格許容度倍率を返す。
+        /// 【ゲームデザイン】VIPは高い価格を許容し、Kidsは低価格を好む。
+        /// 返値は適正価格の何倍まで許容するかを示す。
+        /// </summary>
+        private float GetPriceToleranceMultiplier()
+        {
+            switch (visitorType)
+            {
+                case VisitorType.Kids:   return 1.0f;  // 安さ重視
+                case VisitorType.Young:  return 1.2f;
+                case VisitorType.Family: return 1.3f;
+                case VisitorType.Couple: return 1.5f;  // デートなので多少高くてもOK
+                case VisitorType.Senior: return 1.1f;
+                case VisitorType.VIP:    return 2.0f;  // 金額は気にしない
+                default: return 1.2f;
+            }
+        }
+
+        /// <summary>指定タイプのショップに支払える最低限の所持金があるかチェック</summary>
+        private bool CanAffordShop(FacilityType shopType)
+        {
+            // 最低購入額の見積もり（タイプ別）
+            float minExpectedPrice;
+            switch (shopType)
+            {
+                case FacilityType.FoodShop:     minExpectedPrice = 3f;  break;
+                case FacilityType.DrinkShop:    minExpectedPrice = 2f;  break;
+                case FacilityType.SouvenirShop: minExpectedPrice = 5f;  break;
+                default: minExpectedPrice = 1f; break;
+            }
+            return parameters.Cash >= minExpectedPrice;
+        }
+
+        /// <summary>
+        /// 価格許容範囲内で最寄りのショップを探してナビゲーションを設定する。
+        /// Shopコンポーネントの実際の販売価格を参照し、
+        /// VisitorType別の価格許容度を超えるショップを除外する。
+        /// </summary>
+        private bool TryFindAffordableShop(FacilityType shopType)
+        {
+            string tag = GetFacilityTag(shopType);
+            GameObject[] tagged = GetCachedFacilitiesByTag(tag);
+
+            if (tagged.Length == 0)
+            {
+                // キャッシュに無い場合はフォールバック
+                return TryFindAndNavigateTo(shopType);
+            }
+
+            Transform bestShop = null;
+            float bestScore = float.MinValue;
+            float priceTolerance = GetPriceToleranceMultiplier();
+
+            for (int i = 0; i < tagged.Length; i++)
+            {
+                if (tagged[i] == null) continue;
+
+                float dist = Vector3.Distance(transform.position, tagged[i].transform.position);
+                if (dist > facilitySearchRadius) continue;
+
+                // Shopコンポーネントから実際の価格を取得
+                var shopComp = tagged[i].GetComponent<ThemeParkGame.Attraction.Shop>();
+                if (shopComp == null) continue;
+
+                // 在庫切れチェック
+                if (shopComp.IsOutOfStock) continue;
+
+                // 価格チェック: 販売価格が所持金を超えていたらスキップ
+                if (shopComp.SellingPrice > parameters.Cash) continue;
+
+                // 価格許容度チェック: 適正価格の許容倍率を超えていたらスコアペナルティ
+                float priceRatio = (float)shopComp.SellingPrice / Mathf.Max(1, shopComp.WholesalePrice);
+                float priceScore = 0f;
+                if (priceRatio <= priceTolerance * 2f)
+                {
+                    priceScore = 10f; // 適正価格内
+                }
+                else
+                {
+                    priceScore = -20f; // 高すぎる
+                }
+
+                // 総合スコア: 近いほど高い + 価格適正度
+                float score = priceScore - dist * 0.3f;
+
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    bestShop = tagged[i].transform;
+                }
+            }
+
+            if (bestShop == null) return false;
+
+            currentTarget = bestShop;
+            targetFacilityType = shopType;
+            NavigateTo(bestShop.position);
+            return true;
+        }
+
+        /// <summary>
+        /// お土産を買うべきかどうかを判定する。
+        /// 【ゲームデザイン】幸福度が高い来場者はお土産を買いやすい。
+        /// VIPとCoupleは特にお土産を買いやすい。
+        /// 既にお土産を買っている場合は確率が下がる。
+        /// </summary>
+        private bool ShouldBuySouvenir()
+        {
+            // 幸福度が低い時はお土産に興味がない
+            if (parameters.Happiness < 50f) return false;
+
+            // 所持金チェック
+            if (parameters.Cash < 10f) return false;
+
+            float baseChance = 0.02f; // 意思決定ごとの基本確率
+
+            // 来場者タイプ補正
+            switch (visitorType)
+            {
+                case VisitorType.VIP:    baseChance *= 3.0f; break;
+                case VisitorType.Couple: baseChance *= 2.0f; break;
+                case VisitorType.Family: baseChance *= 1.5f; break;
+                case VisitorType.Kids:   baseChance *= 1.2f; break;
+                case VisitorType.Young:  baseChance *= 0.8f; break;
+                case VisitorType.Senior: baseChance *= 1.0f; break;
+            }
+
+            // 幸福度ボーナス（高いほど買いたくなる）
+            baseChance *= (parameters.Happiness / 100f);
+
+            // 既にお土産を買った回数による確率低下
+            int souvenirCount = profile.GetSouvenirPurchaseCount();
+            baseChance /= (1f + souvenirCount * 0.5f);
+
+            return UnityEngine.Random.value < baseChance;
         }
 
         // ---- 状態機械: 状態実行 ----
@@ -567,6 +733,101 @@ namespace ThemeParkGame.Visitor
             TransitionTo(VisitorBehaviorState.Idle);
         }
 
+        /// <summary>
+        /// ショップ到着時の統合処理。
+        /// Shopコンポーネントを取得し、実際の販売価格で購入→アクション開始。
+        /// </summary>
+        private void OnArrivedAtShop()
+        {
+            // Shopコンポーネント取得
+            ThemeParkGame.Attraction.Shop shopComp = null;
+            if (currentTarget != null)
+            {
+                shopComp = currentTarget.GetComponent<ThemeParkGame.Attraction.Shop>();
+            }
+
+            float actualPrice;
+            if (shopComp != null)
+            {
+                // Shopコンポーネントの実際の販売価格を使用
+                actualPrice = shopComp.SellingPrice;
+
+                // 在庫切れチェック
+                if (shopComp.IsOutOfStock)
+                {
+                    if (emotionBubble != null)
+                        emotionBubble.ShowBubble(EmotionBubbleType.FoodTastesBad, EmotionBubbleColor.Gray);
+                    parameters.ModifyHappiness(-3f);
+                    TransitionTo(VisitorBehaviorState.Idle);
+                    return;
+                }
+
+                // ShopのOnVisitorArriveで行列/サービスを開始
+                shopComp.OnVisitorArrive(visitorId);
+            }
+            else
+            {
+                // Shopコンポーネントが無い場合のフォールバック価格
+                actualPrice = targetFacilityType switch
+                {
+                    FacilityType.FoodShop => UnityEngine.Random.Range(5f, 15f),
+                    FacilityType.DrinkShop => UnityEngine.Random.Range(3f, 8f),
+                    FacilityType.SouvenirShop => UnityEngine.Random.Range(8f, 30f),
+                    _ => 5f
+                };
+            }
+
+            // 支払い
+            if (!parameters.SpendCash(actualPrice))
+            {
+                if (emotionBubble != null)
+                    emotionBubble.ShowBubble(EmotionBubbleType.NoMoney, EmotionBubbleColor.LightBlue);
+                TransitionTo(VisitorBehaviorState.Idle);
+                return;
+            }
+
+            // 収益計上（Shopコンポーネントが無い場合のみ直接計上）
+            if (shopComp == null)
+            {
+                if (GameManager.Instance != null && GameManager.Instance.EconomyManager != null)
+                {
+                    GameManager.Instance.EconomyManager.AddRevenue(
+                        actualPrice,
+                        ThemeParkGame.Economy.RevenueCategory.ShopSale,
+                        currentTargetFacilityId);
+                }
+                else
+                {
+                    GameEvents.FireRevenueEarned(actualPrice);
+                }
+            }
+
+            // アクション開始
+            actionTimer = 0f;
+            switch (targetFacilityType)
+            {
+                case FacilityType.FoodShop:
+                    TransitionTo(VisitorBehaviorState.Eating);
+                    break;
+                case FacilityType.DrinkShop:
+                    TransitionTo(VisitorBehaviorState.Drinking);
+                    break;
+                case FacilityType.SouvenirShop:
+                    // お土産購入: 幸福度UP、購入記録
+                    float happyBonus = UnityEngine.Random.Range(5f, 15f);
+                    parameters.ModifyHappiness(happyBonus);
+                    profile.RecordSouvenirPurchase();
+                    if (emotionBubble != null)
+                        emotionBubble.ShowBubble(EmotionBubbleType.Happy, EmotionBubbleColor.LightBlue);
+                    Debug.Log($"[VisitorAI] Visitor {visitorId} bought souvenir for {actualPrice}. {parameters}");
+                    TransitionTo(VisitorBehaviorState.Idle);
+                    break;
+                default:
+                    TransitionTo(VisitorBehaviorState.Idle);
+                    break;
+            }
+        }
+
         // ---- 目的地到着処理 ----
 
         private void OnReachedDestination()
@@ -582,44 +843,7 @@ namespace ThemeParkGame.Visitor
                     break;
 
                 case VisitorBehaviorState.WalkingToShop:
-                    // ショップに到着 → タイプに応じて食事/飲料開始
-                    if (targetFacilityType == FacilityType.FoodShop)
-                    {
-                        // 仮の食事コスト
-                        float foodCost = UnityEngine.Random.Range(5f, 15f);
-                        if (parameters.SpendCash(foodCost))
-                        {
-                            GameEvents.FireRevenueEarned(foodCost);
-                            actionTimer = 0f;
-                            TransitionTo(VisitorBehaviorState.Eating);
-                        }
-                        else
-                        {
-                            if (emotionBubble != null)
-                                emotionBubble.ShowBubble(EmotionBubbleType.NoMoney, EmotionBubbleColor.LightBlue);
-                            TransitionTo(VisitorBehaviorState.Idle);
-                        }
-                    }
-                    else if (targetFacilityType == FacilityType.DrinkShop)
-                    {
-                        float drinkCost = UnityEngine.Random.Range(3f, 8f);
-                        if (parameters.SpendCash(drinkCost))
-                        {
-                            GameEvents.FireRevenueEarned(drinkCost);
-                            actionTimer = 0f;
-                            TransitionTo(VisitorBehaviorState.Drinking);
-                        }
-                        else
-                        {
-                            if (emotionBubble != null)
-                                emotionBubble.ShowBubble(EmotionBubbleType.NoMoney, EmotionBubbleColor.LightBlue);
-                            TransitionTo(VisitorBehaviorState.Idle);
-                        }
-                    }
-                    else
-                    {
-                        TransitionTo(VisitorBehaviorState.Idle);
-                    }
+                    OnArrivedAtShop();
                     break;
 
                 case VisitorBehaviorState.WalkingToToilet:
@@ -857,22 +1081,38 @@ namespace ThemeParkGame.Visitor
         /// </summary>
         private Transform FindPreferredAttraction()
         {
-            Collider[] colliders = Physics.OverlapSphere(transform.position, facilitySearchRadius);
+            // キャッシュからアトラクションを取得
+            GameObject[] tagged = GetCachedFacilitiesByTag("Attraction");
             Transform bestAttraction = null;
             float bestScore = float.MinValue;
 
-            for (int i = 0; i < colliders.Length; i++)
+            for (int i = 0; i < tagged.Length; i++)
             {
-                if (!colliders[i].CompareTag("Attraction")) continue;
+                if (tagged[i] == null) continue;
+
+                float distance = Vector3.Distance(transform.position, tagged[i].transform.position);
+                if (distance > facilitySearchRadius) continue;
+
+                // アトラクションコンポーネント取得
+                var attractionComp = tagged[i].GetComponent<ThemeParkGame.Attraction.Attraction>();
+                if (attractionComp == null) continue;
+
+                // 稼働中でないアトラクションはスキップ
+                if (!attractionComp.IsOperating) continue;
+
+                // キューが満杯ならスキップ
+                if (!attractionComp.CanAcceptVisitor(visitorId)) continue;
+
+                // チケット価格チェック: 所持金で払えるか
+                if (attractionComp.TicketPrice > parameters.Cash) continue;
 
                 float score = 0f;
-                float distance = Vector3.Distance(transform.position, colliders[i].transform.position);
 
                 // 距離ペナルティ（近いほど高得点）
                 score -= distance * 0.5f;
 
                 // 未体験ボーナス
-                int attractionId = colliders[i].GetInstanceID();
+                int attractionId = tagged[i].GetInstanceID();
                 if (!profile.HasVisitedAttraction(attractionId))
                 {
                     score += 50f * profile.Personality.Curiosity;
@@ -884,22 +1124,65 @@ namespace ThemeParkGame.Visitor
                 }
 
                 // アトラクションカテゴリの好み一致ボーナス
-                var attractionComp = colliders[i].GetComponent<ThemeParkGame.Attraction.Attraction>();
-                if (attractionComp != null && attractionComp.Data != null)
+                if (attractionComp.Data != null)
                 {
-                    // タイプ好みに基づくスコア調整
-                    if (profile.VisitorType == VisitorType.Kids && attractionComp.Data.NauseaFactor < 0.3f)
-                        score += 30f;
-                    else if (profile.VisitorType == VisitorType.Young && attractionComp.EffectiveExcitement > 6f)
-                        score += 30f;
-                    else if (profile.VisitorType == VisitorType.Family && attractionComp.Data.NauseaFactor < 0.5f)
-                        score += 20f;
+                    switch (visitorType)
+                    {
+                        case VisitorType.Kids:
+                            // キッズ: 低嘔吐率を好む
+                            if (attractionComp.Data.NauseaFactor < 0.3f) score += 30f;
+                            if (attractionComp.Data.NauseaFactor > 0.6f) score -= 40f;
+                            break;
+                        case VisitorType.Young:
+                            // ヤング: 高興奮度を好む
+                            if (attractionComp.EffectiveExcitement > 6f) score += 30f;
+                            if (attractionComp.EffectiveExcitement > 8f) score += 20f;
+                            break;
+                        case VisitorType.Family:
+                            // ファミリー: 中程度の刺激、低嘔吐率
+                            if (attractionComp.Data.NauseaFactor < 0.5f) score += 20f;
+                            if (attractionComp.EffectiveExcitement >= 3f &&
+                                attractionComp.EffectiveExcitement <= 7f) score += 15f;
+                            break;
+                        case VisitorType.Couple:
+                            // カップル: 観覧車/ショー系を好む
+                            if (attractionComp.EffectiveExcitement <= 5f) score += 15f;
+                            break;
+                        case VisitorType.Senior:
+                            // シニア: 低嘔吐率・低興奮度を好む
+                            if (attractionComp.Data.NauseaFactor < 0.2f) score += 25f;
+                            if (attractionComp.Data.NauseaFactor > 0.5f) score -= 50f;
+                            break;
+                        case VisitorType.VIP:
+                            // VIP: 高評価アトラクションを好む
+                            score += attractionComp.SatisfactionRating * 30f;
+                            break;
+                    }
                 }
+
+                // 待ち行列の短さボーナス
+                float queueRatio = (float)attractionComp.QueueLength / attractionComp.MaxQueueLength;
+                score -= queueRatio * 20f;
+
+                // 価格妥当性ボーナス
+                float priceTolerance = GetPriceToleranceMultiplier();
+                if (attractionComp.Data != null)
+                {
+                    float priceRatio = (float)attractionComp.TicketPrice /
+                                       Mathf.Max(1, attractionComp.Data.SuggestedTicketPrice);
+                    if (priceRatio <= priceTolerance)
+                        score += 10f;
+                    else
+                        score -= (priceRatio - priceTolerance) * 15f;
+                }
+
+                // 満足度評判ボーナス
+                score += attractionComp.SatisfactionRating * 15f;
 
                 if (score > bestScore)
                 {
                     bestScore = score;
-                    bestAttraction = colliders[i].transform;
+                    bestAttraction = tagged[i].transform;
                 }
             }
 

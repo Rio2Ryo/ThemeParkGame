@@ -212,6 +212,9 @@ namespace ThemeParkGame.Visitor
         // 体験記憶
         private List<AttractionMemory> attractionMemories = new List<AttractionMemory>();
 
+        // お土産購入回数
+        private int souvenirPurchaseCount;
+
         // グループ内の他メンバーID
         private List<int> groupMemberIds = new List<int>();
 
@@ -316,6 +319,7 @@ namespace ThemeParkGame.Visitor
 
             attractionMemories.Clear();
             groupMemberIds.Clear();
+            souvenirPurchaseCount = 0;
         }
 
         /// <summary>グループメンバーIDを追加する</summary>
@@ -331,6 +335,15 @@ namespace ThemeParkGame.Visitor
         public void RecordAttractionVisit(AttractionMemory memory)
         {
             attractionMemories.Add(memory);
+        }
+
+        /// <summary>お土産の購入回数を取得する</summary>
+        public int GetSouvenirPurchaseCount() => souvenirPurchaseCount;
+
+        /// <summary>お土産の購入を記録する</summary>
+        public void RecordSouvenirPurchase()
+        {
+            souvenirPurchaseCount++;
         }
 
         /// <summary>

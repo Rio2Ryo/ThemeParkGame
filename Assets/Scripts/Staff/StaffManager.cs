@@ -653,6 +653,25 @@ namespace ThemeParkGame.Staff
             return BaseMonthlySalaries.TryGetValue(type, out float salary) ? salary : 300f;
         }
 
+        /// <summary>メカニックの平均スキルレベルを取得する（1.0～5.0）</summary>
+        public float GetAverageMechanicSkill()
+        {
+            if (!staffByType.ContainsKey(StaffType.Mechanic) ||
+                staffByType[StaffType.Mechanic].Count == 0)
+                return 1f;
+
+            float totalSkill = 0f;
+            int count = 0;
+
+            foreach (var staff in staffByType[StaffType.Mechanic])
+            {
+                totalSkill += staff.SkillLevel;
+                count++;
+            }
+
+            return count > 0 ? totalSkill / count : 1f;
+        }
+
         // ============================================================
         // ユーティリティ
         // ============================================================
