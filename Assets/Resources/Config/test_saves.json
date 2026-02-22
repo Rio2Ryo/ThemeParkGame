@@ -1,0 +1,259 @@
+{
+  "version": "1.0",
+  "description": "テスト用セーブデータ。デバッグやバランス調整時にロードして使用する。",
+  "test_saves": [
+    {
+      "id": "test_early_game",
+      "name_ja": "テスト: 序盤（開園直後）",
+      "save_data": {
+        "time": {
+          "current_year": 1,
+          "current_month": 4,
+          "current_day": 5,
+          "current_hour": 10,
+          "total_days_elapsed": 5,
+          "game_speed": 1
+        },
+        "economy": {
+          "current_money": 42000,
+          "total_income": 8500,
+          "total_expenses": 6500,
+          "loan_amount": 0,
+          "entrance_fee": 15
+        },
+        "park": {
+          "park_name": "Test Park Early",
+          "is_open": true,
+          "total_visitors_today": 25,
+          "total_visitors_all_time": 120,
+          "park_rating": 35,
+          "unlocked_zones": ["LostKingdom"],
+          "weather": "Sunny"
+        },
+        "attractions": [
+          { "id": "lk_explorer_coaster", "upgrade_level": 0, "condition": 95, "total_rides": 45, "ticket_price": 5 },
+          { "id": "lk_merry_go_round", "upgrade_level": 0, "condition": 98, "total_rides": 30, "ticket_price": 3 }
+        ],
+        "shops": [
+          { "id": "lk_food_ancient_grill", "total_sales": 80 },
+          { "id": "lk_drink_jungle_juice", "total_sales": 65 }
+        ],
+        "staff": [
+          { "type": "Mechanic", "count": 1, "avg_fatigue": 20, "avg_skill": 1.0 },
+          { "type": "Cleaner", "count": 1, "avg_fatigue": 25, "avg_skill": 1.0 }
+        ],
+        "research": {
+          "completed": ["lk_tier1_ride1", "lk_tier1_ride2"],
+          "in_progress": null,
+          "progress_percent": 0
+        },
+        "sns_reputation": 30,
+        "active_quests": []
+      }
+    },
+    {
+      "id": "test_mid_game",
+      "name_ja": "テスト: 中盤（2ゾーン展開）",
+      "save_data": {
+        "time": {
+          "current_year": 1,
+          "current_month": 8,
+          "current_day": 15,
+          "current_hour": 14,
+          "total_days_elapsed": 137,
+          "game_speed": 2
+        },
+        "economy": {
+          "current_money": 85000,
+          "total_income": 180000,
+          "total_expenses": 145000,
+          "loan_amount": 5000,
+          "entrance_fee": 20
+        },
+        "park": {
+          "park_name": "Test Park Mid",
+          "is_open": true,
+          "total_visitors_today": 75,
+          "total_visitors_all_time": 5200,
+          "park_rating": 58,
+          "unlocked_zones": ["LostKingdom", "HalloweenWorld"],
+          "weather": "HeatWave"
+        },
+        "attractions": [
+          { "id": "lk_explorer_coaster", "upgrade_level": 2, "condition": 78, "total_rides": 1200, "ticket_price": 8 },
+          { "id": "lk_merry_go_round", "upgrade_level": 1, "condition": 85, "total_rides": 800, "ticket_price": 4 },
+          { "id": "lk_observation_tower", "upgrade_level": 1, "condition": 90, "total_rides": 600, "ticket_price": 5 },
+          { "id": "hw_ghost_coaster", "upgrade_level": 1, "condition": 88, "total_rides": 400, "ticket_price": 9 },
+          { "id": "hw_haunted_house", "upgrade_level": 0, "condition": 92, "total_rides": 350, "ticket_price": 7 }
+        ],
+        "shops": [
+          { "id": "lk_food_ancient_grill", "total_sales": 2500 },
+          { "id": "lk_drink_jungle_juice", "total_sales": 3200 },
+          { "id": "lk_souvenir_relic_shop", "total_sales": 1800 },
+          { "id": "hw_food_pumpkin_soup", "total_sales": 1200 },
+          { "id": "hw_drink_witch_brew", "total_sales": 1500 }
+        ],
+        "staff": [
+          { "type": "Mechanic", "count": 2, "avg_fatigue": 45, "avg_skill": 2.0 },
+          { "type": "Cleaner", "count": 2, "avg_fatigue": 50, "avg_skill": 1.5 },
+          { "type": "Entertainer", "count": 1, "avg_fatigue": 30, "avg_skill": 1.5 },
+          { "type": "Guard", "count": 1, "avg_fatigue": 35, "avg_skill": 1.0 },
+          { "type": "Scientist", "count": 1, "avg_fatigue": 40, "avg_skill": 2.0 }
+        ],
+        "research": {
+          "completed": [
+            "lk_tier1_ride1", "lk_tier1_ride2", "lk_tier1_ride3",
+            "lk_tier2_ride1", "lk_tier2_ride2",
+            "hw_tier1_ride1", "hw_tier1_ride2", "hw_tier1_ride3"
+          ],
+          "in_progress": "hw_tier2_ride1",
+          "progress_percent": 45
+        },
+        "sns_reputation": 52,
+        "active_quests": [
+          { "id": "quest_recommend_ride", "progress": 1, "total_steps": 3 }
+        ]
+      }
+    },
+    {
+      "id": "test_late_game",
+      "name_ja": "テスト: 終盤（全ゾーン展開・高評価）",
+      "save_data": {
+        "time": {
+          "current_year": 3,
+          "current_month": 6,
+          "current_day": 1,
+          "current_hour": 12,
+          "total_days_elapsed": 790,
+          "game_speed": 3
+        },
+        "economy": {
+          "current_money": 350000,
+          "total_income": 1200000,
+          "total_expenses": 850000,
+          "loan_amount": 0,
+          "entrance_fee": 30
+        },
+        "park": {
+          "park_name": "Test Park Late",
+          "is_open": true,
+          "total_visitors_today": 180,
+          "total_visitors_all_time": 45000,
+          "park_rating": 88,
+          "unlocked_zones": ["LostKingdom", "HalloweenWorld", "Wonderland", "SpaceZone"],
+          "weather": "Sunny",
+          "certificates": ["Thrill", "Beauty", "Variety"]
+        },
+        "attractions": [
+          { "id": "lk_explorer_coaster", "upgrade_level": 3, "condition": 70, "total_rides": 12000, "ticket_price": 12 },
+          { "id": "lk_merry_go_round", "upgrade_level": 3, "condition": 80, "total_rides": 8000, "ticket_price": 6 },
+          { "id": "lk_observation_tower", "upgrade_level": 2, "condition": 85, "total_rides": 5000, "ticket_price": 7 },
+          { "id": "lk_jungle_river", "upgrade_level": 2, "condition": 82, "total_rides": 4500, "ticket_price": 8 },
+          { "id": "hw_ghost_coaster", "upgrade_level": 3, "condition": 65, "total_rides": 9000, "ticket_price": 14 },
+          { "id": "hw_haunted_house", "upgrade_level": 2, "condition": 78, "total_rides": 7000, "ticket_price": 10 },
+          { "id": "hw_terror_drop", "upgrade_level": 2, "condition": 75, "total_rides": 6000, "ticket_price": 11 },
+          { "id": "wl_fairy_wheel", "upgrade_level": 2, "condition": 88, "total_rides": 4000, "ticket_price": 6 },
+          { "id": "wl_teacup_spin", "upgrade_level": 2, "condition": 90, "total_rides": 3500, "ticket_price": 5 },
+          { "id": "wl_magic_carpet", "upgrade_level": 1, "condition": 92, "total_rides": 2000, "ticket_price": 7 },
+          { "id": "sz_rocket_launch", "upgrade_level": 3, "condition": 60, "total_rides": 8000, "ticket_price": 16 },
+          { "id": "sz_zero_gravity", "upgrade_level": 2, "condition": 72, "total_rides": 5500, "ticket_price": 13 },
+          { "id": "sz_space_station", "upgrade_level": 1, "condition": 85, "total_rides": 3000, "ticket_price": 9 }
+        ],
+        "shops": [
+          { "id": "lk_food_ancient_grill", "total_sales": 25000 },
+          { "id": "lk_drink_jungle_juice", "total_sales": 30000 },
+          { "id": "lk_souvenir_relic_shop", "total_sales": 18000 },
+          { "id": "hw_food_pumpkin_soup", "total_sales": 20000 },
+          { "id": "hw_drink_witch_brew", "total_sales": 22000 },
+          { "id": "hw_souvenir_horror_mask", "total_sales": 15000 },
+          { "id": "wl_food_fairy_cake", "total_sales": 16000 },
+          { "id": "wl_drink_rainbow_soda", "total_sales": 18000 },
+          { "id": "sz_food_space_burger", "total_sales": 14000 },
+          { "id": "sz_drink_cosmic_cola", "total_sales": 16000 },
+          { "id": "sz_souvenir_galaxy_figure", "total_sales": 12000 }
+        ],
+        "staff": [
+          { "type": "Mechanic", "count": 4, "avg_fatigue": 55, "avg_skill": 3.0 },
+          { "type": "Cleaner", "count": 4, "avg_fatigue": 50, "avg_skill": 2.5 },
+          { "type": "Entertainer", "count": 3, "avg_fatigue": 40, "avg_skill": 2.5 },
+          { "type": "Guard", "count": 2, "avg_fatigue": 45, "avg_skill": 2.0 },
+          { "type": "Scientist", "count": 2, "avg_fatigue": 50, "avg_skill": 3.0 }
+        ],
+        "research": {
+          "completed": [
+            "lk_tier1_ride1", "lk_tier1_ride2", "lk_tier1_ride3",
+            "lk_tier2_ride1", "lk_tier2_ride2", "lk_tier2_ride3",
+            "lk_tier3_ride1",
+            "hw_tier1_ride1", "hw_tier1_ride2", "hw_tier1_ride3",
+            "hw_tier2_ride1", "hw_tier2_ride2", "hw_tier2_ride3",
+            "hw_tier3_ride1",
+            "wl_tier1_ride1", "wl_tier1_ride2", "wl_tier1_ride3",
+            "wl_tier2_ride1", "wl_tier2_ride2",
+            "sz_tier1_ride1", "sz_tier1_ride2", "sz_tier1_ride3",
+            "sz_tier2_ride1", "sz_tier2_ride2", "sz_tier2_ride3",
+            "sz_tier3_ride1"
+          ],
+          "in_progress": "wl_tier3_ride1",
+          "progress_percent": 72
+        },
+        "sns_reputation": 82,
+        "active_quests": [
+          { "id": "quest_vip_satisfaction", "progress": 2, "total_steps": 4 },
+          { "id": "quest_photo_spot", "progress": 1, "total_steps": 4 }
+        ]
+      }
+    },
+    {
+      "id": "test_crisis",
+      "name_ja": "テスト: 経営危機（赤字・低評価）",
+      "save_data": {
+        "time": {
+          "current_year": 2,
+          "current_month": 11,
+          "current_day": 20,
+          "current_hour": 16,
+          "total_days_elapsed": 600,
+          "game_speed": 1
+        },
+        "economy": {
+          "current_money": 2500,
+          "total_income": 450000,
+          "total_expenses": 497500,
+          "loan_amount": 30000,
+          "entrance_fee": 35
+        },
+        "park": {
+          "park_name": "Struggling Park",
+          "is_open": true,
+          "total_visitors_today": 12,
+          "total_visitors_all_time": 18000,
+          "park_rating": 22,
+          "unlocked_zones": ["LostKingdom", "HalloweenWorld"],
+          "weather": "Rainy",
+          "certificates": []
+        },
+        "attractions": [
+          { "id": "lk_explorer_coaster", "upgrade_level": 1, "condition": 25, "total_rides": 5000, "ticket_price": 15 },
+          { "id": "lk_merry_go_round", "upgrade_level": 0, "condition": 35, "total_rides": 3000, "ticket_price": 10 },
+          { "id": "hw_ghost_coaster", "upgrade_level": 1, "condition": 20, "total_rides": 3500, "ticket_price": 18 },
+          { "id": "hw_haunted_house", "upgrade_level": 0, "condition": 40, "total_rides": 2000, "ticket_price": 12 }
+        ],
+        "shops": [
+          { "id": "lk_food_ancient_grill", "total_sales": 8000 },
+          { "id": "hw_food_pumpkin_soup", "total_sales": 5000 }
+        ],
+        "staff": [
+          { "type": "Mechanic", "count": 1, "avg_fatigue": 85, "avg_skill": 1.5 },
+          { "type": "Cleaner", "count": 1, "avg_fatigue": 80, "avg_skill": 1.0 }
+        ],
+        "research": {
+          "completed": ["lk_tier1_ride1", "lk_tier1_ride2", "hw_tier1_ride1"],
+          "in_progress": null,
+          "progress_percent": 0
+        },
+        "sns_reputation": 15,
+        "active_quests": []
+      }
+    }
+  ]
+}

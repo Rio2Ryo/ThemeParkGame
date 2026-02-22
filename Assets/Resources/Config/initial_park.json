@@ -1,0 +1,307 @@
+{
+  "version": "1.0",
+  "description": "チュートリアル完了後の初期パーク構成テンプレート。新規ゲーム開始時にロードされる。",
+  "sandbox_mode": {
+    "name_ja": "サンドボックスモード",
+    "starting_money": 50000,
+    "starting_loan": 0,
+    "entrance_fee": 15,
+    "starting_date": { "year": 1, "month": 4, "day": 1 },
+    "starting_weather": "Sunny",
+    "park_name": "My Theme Park",
+    "unlocked_zones": ["LostKingdom"],
+    "initial_facilities": [
+      {
+        "type": "Path",
+        "positions": [
+          { "x": 0, "z": 0 },
+          { "x": 1, "z": 0 },
+          { "x": 2, "z": 0 },
+          { "x": 3, "z": 0 },
+          { "x": 4, "z": 0 },
+          { "x": 5, "z": 0 },
+          { "x": 5, "z": 1 },
+          { "x": 5, "z": 2 },
+          { "x": 5, "z": -1 },
+          { "x": 5, "z": -2 }
+        ]
+      },
+      {
+        "type": "ParkEntrance",
+        "position": { "x": 0, "z": 0 },
+        "rotation": 0
+      }
+    ],
+    "initial_staff": [],
+    "initial_research": []
+  },
+  "quick_start_easy": {
+    "name_ja": "クイックスタート（初心者向け）",
+    "starting_money": 80000,
+    "starting_loan": 0,
+    "entrance_fee": 10,
+    "starting_date": { "year": 1, "month": 4, "day": 1 },
+    "starting_weather": "Sunny",
+    "park_name": "Fun Park",
+    "unlocked_zones": ["LostKingdom", "Wonderland"],
+    "initial_facilities": [
+      {
+        "type": "Path",
+        "positions": [
+          { "x": 0, "z": 0 }, { "x": 1, "z": 0 }, { "x": 2, "z": 0 },
+          { "x": 3, "z": 0 }, { "x": 4, "z": 0 }, { "x": 5, "z": 0 },
+          { "x": 6, "z": 0 }, { "x": 7, "z": 0 }, { "x": 8, "z": 0 },
+          { "x": 5, "z": 1 }, { "x": 5, "z": 2 }, { "x": 5, "z": 3 },
+          { "x": 5, "z": -1 }, { "x": 5, "z": -2 }, { "x": 5, "z": -3 },
+          { "x": 8, "z": 1 }, { "x": 8, "z": 2 },
+          { "x": 8, "z": -1 }, { "x": 8, "z": -2 }
+        ]
+      },
+      {
+        "type": "ParkEntrance",
+        "position": { "x": 0, "z": 0 },
+        "rotation": 0
+      },
+      {
+        "type": "Attraction",
+        "attraction_id": "lk_merry_go_round",
+        "position": { "x": 5, "z": 3 },
+        "rotation": 0,
+        "ticket_price": 3
+      },
+      {
+        "type": "Attraction",
+        "attraction_id": "lk_explorer_coaster",
+        "position": { "x": 8, "z": 2 },
+        "rotation": 0,
+        "ticket_price": 5
+      },
+      {
+        "type": "Shop",
+        "shop_id": "lk_food_ancient_grill",
+        "position": { "x": 3, "z": 1 },
+        "rotation": 0
+      },
+      {
+        "type": "Shop",
+        "shop_id": "lk_drink_jungle_juice",
+        "position": { "x": 3, "z": -1 },
+        "rotation": 0
+      },
+      {
+        "type": "Toilet",
+        "position": { "x": 7, "z": -1 },
+        "rotation": 0
+      },
+      {
+        "type": "Bench",
+        "position": { "x": 4, "z": 1 },
+        "rotation": 0
+      },
+      {
+        "type": "Bench",
+        "position": { "x": 6, "z": -1 },
+        "rotation": 0
+      },
+      {
+        "type": "TrashCan",
+        "position": { "x": 4, "z": -1 },
+        "rotation": 0
+      },
+      {
+        "type": "TrashCan",
+        "position": { "x": 6, "z": 1 },
+        "rotation": 0
+      }
+    ],
+    "initial_staff": [
+      { "type": "Mechanic", "count": 1 },
+      { "type": "Cleaner", "count": 1 }
+    ],
+    "initial_research": [
+      "lk_tier1_ride1",
+      "lk_tier1_ride2"
+    ]
+  },
+  "quick_start_advanced": {
+    "name_ja": "クイックスタート（上級者向け）",
+    "starting_money": 30000,
+    "starting_loan": 10000,
+    "entrance_fee": 20,
+    "starting_date": { "year": 1, "month": 4, "day": 1 },
+    "starting_weather": "Cloudy",
+    "park_name": "Grand Park",
+    "unlocked_zones": ["LostKingdom"],
+    "initial_facilities": [
+      {
+        "type": "Path",
+        "positions": [
+          { "x": 0, "z": 0 }, { "x": 1, "z": 0 }, { "x": 2, "z": 0 },
+          { "x": 3, "z": 0 }, { "x": 4, "z": 0 }, { "x": 5, "z": 0 }
+        ]
+      },
+      {
+        "type": "ParkEntrance",
+        "position": { "x": 0, "z": 0 },
+        "rotation": 0
+      }
+    ],
+    "initial_staff": [],
+    "initial_research": []
+  },
+  "demo_showcase": {
+    "name_ja": "デモパーク（全機能体験）",
+    "starting_money": 999999,
+    "starting_loan": 0,
+    "entrance_fee": 15,
+    "starting_date": { "year": 2, "month": 7, "day": 1 },
+    "starting_weather": "Sunny",
+    "park_name": "Dream Theme Park",
+    "unlocked_zones": ["LostKingdom", "HalloweenWorld", "Wonderland", "SpaceZone"],
+    "initial_facilities": [
+      {
+        "type": "Path",
+        "positions": [
+          { "x": 0, "z": 0 }, { "x": 1, "z": 0 }, { "x": 2, "z": 0 },
+          { "x": 3, "z": 0 }, { "x": 4, "z": 0 }, { "x": 5, "z": 0 },
+          { "x": 6, "z": 0 }, { "x": 7, "z": 0 }, { "x": 8, "z": 0 },
+          { "x": 9, "z": 0 }, { "x": 10, "z": 0 }, { "x": 11, "z": 0 },
+          { "x": 12, "z": 0 }, { "x": 13, "z": 0 }, { "x": 14, "z": 0 },
+          { "x": 3, "z": 1 }, { "x": 3, "z": 2 }, { "x": 3, "z": 3 }, { "x": 3, "z": 4 },
+          { "x": 3, "z": -1 }, { "x": 3, "z": -2 }, { "x": 3, "z": -3 }, { "x": 3, "z": -4 },
+          { "x": 7, "z": 1 }, { "x": 7, "z": 2 }, { "x": 7, "z": 3 }, { "x": 7, "z": 4 },
+          { "x": 7, "z": -1 }, { "x": 7, "z": -2 }, { "x": 7, "z": -3 }, { "x": 7, "z": -4 },
+          { "x": 11, "z": 1 }, { "x": 11, "z": 2 }, { "x": 11, "z": 3 }, { "x": 11, "z": 4 },
+          { "x": 11, "z": -1 }, { "x": 11, "z": -2 }, { "x": 11, "z": -3 }, { "x": 11, "z": -4 },
+          { "x": 14, "z": 1 }, { "x": 14, "z": 2 }, { "x": 14, "z": 3 },
+          { "x": 14, "z": -1 }, { "x": 14, "z": -2 }, { "x": 14, "z": -3 }
+        ]
+      },
+      {
+        "type": "ParkEntrance",
+        "position": { "x": 0, "z": 0 },
+        "rotation": 0
+      },
+      {
+        "type": "Attraction",
+        "attraction_id": "lk_explorer_coaster",
+        "position": { "x": 3, "z": 4 },
+        "rotation": 0,
+        "ticket_price": 8,
+        "upgrade_level": 2
+      },
+      {
+        "type": "Attraction",
+        "attraction_id": "lk_merry_go_round",
+        "position": { "x": 3, "z": -3 },
+        "rotation": 0,
+        "ticket_price": 4,
+        "upgrade_level": 1
+      },
+      {
+        "type": "Attraction",
+        "attraction_id": "hw_ghost_coaster",
+        "position": { "x": 7, "z": 4 },
+        "rotation": 0,
+        "ticket_price": 10,
+        "upgrade_level": 1
+      },
+      {
+        "type": "Attraction",
+        "attraction_id": "hw_haunted_house",
+        "position": { "x": 7, "z": -3 },
+        "rotation": 0,
+        "ticket_price": 7,
+        "upgrade_level": 0
+      },
+      {
+        "type": "Attraction",
+        "attraction_id": "wl_fairy_wheel",
+        "position": { "x": 11, "z": 4 },
+        "rotation": 0,
+        "ticket_price": 5,
+        "upgrade_level": 1
+      },
+      {
+        "type": "Attraction",
+        "attraction_id": "wl_teacup_spin",
+        "position": { "x": 11, "z": -3 },
+        "rotation": 0,
+        "ticket_price": 4,
+        "upgrade_level": 0
+      },
+      {
+        "type": "Attraction",
+        "attraction_id": "sz_rocket_launch",
+        "position": { "x": 14, "z": 3 },
+        "rotation": 0,
+        "ticket_price": 12,
+        "upgrade_level": 2
+      },
+      {
+        "type": "Attraction",
+        "attraction_id": "sz_zero_gravity",
+        "position": { "x": 14, "z": -3 },
+        "rotation": 0,
+        "ticket_price": 9,
+        "upgrade_level": 1
+      },
+      {
+        "type": "Shop", "shop_id": "lk_food_ancient_grill", "position": { "x": 2, "z": 1 }, "rotation": 0
+      },
+      {
+        "type": "Shop", "shop_id": "lk_drink_jungle_juice", "position": { "x": 2, "z": -1 }, "rotation": 0
+      },
+      {
+        "type": "Shop", "shop_id": "hw_food_pumpkin_soup", "position": { "x": 6, "z": 1 }, "rotation": 0
+      },
+      {
+        "type": "Shop", "shop_id": "hw_drink_witch_brew", "position": { "x": 6, "z": -1 }, "rotation": 0
+      },
+      {
+        "type": "Shop", "shop_id": "wl_food_fairy_cake", "position": { "x": 10, "z": 1 }, "rotation": 0
+      },
+      {
+        "type": "Shop", "shop_id": "wl_drink_rainbow_soda", "position": { "x": 10, "z": -1 }, "rotation": 0
+      },
+      {
+        "type": "Shop", "shop_id": "sz_food_space_burger", "position": { "x": 13, "z": 1 }, "rotation": 0
+      },
+      {
+        "type": "Shop", "shop_id": "sz_souvenir_galaxy_figure", "position": { "x": 13, "z": -1 }, "rotation": 0
+      },
+      { "type": "Toilet", "position": { "x": 1, "z": -1 }, "rotation": 0 },
+      { "type": "Toilet", "position": { "x": 5, "z": 1 }, "rotation": 0 },
+      { "type": "Toilet", "position": { "x": 9, "z": -1 }, "rotation": 0 },
+      { "type": "Toilet", "position": { "x": 12, "z": 1 }, "rotation": 0 },
+      { "type": "Bench", "position": { "x": 1, "z": 1 }, "rotation": 0 },
+      { "type": "Bench", "position": { "x": 4, "z": -1 }, "rotation": 0 },
+      { "type": "Bench", "position": { "x": 8, "z": 1 }, "rotation": 0 },
+      { "type": "Bench", "position": { "x": 12, "z": -1 }, "rotation": 0 },
+      { "type": "TrashCan", "position": { "x": 2, "z": 0 }, "rotation": 0 },
+      { "type": "TrashCan", "position": { "x": 6, "z": 0 }, "rotation": 0 },
+      { "type": "TrashCan", "position": { "x": 10, "z": 0 }, "rotation": 0 },
+      { "type": "TrashCan", "position": { "x": 13, "z": 0 }, "rotation": 0 },
+      { "type": "InfoBoard", "position": { "x": 1, "z": 0 }, "rotation": 0 },
+      { "type": "InfoBoard", "position": { "x": 9, "z": 0 }, "rotation": 0 },
+      { "type": "ResearchLab", "position": { "x": 15, "z": 0 }, "rotation": 0 },
+      { "type": "StaffRoom", "position": { "x": 15, "z": 2 }, "rotation": 0 }
+    ],
+    "initial_staff": [
+      { "type": "Mechanic", "count": 3 },
+      { "type": "Cleaner", "count": 3 },
+      { "type": "Entertainer", "count": 2 },
+      { "type": "Guard", "count": 1 },
+      { "type": "Scientist", "count": 2 }
+    ],
+    "initial_research": [
+      "lk_tier1_ride1", "lk_tier1_ride2", "lk_tier1_ride3",
+      "lk_tier2_ride1", "lk_tier2_ride2",
+      "hw_tier1_ride1", "hw_tier1_ride2", "hw_tier1_ride3",
+      "wl_tier1_ride1", "wl_tier1_ride2", "wl_tier1_ride3",
+      "sz_tier1_ride1", "sz_tier1_ride2", "sz_tier1_ride3"
+    ],
+    "park_rating_override": 75,
+    "sns_reputation_override": 60
+  }
+}

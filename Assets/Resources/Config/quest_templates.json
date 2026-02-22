@@ -1,0 +1,215 @@
+{
+  "version": "1.0",
+  "description": "ダイナミッククエストのテンプレート。DynamicQuestSystemが会話分析と合わせて使用する。",
+  "quest_templates": [
+    {
+      "id": "quest_lost_child",
+      "type": "escort",
+      "name_ja": "迷子を助けよう",
+      "name_en": "Help the Lost Child",
+      "description_ja": "迷子になった子供を親のもとへ連れて行きましょう。",
+      "trigger_keywords": ["迷子", "お母さん", "お父さん", "はぐれた", "見つからない", "lost", "mama", "papa"],
+      "visitor_types": ["Kids", "Family"],
+      "difficulty": "easy",
+      "time_limit_minutes": 10,
+      "rewards": {
+        "money": 50,
+        "happiness_bonus": 15,
+        "reputation": 5
+      },
+      "steps": [
+        { "action": "find_npc", "description_ja": "迷子の子供を見つける" },
+        { "action": "escort_to_target", "description_ja": "親のもとへ連れて行く" },
+        { "action": "confirm_reunion", "description_ja": "再会を確認する" }
+      ]
+    },
+    {
+      "id": "quest_recommend_ride",
+      "type": "guide",
+      "name_ja": "おすすめアトラクション案内",
+      "name_en": "Recommend an Attraction",
+      "description_ja": "来場者におすすめのアトラクションを案内しましょう。",
+      "trigger_keywords": ["おすすめ", "何が楽しい", "どれがいい", "recommend", "best ride", "何乗ろう"],
+      "visitor_types": ["Young", "Family", "Couple", "Senior"],
+      "difficulty": "easy",
+      "time_limit_minutes": 15,
+      "rewards": {
+        "money": 30,
+        "happiness_bonus": 10,
+        "reputation": 3
+      },
+      "steps": [
+        { "action": "talk_to_visitor", "description_ja": "好みを聞く" },
+        { "action": "select_attraction", "description_ja": "アトラクションを選ぶ" },
+        { "action": "guide_to_attraction", "description_ja": "アトラクションまで案内する" }
+      ]
+    },
+    {
+      "id": "quest_food_hunt",
+      "type": "fetch",
+      "name_ja": "グルメ探し",
+      "name_en": "Food Hunt",
+      "description_ja": "来場者が探している特定のフードを見つけてあげましょう。",
+      "trigger_keywords": ["お腹空いた", "何か食べたい", "ラーメン", "ピザ", "hungry", "food", "eat"],
+      "visitor_types": ["Kids", "Young", "Family"],
+      "difficulty": "easy",
+      "time_limit_minutes": 8,
+      "rewards": {
+        "money": 20,
+        "happiness_bonus": 8,
+        "reputation": 2
+      },
+      "steps": [
+        { "action": "identify_food_preference", "description_ja": "欲しいフードを特定する" },
+        { "action": "find_shop", "description_ja": "該当ショップを見つける" },
+        { "action": "guide_to_shop", "description_ja": "ショップまで案内する" }
+      ]
+    },
+    {
+      "id": "quest_photo_spot",
+      "type": "explore",
+      "name_ja": "写真スポット巡り",
+      "name_en": "Photo Spot Tour",
+      "description_ja": "パーク内の写真映えスポットを3箇所巡りましょう。",
+      "trigger_keywords": ["写真", "映え", "インスタ", "SNS", "photo", "picture", "selfie"],
+      "visitor_types": ["Young", "Couple"],
+      "difficulty": "medium",
+      "time_limit_minutes": 20,
+      "rewards": {
+        "money": 80,
+        "happiness_bonus": 20,
+        "reputation": 10,
+        "sns_post_bonus": true
+      },
+      "steps": [
+        { "action": "visit_spot_1", "description_ja": "最初のフォトスポットへ" },
+        { "action": "visit_spot_2", "description_ja": "2番目のフォトスポットへ" },
+        { "action": "visit_spot_3", "description_ja": "3番目のフォトスポットへ" },
+        { "action": "share_photos", "description_ja": "写真をSNSに投稿" }
+      ]
+    },
+    {
+      "id": "quest_clean_park",
+      "type": "maintenance",
+      "name_ja": "パーク美化活動",
+      "name_en": "Park Cleanup",
+      "description_ja": "来場者からの苦情を受けてパークを清掃しましょう。",
+      "trigger_keywords": ["汚い", "ゴミ", "臭い", "きたない", "dirty", "trash", "messy"],
+      "visitor_types": ["Senior", "Family", "VIP"],
+      "difficulty": "medium",
+      "time_limit_minutes": 12,
+      "rewards": {
+        "money": 60,
+        "happiness_bonus": 12,
+        "reputation": 8,
+        "cleanliness_rating_bonus": 5
+      },
+      "steps": [
+        { "action": "identify_dirty_areas", "description_ja": "汚れたエリアを特定する" },
+        { "action": "assign_cleaner", "description_ja": "スイーパーを派遣する" },
+        { "action": "verify_clean", "description_ja": "清掃完了を確認する" }
+      ]
+    },
+    {
+      "id": "quest_thrill_seeker",
+      "type": "challenge",
+      "name_ja": "スリルシーカーチャレンジ",
+      "name_en": "Thrill Seeker Challenge",
+      "description_ja": "最もスリルのあるアトラクションに3つ乗ってみましょう！",
+      "trigger_keywords": ["スリル", "怖い", "絶叫", "刺激", "thrill", "scary", "extreme"],
+      "visitor_types": ["Young"],
+      "difficulty": "medium",
+      "time_limit_minutes": 30,
+      "rewards": {
+        "money": 100,
+        "happiness_bonus": 25,
+        "reputation": 12,
+        "excitement_bonus": 30
+      },
+      "steps": [
+        { "action": "ride_thrill_1", "description_ja": "1つ目のスリルライドに乗る" },
+        { "action": "ride_thrill_2", "description_ja": "2つ目のスリルライドに乗る" },
+        { "action": "ride_thrill_3", "description_ja": "3つ目のスリルライドに乗る" },
+        { "action": "claim_reward", "description_ja": "報酬を受け取る" }
+      ]
+    },
+    {
+      "id": "quest_fix_attraction",
+      "type": "maintenance",
+      "name_ja": "故障アトラクション修理",
+      "name_en": "Fix Broken Attraction",
+      "description_ja": "故障したアトラクションを修理してください。",
+      "trigger_keywords": ["壊れた", "故障", "動かない", "止まった", "broken", "stuck", "not working"],
+      "visitor_types": ["Kids", "Young", "Family"],
+      "difficulty": "medium",
+      "time_limit_minutes": 15,
+      "rewards": {
+        "money": 70,
+        "happiness_bonus": 15,
+        "reputation": 6
+      },
+      "steps": [
+        { "action": "identify_broken_attraction", "description_ja": "故障アトラクションを特定する" },
+        { "action": "assign_mechanic", "description_ja": "メカニックを派遣する" },
+        { "action": "wait_for_repair", "description_ja": "修理完了を待つ" },
+        { "action": "notify_visitor", "description_ja": "来場者に復旧を知らせる" }
+      ]
+    },
+    {
+      "id": "quest_vip_satisfaction",
+      "type": "service",
+      "name_ja": "VIPおもてなし",
+      "name_en": "VIP Satisfaction",
+      "description_ja": "VIP来場者の特別なリクエストに応えましょう。",
+      "trigger_keywords": ["特別", "VIP", "最高級", "プレミアム", "special", "exclusive", "premium"],
+      "visitor_types": ["VIP"],
+      "difficulty": "hard",
+      "time_limit_minutes": 25,
+      "rewards": {
+        "money": 200,
+        "happiness_bonus": 30,
+        "reputation": 20,
+        "sns_viral_chance": 0.5
+      },
+      "steps": [
+        { "action": "greet_vip", "description_ja": "VIPを出迎える" },
+        { "action": "fulfill_request_1", "description_ja": "最初のリクエストに応える" },
+        { "action": "fulfill_request_2", "description_ja": "2番目のリクエストに応える" },
+        { "action": "farewell_vip", "description_ja": "VIPを見送る" }
+      ]
+    },
+    {
+      "id": "quest_souvenir_collection",
+      "type": "collect",
+      "name_ja": "お土産コレクション",
+      "name_en": "Souvenir Collection",
+      "description_ja": "各テーマゾーンのお土産を集めましょう！",
+      "trigger_keywords": ["お土産", "記念", "コレクション", "souvenir", "collection", "memento"],
+      "visitor_types": ["Family", "Couple", "Senior"],
+      "difficulty": "medium",
+      "time_limit_minutes": 30,
+      "rewards": {
+        "money": 90,
+        "happiness_bonus": 20,
+        "reputation": 8
+      },
+      "steps": [
+        { "action": "buy_souvenir_zone_1", "description_ja": "Lost Kingdomのお土産を購入" },
+        { "action": "buy_souvenir_zone_2", "description_ja": "Halloween Worldのお土産を購入" },
+        { "action": "buy_souvenir_zone_3", "description_ja": "Wonderlandのお土産を購入" },
+        { "action": "buy_souvenir_zone_4", "description_ja": "Space Zoneのお土産を購入" }
+      ]
+    }
+  ],
+  "quest_generation_settings": {
+    "max_active_quests": 3,
+    "min_conversation_turns_to_trigger": 2,
+    "keyword_match_threshold": 0.6,
+    "cooldown_between_quests_minutes": 5,
+    "difficulty_scaling": {
+      "park_rating_below_30": "easy_only",
+      "park_rating_30_to_60": "easy_and_medium",
+      "park_rating_above_60": "all_difficulties"
+    }
+  }
+}
