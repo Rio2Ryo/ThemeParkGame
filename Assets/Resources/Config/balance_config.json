@@ -1,35 +1,69 @@
 {
   "economyBalance": {
-    "entranceFeeDefault": 1000,
+    "entranceFeeDefault": 15,
     "entranceFeeMin": 0,
-    "entranceFeeMax": 5000,
+    "entranceFeeMax": 50,
     "optimalAttractionFeeMultiplier": 0.04,
     "optimalShopPriceMultiplier": 1.6,
     "attractionFeeHappinessImpact": 0.3,
     "shopPriceHappinessImpact": 0.2,
     "monthlyLoanInterestRate": 0.02,
-    "maxLoanAmount": 500000,
-    "bankruptcyThreshold": -200000
+    "maxLoanAmount": 100000,
+    "loanIncrements": 10000,
+    "bankruptcyThreshold": -50000,
+    "zoneUnlockCosts": {
+      "LostKingdom": 0,
+      "HalloweenWorld": 80000,
+      "Wonderland": 120000,
+      "SpaceZone": 200000
+    },
+    "monthlyExpenses": {
+      "description": "月次固定費はスタッフ給与+施設メンテナンス費の合算。下記は追加の固定費。",
+      "parkBaseRunningCost": 500,
+      "perAttractionInsurance": 100,
+      "loanRepaymentMinimum": 1000
+    }
   },
   "visitorSpawning": {
-    "visitorSpawnBaseRate": 5,
-    "visitorSpawnFameMultiplier": 0.15,
+    "visitorSpawnBaseRate": 3,
+    "visitorSpawnFameMultiplier": 0.1,
+    "visitorSpawnRatingMultiplier": 0.02,
     "visitorSpawnWeatherModifiers": {
       "Sunny": 1.2,
       "Cloudy": 1.0,
       "Rainy": 0.5,
       "Snowy": 0.3,
-      "Hot": 0.8
+      "Hot": 0.75
     },
-    "visitorSpawnWeekendMultiplier": 1.5,
+    "visitorSpawnWeekendMultiplier": 1.4,
     "visitorSpawnSeasonModifiers": {
       "spring": 1.1,
       "summer": 1.4,
       "autumn": 1.0,
-      "winter": 0.7
+      "winter": 0.65
     },
-    "maxDailyVisitors": 500,
-    "spawnIntervalSeconds": 10
+    "maxDailyVisitors": {
+      "description": "パーク評価によって上限が段階的に増加する",
+      "ratingBelow20": 30,
+      "rating20to40": 80,
+      "rating40to60": 150,
+      "rating60to80": 300,
+      "ratingAbove80": 500
+    },
+    "spawnIntervalSeconds": 8,
+    "spawnBatchSize": {
+      "min": 1,
+      "max": 4,
+      "description": "1回のスポーンで同時に来場する人数（グループ単位）"
+    },
+    "visitorSpendingBehavior": {
+      "foodPurchaseChance": 0.7,
+      "drinkPurchaseChance": 0.8,
+      "souvenirPurchaseChance": 0.3,
+      "averageRidesBeforeLeaving": 4,
+      "averageStayHoursMin": 3,
+      "averageStayHoursMax": 8
+    }
   },
   "weatherSystem": {
     "weatherChangeIntervalHours": 4,
@@ -37,26 +71,64 @@
     "weatherForecastAccuracy": 0.8,
     "rainBreakdownMultiplier": 1.3,
     "snowSpeedMultiplier": 0.7,
-    "hotNauseaMultiplier": 1.2
+    "hotNauseaMultiplier": 1.2,
+    "hotDrinkDemandMultiplier": 2.0,
+    "coldFoodDemandMultiplier": 1.5,
+    "rainIndoorPreferenceBoost": 0.4
   },
   "maintenanceSystem": {
     "breakdownCheckIntervalHours": 1,
-    "breakdownRepairBaseTimeMinutes": 30,
+    "breakdownRepairBaseTimeMinutes": 20,
     "breakdownSafetyPenalty": 5,
     "neglectedMaintenanceMultiplier": 1.5,
     "upgradeBreakdownReduction": 0.15,
-    "ageBreakdownIncrease": 0.005
+    "ageBreakdownIncrease": 0.003,
+    "conditionDecayPerRide": 0.08,
+    "conditionDecayPerDay": 0.3,
+    "criticalConditionThreshold": 30,
+    "repairCostPerConditionPoint": 50,
+    "accidentChanceAtCritical": 0.02,
+    "accidentParkRatingPenalty": 15,
+    "accidentReputationPenalty": 20
+  },
+  "staffEfficiency": {
+    "description": "スタッフのスキルレベルが作業効率に与える影響",
+    "mechanicRepairSpeedPerLevel": 0.2,
+    "mechanicInspectionQualityPerLevel": 0.15,
+    "cleanerSpeedPerLevel": 0.2,
+    "cleanerCoveragePerLevel": 0.15,
+    "entertainerHappinessBoostPerLevel": 3,
+    "entertainerEffectRadius": 8,
+    "entertainerQueueWaitReduction": 0.1,
+    "guardPatrolSpeedPerLevel": 0.1,
+    "guardDeterrenceRadiusPerLevel": 2,
+    "scientistResearchSpeedPerLevel": 0.2,
+    "scientistResearchCostReductionPerLevel": 0.05,
+    "staffRoomRecoveryRate": 0.3,
+    "staffFatigueWorkRate": 0.08,
+    "staffFatigueIdleRate": 0.02,
+    "strikeWarnFatigueThreshold": 70,
+    "strikeFatigueThreshold": 90,
+    "strikeDurationGameHours": 8,
+    "strikeParkRatingPenalty": 5
   },
   "parkRating": {
-    "baseRating": 50,
+    "baseRating": 30,
     "maxRating": 100,
-    "ratingDecayRate": 0.5,
+    "ratingDecayPerDay": 0.3,
     "attractionVarietyBonus": 2.0,
+    "attractionConditionPenaltyThreshold": 50,
     "cleanlinessWeight": 0.2,
     "safetyWeight": 0.25,
     "funWeight": 0.3,
     "valueForMoneyWeight": 0.15,
-    "themedConsistencyWeight": 0.1
+    "themedConsistencyWeight": 0.1,
+    "newAttractionBoost": 3,
+    "newAttractionBoostDurationDays": 14,
+    "accidentPenalty": 15,
+    "dirtinessPenaltyPerArea": 0.5,
+    "queueTimePenaltyThresholdMinutes": 20,
+    "queueTimePenaltyPerMinute": 0.3
   },
   "certificateRequirements": {
     "Fame": {
@@ -94,7 +166,7 @@
         "parkRating": 40,
         "visitorCount": 200,
         "attractionCount": 4,
-        "monthlyProfit": 10000
+        "monthlyProfit": 5000
       }
     },
     {
@@ -105,7 +177,7 @@
         "parkRating": 55,
         "visitorCount": 500,
         "attractionCount": 8,
-        "monthlyProfit": 30000,
+        "monthlyProfit": 15000,
         "certificateCount": 3
       }
     },
@@ -117,7 +189,7 @@
         "parkRating": 70,
         "visitorCount": 1000,
         "attractionCount": 14,
-        "monthlyProfit": 60000,
+        "monthlyProfit": 35000,
         "certificateCount": 7,
         "happinessAvg": 70
       }
@@ -130,7 +202,7 @@
         "parkRating": 85,
         "visitorCount": 1800,
         "attractionCount": 20,
-        "monthlyProfit": 100000,
+        "monthlyProfit": 60000,
         "certificateCount": 12,
         "happinessAvg": 80,
         "allZonesUnlocked": true
@@ -144,7 +216,7 @@
         "parkRating": 95,
         "visitorCount": 2000,
         "attractionCount": 24,
-        "monthlyProfit": 200000,
+        "monthlyProfit": 100000,
         "certificateCount": 15,
         "happinessAvg": 90,
         "allZonesUnlocked": true,
@@ -153,12 +225,22 @@
     }
   ],
   "timeSystem": {
-    "gameSpeedOptions": [1, 2, 4, 8],
-    "minutesPerGameDay": 10,
+    "gameSpeedLevels": {
+      "0": { "label": "一時停止", "timeScale": 0 },
+      "1": { "label": "通常", "timeScale": 1 },
+      "2": { "label": "2倍速", "timeScale": 2 },
+      "3": { "label": "3倍速", "timeScale": 3 }
+    },
+    "secondsPerGameHour": 5,
     "daysPerGameMonth": 30,
     "monthsPerGameYear": 12,
-    "parkOpenHour": 9,
-    "parkCloseHour": 22
+    "parkOpenHour": 8,
+    "parkCloseHour": 22,
+    "nightMaintenanceWindow": {
+      "startHour": 23,
+      "endHour": 7,
+      "description": "閉園後のメンテナンス時間帯。修理・清掃が優先的に行われる"
+    }
   },
   "upgradeSystem": {
     "level2CostMultiplier": 2.0,
@@ -169,6 +251,34 @@
     "level3ExcitementBonus": 1.0,
     "level2MaintenanceIncrease": 1.3,
     "level3MaintenanceIncrease": 1.6,
-    "upgradeConstructionDays": 3
+    "upgradeConstructionDays": 3,
+    "upgradeConstructionDaysLevel3": 5
+  },
+  "difficultyModifiers": {
+    "description": "シナリオ難易度に応じてbalance_configの各値に掛けられる倍率",
+    "Easy": {
+      "startingMoneyMultiplier": 1.3,
+      "visitorSpawnMultiplier": 1.2,
+      "maintenanceCostMultiplier": 0.8,
+      "breakdownChanceMultiplier": 0.7,
+      "staffFatigueMultiplier": 0.8,
+      "visitorPatienceMultiplier": 1.3
+    },
+    "Normal": {
+      "startingMoneyMultiplier": 1.0,
+      "visitorSpawnMultiplier": 1.0,
+      "maintenanceCostMultiplier": 1.0,
+      "breakdownChanceMultiplier": 1.0,
+      "staffFatigueMultiplier": 1.0,
+      "visitorPatienceMultiplier": 1.0
+    },
+    "Hard": {
+      "startingMoneyMultiplier": 0.8,
+      "visitorSpawnMultiplier": 0.85,
+      "maintenanceCostMultiplier": 1.3,
+      "breakdownChanceMultiplier": 1.3,
+      "staffFatigueMultiplier": 1.2,
+      "visitorPatienceMultiplier": 0.75
+    }
   }
 }

@@ -1,4 +1,322 @@
 {
+  "sample_scenarios": [
+    {
+      "id": "tutorial_beginner",
+      "type": "tutorial",
+      "nameJa": "チュートリアル - はじめてのテーマパーク",
+      "nameEn": "Tutorial - Your First Theme Park",
+      "difficulty": "Easy",
+      "startingMoney": 100000,
+      "startingZone": "LostKingdom",
+      "description": "テーマパーク経営の基本を学ぶチュートリアルシナリオ。ガイド付きで一つずつ操作を覚えながら、小さなパークを完成させよう。時間制限なし・失敗なし。",
+      "mapSize": "Small",
+      "startingStaff": 2,
+      "weatherBias": "Sunny",
+      "timeLimitMonths": 0,
+      "tutorialEnabled": true,
+      "failureDisabled": true,
+      "startingFacilities": [
+        { "type": "ParkEntrance", "position": { "x": 0, "z": 0 } },
+        { "type": "Path", "positions": [
+          { "x": 0, "z": 0 }, { "x": 1, "z": 0 }, { "x": 2, "z": 0 },
+          { "x": 3, "z": 0 }, { "x": 4, "z": 0 }, { "x": 5, "z": 0 }
+        ]}
+      ],
+      "initialResearch": ["res_lk_cups", "res_lk_ferris"],
+      "tutorialSteps": [
+        {
+          "step": 1,
+          "titleJa": "通路を敷こう",
+          "descriptionJa": "まず入口から通路を伸ばしましょう。来場者が歩くには通路が必要です。",
+          "requiredAction": "place_pathway",
+          "targetCount": 5
+        },
+        {
+          "step": 2,
+          "titleJa": "アトラクションを建設",
+          "descriptionJa": "通路に沿ってアトラクションを1つ建てましょう。「ファラオの回転杯」がおすすめです。",
+          "requiredAction": "build_attraction",
+          "targetCount": 1
+        },
+        {
+          "step": 3,
+          "titleJa": "ショップを建設",
+          "descriptionJa": "来場者はお腹が空きます。フードショップを1つ建てましょう。",
+          "requiredAction": "build_shop",
+          "targetCount": 1
+        },
+        {
+          "step": 4,
+          "titleJa": "トイレを建設",
+          "descriptionJa": "来場者にはトイレも必要です。通路の近くに配置しましょう。",
+          "requiredAction": "build_toilet",
+          "targetCount": 1
+        },
+        {
+          "step": 5,
+          "titleJa": "スタッフを雇おう",
+          "descriptionJa": "メカニック1人とスイーパー1人を雇いましょう。アトラクションの故障と清掃に必要です。",
+          "requiredAction": "hire_staff",
+          "targetCount": 2
+        },
+        {
+          "step": 6,
+          "titleJa": "開園！",
+          "descriptionJa": "準備完了！ゲーム速度を1倍にして来場者を迎え入れましょう。",
+          "requiredAction": "set_speed_1",
+          "targetCount": 1
+        },
+        {
+          "step": 7,
+          "titleJa": "来場者を観察",
+          "descriptionJa": "来場者をタップして満足度を確認しましょう。感情バブルの色で状態がわかります。",
+          "requiredAction": "tap_visitor",
+          "targetCount": 3
+        },
+        {
+          "step": 8,
+          "titleJa": "2つ目のアトラクション",
+          "descriptionJa": "来場者が増えたら2つ目のアトラクションを建設しましょう。バリエーションが評価を上げます。",
+          "requiredAction": "build_attraction",
+          "targetCount": 1
+        }
+      ],
+      "objectives": [
+        {
+          "type": "attractionCount",
+          "target": 2,
+          "description": "アトラクションを2つ建設する"
+        },
+        {
+          "type": "visitorCount",
+          "target": 30,
+          "description": "累計来場者数30人を達成"
+        },
+        {
+          "type": "parkRating",
+          "target": 30,
+          "description": "パーク評価30を達成"
+        }
+      ],
+      "completionReward": {
+        "money": 20000,
+        "unlockMessage": "おめでとう！基本操作をマスターしました。サンドボックスモードやシナリオモードに挑戦しよう！"
+      }
+    },
+    {
+      "id": "scenario_easy_wonderland",
+      "type": "scenario",
+      "nameJa": "イージー - 夢の王国づくり",
+      "nameEn": "Easy - Building a Dream Kingdom",
+      "difficulty": "Easy",
+      "startingMoney": 120000,
+      "startingZone": "Wonderland",
+      "description": "ワンダーランドゾーンを中心に夢いっぱいのパークを作ろう。穏やかな天候と豊富な資金で余裕のある経営が楽しめる。2つ目のゾーン解放を目指そう。",
+      "mapSize": "Medium",
+      "startingStaff": 3,
+      "weatherBias": "Sunny",
+      "timeLimitMonths": 0,
+      "tutorialEnabled": false,
+      "failureDisabled": false,
+      "startingFacilities": [
+        { "type": "ParkEntrance", "position": { "x": 0, "z": 0 } },
+        { "type": "Path", "positions": [
+          { "x": 0, "z": 0 }, { "x": 1, "z": 0 }, { "x": 2, "z": 0 },
+          { "x": 3, "z": 0 }, { "x": 4, "z": 0 }, { "x": 5, "z": 0 },
+          { "x": 6, "z": 0 }, { "x": 7, "z": 0 },
+          { "x": 4, "z": 1 }, { "x": 4, "z": 2 },
+          { "x": 4, "z": -1 }, { "x": 4, "z": -2 },
+          { "x": 7, "z": 1 }, { "x": 7, "z": 2 },
+          { "x": 7, "z": -1 }, { "x": 7, "z": -2 }
+        ]},
+        { "type": "Attraction", "attraction_id": "wl_horizontal_01", "position": { "x": 4, "z": 3 }, "ticket_price": 3 },
+        { "type": "Shop", "shop_id": "wl_food_fairy_cake", "position": { "x": 3, "z": 1 } },
+        { "type": "Shop", "shop_id": "wl_drink_rainbow_soda", "position": { "x": 3, "z": -1 } },
+        { "type": "Toilet", "position": { "x": 6, "z": -1 } },
+        { "type": "Bench", "position": { "x": 5, "z": 1 } },
+        { "type": "TrashCan", "position": { "x": 5, "z": -1 } }
+      ],
+      "initialResearch": ["res_wl_carousel", "res_wl_ferris"],
+      "objectives": [
+        {
+          "type": "parkRating",
+          "target": 50,
+          "description": "パーク評価を50以上にする"
+        },
+        {
+          "type": "visitorCount",
+          "target": 500,
+          "description": "累計来場者数500人を達成"
+        },
+        {
+          "type": "attractionCount",
+          "target": 6,
+          "description": "アトラクションを6つ以上建設する"
+        },
+        {
+          "type": "monthlyProfit",
+          "target": 8000,
+          "description": "月間利益8,000以上を達成"
+        },
+        {
+          "type": "unlockZone",
+          "target": 2,
+          "description": "2つ目のテーマゾーンを解放する"
+        }
+      ],
+      "milestones": [
+        {
+          "id": "first_upgrade",
+          "nameJa": "初めてのアップグレード",
+          "trigger": { "type": "upgradeAttraction", "count": 1 },
+          "reward": { "money": 5000 }
+        },
+        {
+          "id": "visitor_100",
+          "nameJa": "100人突破",
+          "trigger": { "type": "visitorCount", "count": 100 },
+          "reward": { "money": 3000, "reputation": 5 }
+        },
+        {
+          "id": "first_certificate",
+          "nameJa": "初めての認定証",
+          "trigger": { "type": "certificateEarned", "count": 1 },
+          "reward": { "money": 10000 }
+        }
+      ],
+      "completionReward": {
+        "money": 50000,
+        "goldenTickets": 1,
+        "unlockMessage": "素晴らしいパーク経営です！ゴールデンチケットを獲得しました。"
+      }
+    },
+    {
+      "id": "scenario_medium_dual_zone",
+      "type": "scenario",
+      "nameJa": "ミディアム - ふたつの王国",
+      "nameEn": "Medium - Two Kingdoms",
+      "difficulty": "Normal",
+      "startingMoney": 80000,
+      "startingZone": "LostKingdom",
+      "description": "ロストキングダムからスタートし、ハロウィーンワールドへの拡張を目指す本格経営シナリオ。天候変化への対応、スタッフ管理、価格設定のバランスが問われる。24ヶ月以内にゴールドチケットを獲得せよ。",
+      "mapSize": "Large",
+      "startingStaff": 2,
+      "weatherBias": "Cloudy",
+      "timeLimitMonths": 24,
+      "tutorialEnabled": false,
+      "failureDisabled": false,
+      "startingFacilities": [
+        { "type": "ParkEntrance", "position": { "x": 0, "z": 0 } },
+        { "type": "Path", "positions": [
+          { "x": 0, "z": 0 }, { "x": 1, "z": 0 }, { "x": 2, "z": 0 },
+          { "x": 3, "z": 0 }, { "x": 4, "z": 0 }, { "x": 5, "z": 0 }
+        ]}
+      ],
+      "initialResearch": ["res_lk_cups"],
+      "startingLoan": 10000,
+      "objectives": [
+        {
+          "type": "parkRating",
+          "target": 65,
+          "description": "パーク評価を65以上にする"
+        },
+        {
+          "type": "visitorCount",
+          "target": 1500,
+          "description": "累計来場者数1,500人を達成"
+        },
+        {
+          "type": "attractionCount",
+          "target": 10,
+          "description": "アトラクションを10個以上建設する"
+        },
+        {
+          "type": "monthlyProfit",
+          "target": 20000,
+          "description": "月間利益20,000以上を達成"
+        },
+        {
+          "type": "unlockZone",
+          "target": 2,
+          "description": "2つ目のテーマゾーンを解放する"
+        },
+        {
+          "type": "certificateCount",
+          "target": 3,
+          "description": "認定証を3つ獲得する"
+        },
+        {
+          "type": "happinessAverage",
+          "target": 65,
+          "description": "来場者の平均満足度を65以上にする"
+        }
+      ],
+      "events": [
+        {
+          "triggerMonth": 3,
+          "eventId": "event_rainy_season",
+          "description": "梅雨入り：3ヶ月目に雨天が続く期間が発生。屋内アトラクションの重要性を学ぶ。"
+        },
+        {
+          "triggerMonth": 8,
+          "eventId": "event_summer_rush",
+          "description": "夏休みラッシュ：来場者が1.5倍に増加。キャパシティ管理が試される。"
+        },
+        {
+          "triggerMonth": 14,
+          "eventId": "event_vip_visit",
+          "description": "VIP来園：有名なレビュアーが来園。高評価を得ればSNS評判が大幅アップ。"
+        },
+        {
+          "triggerMonth": 18,
+          "eventId": "event_rival_park",
+          "description": "ライバルパーク出現：来場者のスポーン率が一時的に0.7倍に。差別化が重要。"
+        }
+      ],
+      "milestones": [
+        {
+          "id": "first_profit_month",
+          "nameJa": "初の黒字月",
+          "trigger": { "type": "monthlyProfit", "count": 1 },
+          "reward": { "money": 5000 }
+        },
+        {
+          "id": "zone_2_unlock",
+          "nameJa": "新天地へ",
+          "trigger": { "type": "unlockZone", "count": 2 },
+          "reward": { "money": 15000, "reputation": 10 }
+        },
+        {
+          "id": "rating_50",
+          "nameJa": "注目のパーク",
+          "trigger": { "type": "parkRating", "count": 50 },
+          "reward": { "money": 8000, "reputation": 8 }
+        },
+        {
+          "id": "staff_team_10",
+          "nameJa": "精鋭チーム結成",
+          "trigger": { "type": "staffCount", "count": 10 },
+          "reward": { "money": 5000 }
+        }
+      ],
+      "completionReward": {
+        "money": 80000,
+        "goldenTickets": 2,
+        "unlockMessage": "2つのゾーンを見事に運営しました！ゴールデンチケット2枚獲得！"
+      },
+      "failureConditions": [
+        {
+          "type": "bankruptcy",
+          "description": "資金が破産ラインを下回る"
+        },
+        {
+          "type": "timeLimit",
+          "monthLimit": 24,
+          "description": "24ヶ月以内に全目標を達成できなかった"
+        }
+      ]
+    }
+  ],
   "scenarios": [
     {
       "id": "scenario_france",
