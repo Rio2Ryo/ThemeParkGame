@@ -126,5 +126,15 @@ namespace ThemeParkGame.Core
         public static void FireNPCConversationEnded(int npcId, string summary) => OnNPCConversationEnded?.Invoke(npcId, summary);
         public static void FireQuestGenerated(string questData) => OnQuestGenerated?.Invoke(questData);
         public static void FireSNSPostGenerated(int visitorId, string content) => OnSNSPostGenerated?.Invoke(visitorId, content);
+
+        // ---- カメラ関連イベント ----
+        public static event Action<int> OnCameraFollowRequested;
+        public static void FireCameraFollowRequested(int targetId) => OnCameraFollowRequested?.Invoke(targetId);
+
+        // ---- セーブ/ロード関連イベント ----
+        public static event Action OnGameSaved;
+        public static event Action OnGameLoaded;
+        public static void FireGameSaved() => OnGameSaved?.Invoke();
+        public static void FireGameLoaded() => OnGameLoaded?.Invoke();
     }
 }

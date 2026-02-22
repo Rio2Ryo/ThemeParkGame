@@ -312,7 +312,7 @@ namespace ThemeParkGame.Staff
         /// </summary>
         private GameObject FindAttractionById(int attractionId)
         {
-            // TODO: AttractionManager.Instance.GetAttraction(attractionId) に置き換える
+            // タグベースでアトラクションを検索
             var attractions = GameObject.FindGameObjectsWithTag("Attraction");
             foreach (var attraction in attractions)
             {

@@ -212,8 +212,9 @@ namespace ThemeParkGame.Staff
                 if (!hit.CompareTag("Toilet")) continue;
                 if (!IsWithinPatrolArea(hit.transform.position)) continue;
 
-                // TODO: トイレの汚れ度合いを確認する処理を追加
-                // if (toilet.DirtLevel < threshold) continue;
+                // トイレの汚れ度合いをチェック（FacilityDirtコンポーネントがあれば利用）
+                var dirtComp = hit.GetComponent<FacilityDirt>();
+                if (dirtComp != null && dirtComp.DirtLevel < 0.3f) continue;
 
                 float dist = Vector3.Distance(transform.position, hit.transform.position);
                 if (dist < bestDistance)

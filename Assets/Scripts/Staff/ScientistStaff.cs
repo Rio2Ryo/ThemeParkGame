@@ -283,8 +283,14 @@ namespace ThemeParkGame.Staff
         /// </summary>
         private void NotifyResearchProgress(float points)
         {
-            // TODO: ResearchManager.Instance.AddProgress(CurrentResearchId, points);
-            // 現時点ではResearchManagerの実装が未完成のため、ここではログのみ
+            if (GameManager.Instance != null && GameManager.Instance.ResearchManager != null)
+            {
+                var research = GameManager.Instance.ResearchManager.CurrentResearch;
+                if (research != null && research.ResearchId == CurrentResearchId)
+                {
+                    research.AddProgress(points);
+                }
+            }
         }
 
         // ============================================================

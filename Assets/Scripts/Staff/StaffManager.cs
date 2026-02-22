@@ -193,10 +193,17 @@ namespace ThemeParkGame.Staff
                 return null;
             }
 
-            // 雇用コスト確認
+            // 雇用コスト確認・支払い処理
             float hiringCost = GetHiringCost(type);
-            // TODO: EconomyManager.Instance.CanAfford(hiringCost) で資金チェック
-            // TODO: EconomyManager.Instance.SpendMoney(hiringCost) で支払い処理
+            if (GameManager.Instance != null && GameManager.Instance.EconomyManager != null)
+            {
+                if (!GameManager.Instance.EconomyManager.CanAfford(hiringCost))
+                {
+                    Debug.LogWarning($"[StaffManager] 資金不足。雇用コスト: {hiringCost:F0}");
+                    return null;
+                }
+                GameManager.Instance.EconomyManager.PayExpense(hiringCost, Economy.ExpenseCategory.Other);
+            }
 
             // プレハブからスタッフを生成
             GameObject prefab = GetPrefabForType(type);
@@ -371,8 +378,16 @@ namespace ThemeParkGame.Staff
                 return false;
             }
 
-            // TODO: EconomyManager.Instance.CanAfford(cost) で資金チェック
-            // TODO: EconomyManager.Instance.SpendMoney(cost) で支払い処理
+            // 訓練費用の確認・支払い
+            if (GameManager.Instance != null && GameManager.Instance.EconomyManager != null)
+            {
+                if (!GameManager.Instance.EconomyManager.CanAfford(cost))
+                {
+                    Debug.LogWarning($"[StaffManager] 訓練資金不足。コスト: {cost:F0}");
+                    return false;
+                }
+                GameManager.Instance.EconomyManager.PayExpense(cost, Economy.ExpenseCategory.Other);
+            }
 
             if (staff.Train())
             {

@@ -573,7 +573,10 @@ namespace ThemeParkGame.Visitor
         /// </summary>
         private float GetParkFame()
         {
-            // TODO: GameManager.Instance.ParkManager.Fame に置き換え
+            if (GameManager.Instance != null && GameManager.Instance.ParkManager != null)
+            {
+                return GameManager.Instance.ParkManager.GetOverallRating();
+            }
             return 50f;
         }
 
@@ -598,7 +601,10 @@ namespace ThemeParkGame.Visitor
         /// <summary>現在の天候を取得する</summary>
         private Weather GetCurrentWeather()
         {
-            // TODO: GameManager.Instance.WeatherSystem.CurrentWeather に置き換え
+            if (GameManager.Instance != null && GameManager.Instance.WeatherSystem != null)
+            {
+                return GameManager.Instance.WeatherSystem.CurrentWeather;
+            }
             return Weather.Sunny;
         }
 

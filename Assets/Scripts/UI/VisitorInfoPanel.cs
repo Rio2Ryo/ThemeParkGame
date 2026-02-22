@@ -395,7 +395,10 @@ namespace ThemeParkGame.UI
             }
 
             // カメラシステムにフォロー対象を通知
-            // TODO: CameraManagerとの連携実装
+            if (_isFollowing && _currentVisitorTransform != null)
+            {
+                GameEvents.FireCameraFollowRequested(_currentVisitorId);
+            }
             Debug.Log($"[VisitorInfoPanel] フォロー{(_isFollowing ? "開始" : "解除")}: ID={_currentVisitorId}");
         }
 

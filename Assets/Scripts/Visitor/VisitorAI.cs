@@ -767,40 +767,59 @@ namespace ThemeParkGame.Visitor
         /// </summary>
         private Transform FindNearestFacility(FacilityType facilityType)
         {
-            // TODO: ParkManager.FindNearestFacility(transform.position, facilityType, facilitySearchRadius)
-            //       に置き換える。現在はCollider検索でのフォールバック実装。
+            // ParkManager経由で施設リストを取得し、最寄りを検索する
+            if (GameManager.Instance != null && GameManager.Instance.ParkManager != null)
+            {
+                var facilities = GameManager.Instance.ParkManager.GetFacilitiesByType(facilityType);
+                Transform nearest = null;
+                float nearestDist = float.MaxValue;
+
+                foreach (var facility in facilities)
+                {
+                    // GridからWorldPositionへの変換（簡易: 1グリッド=1ユニット）
+                    Vector3 facilityPos = new Vector3(facility.GridX, 0f, facility.GridY);
+                    float dist = Vector3.Distance(transform.position, facilityPos);
+                    if (dist < nearestDist && dist <= facilitySearchRadius)
+                    {
+                        nearestDist = dist;
+                        // 施設のGameObjectをタグで検索（フォールバック）
+                        string tag = GetFacilityTag(facilityType);
+                        var tagged = GameObject.FindGameObjectsWithTag(tag);
+                        foreach (var obj in tagged)
+                        {
+                            float d = Vector3.Distance(transform.position, obj.transform.position);
+                            if (d < nearestDist)
+                            {
+                                nearestDist = d;
+                                nearest = obj.transform;
+                            }
+                        }
+                    }
+                }
+
+                if (nearest != null) return nearest;
+            }
+
+            // フォールバック: Physics.OverlapSphereでタグベース検索
             Collider[] colliders = Physics.OverlapSphere(transform.position, facilitySearchRadius);
-            Transform nearest = null;
-            float nearestDist = float.MaxValue;
+            Transform nearestFallback = null;
+            float nearestDistFallback = float.MaxValue;
 
             for (int i = 0; i < colliders.Length; i++)
             {
-                // 施設コンポーネントの存在チェック（将来実装）
-                // var facility = colliders[i].GetComponent<FacilityBase>();
-                // if (facility != null && facility.Type == facilityType)
-                // {
-                //     float dist = Vector3.Distance(transform.position, colliders[i].transform.position);
-                //     if (dist < nearestDist)
-                //     {
-                //         nearestDist = dist;
-                //         nearest = colliders[i].transform;
-                //     }
-                // }
-
-                // タグベースの仮実装
                 string expectedTag = GetFacilityTag(facilityType);
                 if (!string.IsNullOrEmpty(expectedTag) && colliders[i].CompareTag(expectedTag))
                 {
                     float dist = Vector3.Distance(transform.position, colliders[i].transform.position);
-                    if (dist < nearestDist)
+                    if (dist < nearestDistFallback)
                     {
-                        nearestDist = dist;
-                        nearest = colliders[i].transform;
+                        nearestDistFallback = dist;
+                        nearestFallback = colliders[i].transform;
                     }
                 }
             }
 
-            return nearest;
+            return nearestFallback;
         }
 
         /// <summary>
@@ -809,7 +828,6 @@ namespace ThemeParkGame.Visitor
         /// </summary>
         private Transform FindPreferredAttraction()
         {
-            // TODO: ParkManager.GetAllAttractions() に置き換える
             Collider[] colliders = Physics.OverlapSphere(transform.position, facilitySearchRadius);
             Transform bestAttraction = null;
             float bestScore = float.MinValue;
@@ -836,12 +854,18 @@ namespace ThemeParkGame.Visitor
                     score -= 20f * profile.Personality.Curiosity;
                 }
 
-                // TODO: アトラクションカテゴリの好み一致ボーナス
-                // var attractionComp = colliders[i].GetComponent<AttractionBase>();
-                // if (attractionComp != null && profile.LikesCategory(attractionComp.Category))
-                //     score += 30f;
-                // if (attractionComp != null && profile.DislikesCategory(attractionComp.Category))
-                //     score -= 40f;
+                // アトラクションカテゴリの好み一致ボーナス
+                var attractionComp = colliders[i].GetComponent<ThemeParkGame.Attraction.Attraction>();
+                if (attractionComp != null && attractionComp.Data != null)
+                {
+                    // タイプ好みに基づくスコア調整
+                    if (profile.VisitorType == VisitorType.Kids && attractionComp.Data.NauseaFactor < 0.3f)
+                        score += 30f;
+                    else if (profile.VisitorType == VisitorType.Young && attractionComp.EffectiveExcitement > 6f)
+                        score += 30f;
+                    else if (profile.VisitorType == VisitorType.Family && attractionComp.Data.NauseaFactor < 0.5f)
+                        score += 20f;
+                }
 
                 if (score > bestScore)
                 {
@@ -949,9 +973,14 @@ namespace ThemeParkGame.Visitor
         /// <summary>出口へのナビゲーションを開始する</summary>
         private void NavigateToExit()
         {
-            // TODO: ParkManager.GetExitPosition() に置き換え
-            // 仮実装: 原点方向を出口とする
+            // パーク出口位置を取得（ParkExitタグで検索、フォールバックは原点）
             Vector3 exitPosition = Vector3.zero;
+
+            GameObject exitObj = GameObject.FindGameObjectWithTag("ParkExit");
+            if (exitObj != null)
+            {
+                exitPosition = exitObj.transform.position;
+            }
 
             NavMeshHit hit;
             if (NavMesh.SamplePosition(exitPosition, out hit, 50f, NavMesh.AllAreas))
@@ -1026,7 +1055,12 @@ namespace ThemeParkGame.Visitor
             profile.RecordAttractionVisit(memory);
 
             // 搭乗料金
-            float rideCost = UnityEngine.Random.Range(5f, 25f); // TODO: アトラクション側から取得
+            // アトラクション料金を取得（Attractionコンポーネントがあればそこから、なければランダム）
+            float rideCost = UnityEngine.Random.Range(5f, 25f);
+            var attrComp = currentTarget != null
+                ? currentTarget.GetComponent<ThemeParkGame.Attraction.Attraction>()
+                : null;
+            if (attrComp != null) rideCost = attrComp.TicketPrice;
             if (parameters.SpendCash(rideCost))
             {
                 GameEvents.FireRevenueEarned(rideCost);
@@ -1153,8 +1187,7 @@ namespace ThemeParkGame.Visitor
         {
             if (GameManager.Instance != null && GameManager.Instance.WeatherSystem != null)
             {
-                // TODO: WeatherSystem.CurrentWeather プロパティから取得
-                // return GameManager.Instance.WeatherSystem.CurrentWeather;
+                return GameManager.Instance.WeatherSystem.CurrentWeather;
             }
             return Weather.Sunny;
         }

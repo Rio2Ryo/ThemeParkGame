@@ -775,10 +775,98 @@ namespace ThemeParkGame.UI
         /// <summary>カテゴリに一致するアイテム一覧を取得する</summary>
         public static List<BuildItemData> GetItemsByCategory(BuildPanelUI.BuildCategory category)
         {
-            // TODO: ScriptableObjectデータベースから実データを取得
-            // 現在はParkManager/ResearchManagerと連携して
-            // アンロック状態を含むリストを返す想定
-            return new List<BuildItemData>();
+            var items = new List<BuildItemData>();
+
+            if (GameManager.Instance == null || GameManager.Instance.ResearchManager == null)
+                return items;
+
+            var researchManager = GameManager.Instance.ResearchManager;
+
+            switch (category)
+            {
+                case BuildPanelUI.BuildCategory.Attractions:
+                    foreach (var research in researchManager.GetResearchByCategory(
+                        ThemeParkGame.Attraction.ResearchCategory.Attractions))
+                    {
+                        if (research.CurrentState == ThemeParkGame.Attraction.ResearchState.Completed)
+                        {
+                            items.Add(new BuildItemData
+                            {
+                                ItemId = research.UnlockedAttractionId,
+                                DisplayName = research.NameJP,
+                                Description = research.Description,
+                                BuildCost = research.ResearchCost * 2,
+                                GridWidth = 3,
+                                GridHeight = 3,
+                                IsUnlocked = true
+                            });
+                        }
+                    }
+                    break;
+
+                case BuildPanelUI.BuildCategory.Shops:
+                    foreach (var research in researchManager.GetResearchByCategory(
+                        ThemeParkGame.Attraction.ResearchCategory.Shops))
+                    {
+                        if (research.CurrentState == ThemeParkGame.Attraction.ResearchState.Completed)
+                        {
+                            items.Add(new BuildItemData
+                            {
+                                ItemId = research.ResearchId,
+                                DisplayName = research.NameJP,
+                                Description = research.Description,
+                                BuildCost = research.ResearchCost,
+                                GridWidth = 2,
+                                GridHeight = 2,
+                                IsUnlocked = true
+                            });
+                        }
+                    }
+                    break;
+
+                case BuildPanelUI.BuildCategory.Facilities:
+                    foreach (var research in researchManager.GetResearchByCategory(
+                        ThemeParkGame.Attraction.ResearchCategory.Facilities))
+                    {
+                        if (research.CurrentState == ThemeParkGame.Attraction.ResearchState.Completed)
+                        {
+                            items.Add(new BuildItemData
+                            {
+                                ItemId = research.ResearchId,
+                                DisplayName = research.NameJP,
+                                Description = research.Description,
+                                BuildCost = research.ResearchCost,
+                                GridWidth = 2,
+                                GridHeight = 2,
+                                IsUnlocked = true
+                            });
+                        }
+                    }
+                    // トイレとベンチはデフォルトで利用可能
+                    items.Add(new BuildItemData
+                    {
+                        ItemId = "TOILET",
+                        DisplayName = "トイレ",
+                        Description = "来場者のトイレ欲求を満たす基本施設",
+                        BuildCost = 500,
+                        GridWidth = 1,
+                        GridHeight = 1,
+                        IsUnlocked = true
+                    });
+                    items.Add(new BuildItemData
+                    {
+                        ItemId = "BENCH",
+                        DisplayName = "ベンチ",
+                        Description = "来場者が休憩できるベンチ",
+                        BuildCost = 100,
+                        GridWidth = 1,
+                        GridHeight = 1,
+                        IsUnlocked = true
+                    });
+                    break;
+            }
+
+            return items;
         }
     }
 }
