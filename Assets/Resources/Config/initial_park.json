@@ -64,27 +64,27 @@
       },
       {
         "type": "Attraction",
-        "attraction_id": "lk_merry_go_round",
+        "attraction_id": "lk_horizontal_01",
         "position": { "x": 5, "z": 3 },
         "rotation": 0,
         "ticket_price": 3
       },
       {
         "type": "Attraction",
-        "attraction_id": "lk_explorer_coaster",
+        "attraction_id": "lk_gforce_01",
         "position": { "x": 8, "z": 2 },
         "rotation": 0,
         "ticket_price": 5
       },
       {
         "type": "Shop",
-        "shop_id": "lk_food_ancient_grill",
+        "shop_id": "shop_lk_food_01",
         "position": { "x": 3, "z": 1 },
         "rotation": 0
       },
       {
         "type": "Shop",
-        "shop_id": "lk_drink_jungle_juice",
+        "shop_id": "shop_lk_drink_01",
         "position": { "x": 3, "z": -1 },
         "rotation": 0
       },
@@ -184,7 +184,7 @@
       },
       {
         "type": "Attraction",
-        "attraction_id": "lk_explorer_coaster",
+        "attraction_id": "lk_gforce_01",
         "position": { "x": 3, "z": 4 },
         "rotation": 0,
         "ticket_price": 8,
@@ -192,7 +192,7 @@
       },
       {
         "type": "Attraction",
-        "attraction_id": "lk_merry_go_round",
+        "attraction_id": "lk_horizontal_01",
         "position": { "x": 3, "z": -3 },
         "rotation": 0,
         "ticket_price": 4,
@@ -200,7 +200,7 @@
       },
       {
         "type": "Attraction",
-        "attraction_id": "hw_ghost_coaster",
+        "attraction_id": "hw_gforce_01",
         "position": { "x": 7, "z": 4 },
         "rotation": 0,
         "ticket_price": 10,
@@ -208,7 +208,7 @@
       },
       {
         "type": "Attraction",
-        "attraction_id": "hw_haunted_house",
+        "attraction_id": "hw_show_01",
         "position": { "x": 7, "z": -3 },
         "rotation": 0,
         "ticket_price": 7,
@@ -216,7 +216,7 @@
       },
       {
         "type": "Attraction",
-        "attraction_id": "wl_fairy_wheel",
+        "attraction_id": "wl_vertical_01",
         "position": { "x": 11, "z": 4 },
         "rotation": 0,
         "ticket_price": 5,
@@ -224,7 +224,7 @@
       },
       {
         "type": "Attraction",
-        "attraction_id": "wl_teacup_spin",
+        "attraction_id": "wl_horizontal_01",
         "position": { "x": 11, "z": -3 },
         "rotation": 0,
         "ticket_price": 4,
@@ -232,7 +232,7 @@
       },
       {
         "type": "Attraction",
-        "attraction_id": "sz_rocket_launch",
+        "attraction_id": "sz_gforce_01",
         "position": { "x": 14, "z": 3 },
         "rotation": 0,
         "ticket_price": 12,
@@ -240,35 +240,35 @@
       },
       {
         "type": "Attraction",
-        "attraction_id": "sz_zero_gravity",
+        "attraction_id": "sz_vertical_01",
         "position": { "x": 14, "z": -3 },
         "rotation": 0,
         "ticket_price": 9,
         "upgrade_level": 1
       },
       {
-        "type": "Shop", "shop_id": "lk_food_ancient_grill", "position": { "x": 2, "z": 1 }, "rotation": 0
+        "type": "Shop", "shop_id": "shop_lk_food_01", "position": { "x": 2, "z": 1 }, "rotation": 0
       },
       {
-        "type": "Shop", "shop_id": "lk_drink_jungle_juice", "position": { "x": 2, "z": -1 }, "rotation": 0
+        "type": "Shop", "shop_id": "shop_lk_drink_01", "position": { "x": 2, "z": -1 }, "rotation": 0
       },
       {
-        "type": "Shop", "shop_id": "hw_food_pumpkin_soup", "position": { "x": 6, "z": 1 }, "rotation": 0
+        "type": "Shop", "shop_id": "shop_hw_food_01", "position": { "x": 6, "z": 1 }, "rotation": 0
       },
       {
-        "type": "Shop", "shop_id": "hw_drink_witch_brew", "position": { "x": 6, "z": -1 }, "rotation": 0
+        "type": "Shop", "shop_id": "shop_hw_drink_01", "position": { "x": 6, "z": -1 }, "rotation": 0
       },
       {
-        "type": "Shop", "shop_id": "wl_food_fairy_cake", "position": { "x": 10, "z": 1 }, "rotation": 0
+        "type": "Shop", "shop_id": "shop_wl_food_01", "position": { "x": 10, "z": 1 }, "rotation": 0
       },
       {
-        "type": "Shop", "shop_id": "wl_drink_rainbow_soda", "position": { "x": 10, "z": -1 }, "rotation": 0
+        "type": "Shop", "shop_id": "shop_wl_drink_01", "position": { "x": 10, "z": -1 }, "rotation": 0
       },
       {
-        "type": "Shop", "shop_id": "sz_food_space_burger", "position": { "x": 13, "z": 1 }, "rotation": 0
+        "type": "Shop", "shop_id": "shop_sz_food_01", "position": { "x": 13, "z": 1 }, "rotation": 0
       },
       {
-        "type": "Shop", "shop_id": "sz_souvenir_galaxy_figure", "position": { "x": 13, "z": -1 }, "rotation": 0
+        "type": "Shop", "shop_id": "shop_sz_souvenir_01", "position": { "x": 13, "z": -1 }, "rotation": 0
       },
       { "type": "Toilet", "position": { "x": 1, "z": -1 }, "rotation": 0 },
       { "type": "Toilet", "position": { "x": 5, "z": 1 }, "rotation": 0 },

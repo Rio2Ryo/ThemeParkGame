@@ -136,5 +136,79 @@ namespace ThemeParkGame.Core
         public static event Action OnGameLoaded;
         public static void FireGameSaved() => OnGameSaved?.Invoke();
         public static void FireGameLoaded() => OnGameLoaded?.Invoke();
+
+        // ================================================================
+        // イベントクリーンアップ
+        // ================================================================
+
+        /// <summary>
+        /// 全イベントの購読を解除する。
+        /// シーン遷移時やゲーム終了時に呼び出し、メモリリークを防止する。
+        /// </summary>
+        public static void ClearAll()
+        {
+            // 来場者
+            OnVisitorEnterPark = null;
+            OnVisitorLeavePark = null;
+            OnVisitorEmotionChanged = null;
+            OnVisitorHappinessChanged = null;
+            OnVisitorVomited = null;
+            OnVisitorHadAccident = null;
+            OnVisitorSaidSomething = null;
+
+            // スタッフ
+            OnStaffHired = null;
+            OnStaffFired = null;
+            OnStaffWentOnStrike = null;
+            OnStaffFinishedTask = null;
+
+            // アトラクション
+            OnAttractionBuilt = null;
+            OnAttractionBrokenDown = null;
+            OnAttractionRepaired = null;
+            OnAttractionAccident = null;
+            OnAttractionUpgraded = null;
+
+            // 経済
+            OnMoneyChanged = null;
+            OnRevenueEarned = null;
+            OnExpensePaid = null;
+            OnPriceChanged = null;
+
+            // パーク
+            OnThemeZoneUnlocked = null;
+            OnGoldenTicketEarned = null;
+            OnCertificateAwarded = null;
+            OnWeatherChanged = null;
+            OnParkOpened = null;
+            OnParkClosed = null;
+            OnParkYearPassed = null;
+
+            // 研究
+            OnResearchStarted = null;
+            OnResearchCompleted = null;
+
+            // VIP
+            OnVIPArrived = null;
+            OnVIPRequestCompleted = null;
+
+            // UI/視点
+            OnViewModeChanged = null;
+            OnFacilitySelected = null;
+            OnVisitorSelected = null;
+
+            // AI
+            OnNPCConversationStarted = null;
+            OnNPCConversationEnded = null;
+            OnQuestGenerated = null;
+            OnSNSPostGenerated = null;
+
+            // カメラ
+            OnCameraFollowRequested = null;
+
+            // セーブ/ロード
+            OnGameSaved = null;
+            OnGameLoaded = null;
+        }
     }
 }

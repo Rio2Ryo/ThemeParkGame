@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using ThemeParkGame.Core;
+using ThemeParkGame.Economy;
 
 namespace ThemeParkGame.Attraction
 {
@@ -359,13 +360,23 @@ namespace ThemeParkGame.Attraction
             int riderCount = _currentRiders.Count;
             if (riderCount == 0) return;
 
-            // 収益計上
+            // 収益計上（EconomyManager経由で正式に計上する）
             float cycleRevenue = riderCount * ticketPrice;
             TodayRevenue += cycleRevenue;
             TotalRevenue += cycleRevenue;
             TodayRiderCount += riderCount;
             TotalRiderCount += riderCount;
-            GameEvents.FireRevenueEarned(cycleRevenue);
+
+            if (GameManager.Instance != null && GameManager.Instance.EconomyManager != null)
+            {
+                GameManager.Instance.EconomyManager.AddRevenue(
+                    cycleRevenue, RevenueCategory.AttractionFee, FacilityId);
+            }
+            else
+            {
+                // EconomyManager未初期化時のフォールバック
+                GameEvents.FireRevenueEarned(cycleRevenue);
+            }
 
             // 各乗客の満足度評価と嘔吐判定
             foreach (int visitorId in _currentRiders)

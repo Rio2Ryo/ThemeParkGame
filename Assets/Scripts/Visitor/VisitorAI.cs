@@ -765,50 +765,79 @@ namespace ThemeParkGame.Visitor
         /// ParkManagerのAPIが実装されるまでのスタブ実装として、
         /// 物理範囲検索で代用する。
         /// </summary>
+        // ---- 施設キャッシュ（FindGameObjectsWithTag最適化） ----
+
+        /// <summary>タグ別施設GameObjectキャッシュ。全VisitorAIインスタンスで共有する。</summary>
+        private static readonly Dictionary<string, GameObject[]> s_facilityCache =
+            new Dictionary<string, GameObject[]>();
+
+        /// <summary>キャッシュの最終更新時刻</summary>
+        private static float s_facilityCacheTime = -1f;
+
+        /// <summary>キャッシュの有効期間（秒）</summary>
+        private const float FacilityCacheLifetime = 2f;
+
+        /// <summary>キャッシュを更新する（有効期限切れの場合のみ）</summary>
+        private static GameObject[] GetCachedFacilitiesByTag(string tag)
+        {
+            if (string.IsNullOrEmpty(tag)) return System.Array.Empty<GameObject>();
+
+            float now = Time.time;
+            if (now - s_facilityCacheTime > FacilityCacheLifetime)
+            {
+                s_facilityCache.Clear();
+                s_facilityCacheTime = now;
+            }
+
+            if (!s_facilityCache.TryGetValue(tag, out GameObject[] cached))
+            {
+                cached = GameObject.FindGameObjectsWithTag(tag);
+                s_facilityCache[tag] = cached;
+            }
+
+            return cached;
+        }
+
+        /// <summary>施設キャッシュを強制的にクリアする（施設の建設・撤去時に呼ぶ）</summary>
+        public static void InvalidateFacilityCache()
+        {
+            s_facilityCache.Clear();
+            s_facilityCacheTime = -1f;
+        }
+
         private Transform FindNearestFacility(FacilityType facilityType)
         {
-            // ParkManager経由で施設リストを取得し、最寄りを検索する
-            if (GameManager.Instance != null && GameManager.Instance.ParkManager != null)
+            string tag = GetFacilityTag(facilityType);
+
+            // キャッシュされた施設リストから最寄りを検索する
+            GameObject[] tagged = GetCachedFacilitiesByTag(tag);
+            if (tagged.Length > 0)
             {
-                var facilities = GameManager.Instance.ParkManager.GetFacilitiesByType(facilityType);
                 Transform nearest = null;
                 float nearestDist = float.MaxValue;
 
-                foreach (var facility in facilities)
+                for (int i = 0; i < tagged.Length; i++)
                 {
-                    // GridからWorldPositionへの変換（簡易: 1グリッド=1ユニット）
-                    Vector3 facilityPos = new Vector3(facility.GridX, 0f, facility.GridY);
-                    float dist = Vector3.Distance(transform.position, facilityPos);
+                    if (tagged[i] == null) continue;
+                    float dist = Vector3.Distance(transform.position, tagged[i].transform.position);
                     if (dist < nearestDist && dist <= facilitySearchRadius)
                     {
                         nearestDist = dist;
-                        // 施設のGameObjectをタグで検索（フォールバック）
-                        string tag = GetFacilityTag(facilityType);
-                        var tagged = GameObject.FindGameObjectsWithTag(tag);
-                        foreach (var obj in tagged)
-                        {
-                            float d = Vector3.Distance(transform.position, obj.transform.position);
-                            if (d < nearestDist)
-                            {
-                                nearestDist = d;
-                                nearest = obj.transform;
-                            }
-                        }
+                        nearest = tagged[i].transform;
                     }
                 }
 
                 if (nearest != null) return nearest;
             }
 
-            // フォールバック: Physics.OverlapSphereでタグベース検索
+            // フォールバック: Physics.OverlapSphereで近傍検索
             Collider[] colliders = Physics.OverlapSphere(transform.position, facilitySearchRadius);
             Transform nearestFallback = null;
             float nearestDistFallback = float.MaxValue;
 
             for (int i = 0; i < colliders.Length; i++)
             {
-                string expectedTag = GetFacilityTag(facilityType);
-                if (!string.IsNullOrEmpty(expectedTag) && colliders[i].CompareTag(expectedTag))
+                if (!string.IsNullOrEmpty(tag) && colliders[i].CompareTag(tag))
                 {
                     float dist = Vector3.Distance(transform.position, colliders[i].transform.position);
                     if (dist < nearestDistFallback)

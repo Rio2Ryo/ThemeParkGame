@@ -8,6 +8,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using ThemeParkGame.Core;
+using ThemeParkGame.Visitor;
 
 namespace ThemeParkGame.AI
 {
@@ -367,7 +368,16 @@ namespace ThemeParkGame.AI
             // 一部の来場者にNPC性格を事前生成（パフォーマンス分散）
             if (UnityEngine.Random.value < 0.3f)
             {
-                var visitorType = (VisitorType)UnityEngine.Random.Range(0, 3);
+                // VisitorManagerから実際のVisitorTypeを取得する
+                VisitorType visitorType = VisitorType.Family; // デフォルト
+                if (GameManager.Instance != null && GameManager.Instance.VisitorManager != null)
+                {
+                    var visitorAI = GameManager.Instance.VisitorManager.FindVisitorById(visitorId);
+                    if (visitorAI != null)
+                    {
+                        visitorType = visitorAI.Type;
+                    }
+                }
                 GetOrCreatePersonality(visitorId, visitorType);
             }
         }

@@ -6,8 +6,12 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using ThemeParkGame.AI;
+using ThemeParkGame.Attraction;
 using ThemeParkGame.Economy;
 using ThemeParkGame.Park;
+using ThemeParkGame.Staff;
+using ThemeParkGame.Visitor;
 
 namespace ThemeParkGame.Core
 {
@@ -195,7 +199,11 @@ namespace ThemeParkGame.Core
 
         private void OnDestroy()
         {
-            if (Instance == this) Instance = null;
+            if (Instance == this)
+            {
+                GameEvents.ClearAll();
+                Instance = null;
+            }
         }
     }
 }

@@ -130,8 +130,8 @@
           { "x": 7, "z": -1 }, { "x": 7, "z": -2 }
         ]},
         { "type": "Attraction", "attraction_id": "wl_horizontal_01", "position": { "x": 4, "z": 3 }, "ticket_price": 3 },
-        { "type": "Shop", "shop_id": "wl_food_fairy_cake", "position": { "x": 3, "z": 1 } },
-        { "type": "Shop", "shop_id": "wl_drink_rainbow_soda", "position": { "x": 3, "z": -1 } },
+        { "type": "Shop", "shop_id": "shop_wl_food_01", "position": { "x": 3, "z": 1 } },
+        { "type": "Shop", "shop_id": "shop_wl_drink_01", "position": { "x": 3, "z": -1 } },
         { "type": "Toilet", "position": { "x": 6, "z": -1 } },
         { "type": "Bench", "position": { "x": 5, "z": 1 } },
         { "type": "TrashCan", "position": { "x": 5, "z": -1 } }

@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using ThemeParkGame.Core;
+using ThemeParkGame.Economy;
 
 namespace ThemeParkGame.Attraction
 {
@@ -249,12 +250,21 @@ namespace ThemeParkGame.Attraction
             // 在庫を消費
             currentStock--;
 
-            // 売上計上
+            // 売上計上（EconomyManager経由で正式に計上する）
             TodayRevenue += sellingPrice;
             TotalRevenue += sellingPrice;
             TodaySalesCount++;
             TotalSalesCount++;
-            GameEvents.FireRevenueEarned(sellingPrice);
+
+            if (GameManager.Instance != null && GameManager.Instance.EconomyManager != null)
+            {
+                GameManager.Instance.EconomyManager.AddRevenue(
+                    sellingPrice, RevenueCategory.ShopSale, FacilityId);
+            }
+            else
+            {
+                GameEvents.FireRevenueEarned(sellingPrice);
+            }
 
             // 満足度評価
             float satisfaction = CalculateCustomerSatisfaction(visitorId);
@@ -348,7 +358,7 @@ namespace ThemeParkGame.Attraction
             int restockCost = amountToRestock * wholesalePrice;
             TodayExpense += restockCost;
             TotalExpense += restockCost;
-            GameEvents.FireExpensePaid(restockCost);
+            PayRestockExpense(restockCost);
 
             currentStock += amountToRestock;
             Debug.Log($"[Shop] 在庫補充: {shopName} +{amountToRestock}個 (在庫: {currentStock}/{maxStock}, コスト: {restockCost})");
@@ -363,9 +373,23 @@ namespace ThemeParkGame.Attraction
             int restockCost = amountToRestock * wholesalePrice;
             TodayExpense += restockCost;
             TotalExpense += restockCost;
-            GameEvents.FireExpensePaid(restockCost);
+            PayRestockExpense(restockCost);
 
             currentStock = maxStock;
+        }
+
+        /// <summary>仕入れコストをEconomyManager経由で支払う</summary>
+        private void PayRestockExpense(float cost)
+        {
+            if (GameManager.Instance != null && GameManager.Instance.EconomyManager != null)
+            {
+                GameManager.Instance.EconomyManager.PayExpense(
+                    cost, ExpenseCategory.Other, FacilityId);
+            }
+            else
+            {
+                GameEvents.FireExpensePaid(cost);
+            }
         }
 
         // ---- 来場者インタラクション（FacilityBase実装） ----
