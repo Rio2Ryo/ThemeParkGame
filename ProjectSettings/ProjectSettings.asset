@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!129 &1
+PlayerSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 22
+  productGUID: a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6
+  AndroidProfiler: 0
+  AndroidFilterTouchesWhenObscured: 0
+  AndroidEnableADBBanner: 1
+  defaultScreenWidth: 1920
+  defaultScreenHeight: 1080
+  m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
+  m_ShowUnitySplashScreen: 1
+  m_SplashScreenOverlayOpacity: 1
+  m_SplashScreenAnimation: 1
+  m_SplashScreenLogoStyle: 1
+  m_SplashScreenBackgroundAnimationZoom: 1
+  m_SplashScreenLogos: []
+  m_SplashScreenBackgroundLandscapeAspect: 1
+  m_SplashScreenBackgroundPortraitAspect: 1
+  m_VirtualRealitySplashScreen: {fileID: 0}
+  m_HolographicTrackingLossScreen: {fileID: 0}
+  defaultScreenWidthWeb: 960
+  defaultScreenHeightWeb: 600
+  m_StereoRenderingPath: 0
+  m_ActiveColorSpace: 1
+  m_MTRendering: 1
+  mipStripping: 0
+  numberOfMipsStripped: 0
+  m_StackTraceTypes: 010000000100000001000000010000000100000001000000
+  iosShowActivityIndicatorOnLoading: -1
+  androidShowActivityIndicatorOnLoading: -1
+  displayResolutionDialog: 0
+  defaultIsNativeResolution: 1
+  macRetinaSupport: 1
+  runInBackground: 1
+  fullscreenMode: 1
+  defaultIsFullScreen: 0
+  d3d11FullscreenMode: 1
+  visibleInBackground: 1
+  allowFullscreenSwitch: 1
+  graphicsJobMode: 0
+  macFullscreenMode: 2
+  use32BitDisplayBuffer: 1
+  preserveFramebufferAlpha: 0
+  forceSRGBBlit: 1
+  productName: ThemeParkGame
+  companyName: ThemeParkGame
+  cloudProjectId:
+  framebufferDepthMemorylessMode: 0
+  bundleVersion: 0.1
+  preloadedAssets: []
+  metroInputSource: 0
+  wsaTransparentSwapchain: 0
+  m_HolographicPauseOnTrackingLoss: 1
+  xboxOneDisableKinectGpuReservation: 1
+  xboxOneEnable7thCore: 1
+  isWsaHolographicRemotingEnabled: 0
+  vrEditorSettings: {}
+  cloudServicesEnabled: {}
+  luminIcon:
+    m_Name:
+    m_ModelFolderPath:
+    m_PortalFolderPath:
+  apiCompatibilityLevel: 6
+  activeInputHandler: 0
+  cloudProjectId:
+  projectName:
+  organizationId:
+  cloudEnabled: 0
+  legacyClampBlendShapeWeights: 0
+  virtualTexturingSupportEnabled: 0
