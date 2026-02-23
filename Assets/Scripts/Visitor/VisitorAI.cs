@@ -75,6 +75,11 @@ namespace ThemeParkGame.Visitor
         private int currentTargetFacilityId = -1;
         private FacilityType targetFacilityType;
 
+        // NavMeshフォールバック移動
+        private Vector3 fallbackDestination;
+        private bool useFallbackMovement;
+        private const float FallbackMoveSpeed = 3.5f;
+
         // 一意ID（VisitorManagerから割り当て）
         private int visitorId;
         private bool isInitialized;
@@ -123,8 +128,8 @@ namespace ThemeParkGame.Visitor
         /// <summary>現在の幸福度（外部参照用ショートカット）</summary>
         public float Happiness => parameters.Happiness;
 
-        /// <summary>アクティブかどうか（初期化済みかつ退園していない）</summary>
-        public bool IsActive => isInitialized && currentState != VisitorBehaviorState.LeavingPark;
+        /// <summary>アクティブかどうか（初期化済み。OnLeftParkでfalseになる）</summary>
+        public bool IsActive => isInitialized;
 
         /// <summary>現在の感情バブルタイプ</summary>
         public EmotionBubbleType CurrentEmotionType =>
@@ -215,10 +220,24 @@ namespace ThemeParkGame.Visitor
             queueWaitTimer = 0f;
 
             // NavMeshAgent設定
+            useFallbackMovement = false;
             if (navAgent != null)
             {
                 navAgent.speed = GetWalkSpeed();
                 navAgent.enabled = true;
+
+                // NavMesh上に配置を試みる
+                NavMeshHit hit;
+                if (NavMesh.SamplePosition(spawnPosition, out hit, 10f, NavMesh.AllAreas))
+                {
+                    navAgent.Warp(hit.position);
+                }
+                else
+                {
+                    // NavMeshが無い場合はフォールバック移動モード
+                    navAgent.enabled = false;
+                    useFallbackMovement = true;
+                }
             }
 
             isInitialized = true;
@@ -236,10 +255,12 @@ namespace ThemeParkGame.Visitor
             currentState = VisitorBehaviorState.Idle;
             currentTarget = null;
             currentTargetFacilityId = -1;
+            useFallbackMovement = false;
 
             if (navAgent != null)
             {
-                navAgent.ResetPath();
+                if (navAgent.isOnNavMesh)
+                    navAgent.ResetPath();
                 navAgent.enabled = false;
             }
 
@@ -612,7 +633,11 @@ namespace ThemeParkGame.Visitor
 
         private void ExecuteWalking(float deltaTime)
         {
-            if (navAgent == null || !navAgent.enabled) return;
+            // フォールバック移動
+            if (useFallbackMovement)
+            {
+                MoveFallback(deltaTime);
+            }
 
             // 目的地に到着したか
             if (HasReachedDestination())
@@ -669,8 +694,17 @@ namespace ThemeParkGame.Visitor
 
         private void ExecuteLeavingPark(float deltaTime)
         {
-            // 出口に向かう（出口位置はParkManagerから取得する想定）
-            if (HasReachedDestination() || !navAgent.hasPath)
+            // フォールバック移動
+            if (useFallbackMovement)
+            {
+                MoveFallback(deltaTime);
+            }
+
+            // 出口に到着したか
+            bool reached = HasReachedDestination();
+            bool noPath = navAgent == null || !navAgent.enabled || !navAgent.isOnNavMesh || !navAgent.hasPath;
+
+            if (reached || (noPath && !useFallbackMovement))
             {
                 OnLeftPark();
             }
@@ -996,11 +1030,7 @@ namespace ThemeParkGame.Visitor
         /// <returns>施設が見つかりナビゲーション設定できたらtrue</returns>
         private bool TryFindAndNavigateTo(FacilityType facilityType)
         {
-            // ParkManagerから最寄り施設を検索
-            // （ParkManagerの実装は別途。ここではインターフェースのみ定義）
-            if (GameManager.Instance == null || GameManager.Instance.ParkManager == null)
-                return false;
-
+            // タグベースで最寄り施設を検索（ParkManager不要）
             Transform facility = FindNearestFacility(facilityType);
             if (facility == null) return false;
 
@@ -1236,28 +1266,51 @@ namespace ThemeParkGame.Visitor
         /// <summary>指定位置へのナビゲーションを開始する</summary>
         private void NavigateTo(Vector3 destination)
         {
-            if (navAgent == null || !navAgent.enabled) return;
+            useFallbackMovement = false;
+            fallbackDestination = destination;
 
-            navAgent.isStopped = false;
-            navAgent.SetDestination(destination);
+            if (navAgent != null && navAgent.enabled && navAgent.isOnNavMesh)
+            {
+                navAgent.isStopped = false;
+                if (!navAgent.SetDestination(destination))
+                {
+                    // NavMeshパス設定失敗 → フォールバック
+                    useFallbackMovement = true;
+                }
+            }
+            else
+            {
+                // NavMeshAgentが使えない → フォールバック移動
+                useFallbackMovement = true;
+            }
         }
 
         /// <summary>ナビゲーションを停止する</summary>
         private void StopNavigation()
         {
-            if (navAgent == null || !navAgent.enabled) return;
+            useFallbackMovement = false;
 
-            if (navAgent.hasPath)
+            if (navAgent != null && navAgent.enabled && navAgent.isOnNavMesh)
             {
-                navAgent.isStopped = true;
-                navAgent.ResetPath();
+                if (navAgent.hasPath)
+                {
+                    navAgent.isStopped = true;
+                    navAgent.ResetPath();
+                }
             }
         }
 
         /// <summary>目的地に到達したかどうか</summary>
         private bool HasReachedDestination()
         {
-            if (navAgent == null || !navAgent.enabled) return true;
+            if (useFallbackMovement)
+            {
+                float dist = Vector3.Distance(transform.position, fallbackDestination);
+                return dist <= 2.0f;
+            }
+
+            if (navAgent == null || !navAgent.enabled || !navAgent.isOnNavMesh)
+                return true;
 
             return !navAgent.pathPending
                 && navAgent.remainingDistance <= navAgent.stoppingDistance + 0.1f
@@ -1268,12 +1321,48 @@ namespace ThemeParkGame.Visitor
         private void WanderRandomly()
         {
             Vector3 randomDirection = UnityEngine.Random.insideUnitSphere * wanderRadius;
+            randomDirection.y = 0f;
             randomDirection += transform.position;
 
             NavMeshHit hit;
             if (NavMesh.SamplePosition(randomDirection, out hit, wanderRadius, NavMesh.AllAreas))
             {
                 NavigateTo(hit.position);
+            }
+            else
+            {
+                // NavMeshなし → フォールバック直接移動
+                NavigateTo(randomDirection);
+            }
+        }
+
+        /// <summary>NavMesh不使用時のフォールバック移動（Transform直接操作）</summary>
+        private void MoveFallback(float deltaTime)
+        {
+            if (!useFallbackMovement) return;
+
+            Vector3 direction = fallbackDestination - transform.position;
+            direction.y = 0f;
+
+            if (direction.sqrMagnitude < 0.1f) return;
+
+            float speed = (navAgent != null) ? navAgent.speed : FallbackMoveSpeed;
+            Vector3 move = direction.normalized * speed * deltaTime;
+
+            // 目的地を超えないようにクランプ
+            if (move.sqrMagnitude > direction.sqrMagnitude)
+            {
+                transform.position = new Vector3(fallbackDestination.x, transform.position.y, fallbackDestination.z);
+            }
+            else
+            {
+                transform.position += move;
+            }
+
+            // 進行方向を向く
+            if (direction.sqrMagnitude > 0.01f)
+            {
+                transform.rotation = Quaternion.LookRotation(direction.normalized);
             }
         }
 
@@ -1330,16 +1419,31 @@ namespace ThemeParkGame.Visitor
             // パーク出口位置を取得（ParkExitタグで検索、フォールバックは原点）
             Vector3 exitPosition = Vector3.zero;
 
-            GameObject exitObj = GameObject.FindGameObjectWithTag("ParkExit");
-            if (exitObj != null)
+            // VisitorManagerの出口位置を優先
+            if (GameManager.Instance != null && GameManager.Instance.VisitorManager != null)
             {
-                exitPosition = exitObj.transform.position;
+                exitPosition = GameManager.Instance.VisitorManager.ExitPosition;
+            }
+
+            // ParkExitタグでも検索
+            if (exitPosition == Vector3.zero)
+            {
+                GameObject exitObj = GameObject.FindGameObjectWithTag("ParkExit");
+                if (exitObj != null)
+                {
+                    exitPosition = exitObj.transform.position;
+                }
             }
 
             NavMeshHit hit;
             if (NavMesh.SamplePosition(exitPosition, out hit, 50f, NavMesh.AllAreas))
             {
                 NavigateTo(hit.position);
+            }
+            else
+            {
+                // NavMeshなし → フォールバック直接移動
+                NavigateTo(exitPosition);
             }
         }
 

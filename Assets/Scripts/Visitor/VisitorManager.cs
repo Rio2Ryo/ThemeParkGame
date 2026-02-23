@@ -42,7 +42,7 @@ namespace ThemeParkGame.Visitor
         [SerializeField] private float vipFameThreshold = 50f;
 
         [Header("統計表示")]
-        [SerializeField] private bool enableDebugStats = true;
+        [SerializeField] private bool enableDebugStats = false;
 
         // ---- 内部状態 ----
 
