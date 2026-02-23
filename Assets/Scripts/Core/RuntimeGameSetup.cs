@@ -84,7 +84,7 @@ namespace ThemeParkGame.Core
                     surface = ground.AddComponent<Unity.AI.Navigation.NavMeshSurface>();
 
                 surface.collectObjects = Unity.AI.Navigation.CollectObjects.All;
-                surface.useGeometry = Unity.AI.Navigation.NavMeshCollectGeometry.PhysicsColliders;
+                surface.useGeometry = UnityEngine.AI.NavMeshCollectGeometry.PhysicsColliders;
                 surface.BuildNavMesh();
                 Debug.Log("[RuntimeGameSetup] NavMesh構築完了");
             }
