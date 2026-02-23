@@ -1,17 +1,16 @@
-name: Unity Activation
+name: Unity License Setup Info
 on:
   workflow_dispatch:
 jobs:
-  activation:
-    name: Request Unity Manual Activation File
+  info:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: game-ci/unity-request-activation-file@v2
-        id: getManualLicenseFile
-        with:
-          unityVersion: 2021.3.35f1
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Unity_Activation_File
-          path: ${{ steps.getManualLicenseFile.outputs.filePath }}
+      - name: How to set up Unity license
+        run: |
+          echo '=== Unity License Setup ==='
+          echo 'Set the following GitHub Secrets:'
+          echo '  UNITY_LICENSE  : contents of Unity_lic.ulf file'
+          echo '  UNITY_EMAIL    : your Unity account email'
+          echo '  UNITY_PASSWORD : your Unity account password'
+          echo ''
+          echo 'Then push to master to trigger the WebGL build.'
