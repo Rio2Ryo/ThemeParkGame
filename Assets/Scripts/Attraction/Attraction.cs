@@ -186,6 +186,17 @@ namespace ThemeParkGame.Attraction
         /// <summary>乗車・降車にかかる時間（秒）</summary>
         private const float LoadUnloadDuration = 5f;
 
+        // ---- ランタイム初期化 ----
+
+        /// <summary>
+        /// ランタイムでAttractionDataを設定する。
+        /// プレハブ/Inspector設定なしで動作させる場合に使用。
+        /// </summary>
+        public void SetAttractionData(AttractionData data)
+        {
+            attractionData = data;
+        }
+
         // ---- 初期化 ----
 
         protected override void Awake()

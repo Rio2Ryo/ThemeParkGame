@@ -142,6 +142,23 @@ namespace ThemeParkGame.Visitor
             }
         }
 
+        // ---- ランタイム設定 ----
+
+        /// <summary>
+        /// ランタイムでVisitorManagerを構成する。
+        /// プレハブ/Inspector設定なしで動作させる場合に使用。
+        /// </summary>
+        public void ConfigureRuntime(GameObject prefab, Transform spawn, Transform exit,
+            int maxVis = 50, int poolSize = 10, float spawnInterval = 3f)
+        {
+            visitorPrefab = prefab;
+            spawnPoint = spawn;
+            exitPoint = exit;
+            maxVisitors = maxVis;
+            initialPoolSize = poolSize;
+            baseSpawnInterval = spawnInterval;
+        }
+
         // ---- 初期化 ----
 
         /// <summary>

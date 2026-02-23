@@ -27,6 +27,9 @@ namespace ThemeParkGame.Core
             EnsureDirectionalLight();
             EnsureGround();
 
+            // ランタイムゲームセットアップ（ゲーム開始後にワールドを構築）
+            EnsureRuntimeGameSetup();
+
             CreateStartScreen();
 
             Debug.Log("[GameBootstrapper] === 初期化完了 ===");
@@ -141,6 +144,19 @@ namespace ThemeParkGame.Core
 
             go.isStatic = true;
             Debug.Log("[GameBootstrapper] Ground を生成");
+        }
+
+        // ================================================================
+        // ランタイムゲームセットアップ
+        // ================================================================
+
+        private static void EnsureRuntimeGameSetup()
+        {
+            if (Object.FindObjectOfType<RuntimeGameSetup>() != null) return;
+            var go = new GameObject("RuntimeGameSetup");
+            go.AddComponent<RuntimeGameSetup>();
+            Object.DontDestroyOnLoad(go);
+            Debug.Log("[GameBootstrapper] RuntimeGameSetup を生成");
         }
 
         // ================================================================

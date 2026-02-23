@@ -181,12 +181,28 @@ namespace ThemeParkGame.Attraction
         private readonly Queue<float> _recentQualityScores = new Queue<float>();
         private const int QualityWindowSize = 30;
 
+        // ---- ランタイム初期化 ----
+
+        /// <summary>
+        /// ランタイムでShopを構成する。
+        /// プレハブ/Inspector設定なしで動作させる場合に使用。
+        /// </summary>
+        public void ConfigureRuntime(string name, ShopType type, int wholesale, int selling, int stock)
+        {
+            shopName = name;
+            shopType = type;
+            wholesalePrice = wholesale;
+            sellingPrice = selling;
+            maxStock = stock;
+            currentStock = stock;
+        }
+
         // ---- 初期化 ----
 
         protected override void Start()
         {
             base.Start();
-            currentStock = maxStock;
+            if (currentStock <= 0) currentStock = maxStock;
             _restockTimer = 0f;
         }
 
