@@ -393,6 +393,8 @@ Claude: https://console.anthropic.com/
 GitHub Actions（GameCI）による自動ビルド・デプロイが設定されています。
 `main` または `master` ブランチへの push で自動的に WebGL ビルドが実行され、GitHub Pages にデプロイされます。
 
+> **初回セットアップ**: ワークフローファイルの追加が必要です。[こちらのGist](https://gist.github.com/Rio2Ryo/c2db02e7b74f698cd7ce5f310aca04a0) の内容を `.github/workflows/build-webgl.yml` としてリポジトリに追加してください。詳細は [WEBGL_SETUP.md](WEBGL_SETUP.md) を参照。
+
 **公開URL:** https://rio2ryo.github.io/ThemeParkGame/
 
 #### GitHub Secrets の設定 (必須)

@@ -6,6 +6,33 @@ ThemeParkGame を WebGL としてビルドし、GitHub Pages で公開するた�
 
 https://rio2ryo.github.io/ThemeParkGame/
 
+## 0. ワークフローファイルの追加 (初回のみ)
+
+ワークフローファイル (`.github/workflows/build-webgl.yml`) をリポジトリに追加する必要があります。
+このファイルは GitHub の `workflow` スコープ権限が必要なため、以下のいずれかの方法で追加してください:
+
+### 方法A: GitHub Web UIから追加 (推奨)
+
+1. https://gist.github.com/Rio2Ryo/c2db02e7b74f698cd7ce5f310aca04a0 にアクセス
+2. `build-webgl.yml` の内容をすべてコピー
+3. GitHub リポジトリの **Code** タブを開く
+4. **Add file → Create new file** をクリック
+5. ファイル名に `.github/workflows/build-webgl.yml` と入力
+6. コピーした内容を貼り付け
+7. **Commit changes** をクリック
+
+### 方法B: ローカルから push
+
+`workflow` スコープを持つ Personal Access Token (PAT) を使用:
+
+```bash
+# PAT を生成: GitHub Settings → Developer Settings → Personal Access Tokens → Fine-grained tokens
+# Permissions: Contents (Read and Write) + Workflows (Read and Write)
+
+git remote set-url origin https://<YOUR_PAT>@github.com/Rio2Ryo/ThemeParkGame.git
+git push origin master
+```
+
 ## 概要
 
 GitHub Actions で [GameCI](https://game.ci/) を使用し、Unity プロジェクトを自動的に WebGL ビルドします。
