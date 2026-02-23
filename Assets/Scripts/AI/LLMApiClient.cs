@@ -183,7 +183,7 @@ namespace ThemeParkGame.AI
     /// Handles common concerns: retries, backoff, rate limiting.
     /// Concrete subclasses format requests for specific providers.
     /// </summary>
-    public abstract class LLMApiClientBase
+    public abstract partial class LLMApiClientBase
     {
         protected LLMProviderConfig Config { get; private set; }
 

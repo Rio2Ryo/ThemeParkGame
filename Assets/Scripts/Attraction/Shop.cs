@@ -146,7 +146,6 @@ namespace ThemeParkGame.Attraction
 
         // ---- 収益トラッキング ----
 
-        [Header("Revenue (Read Only)")]
         /// <summary>本日の売上</summary>
         public float TodayRevenue { get; private set; }
 
