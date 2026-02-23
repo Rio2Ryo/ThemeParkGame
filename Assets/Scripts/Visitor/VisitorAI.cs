@@ -52,6 +52,7 @@ namespace ThemeParkGame.Visitor
 
         private NavMeshAgent navAgent;
         private EmotionBubble emotionBubble;
+        private VisitorVisualController visualController;
 
         // ---- 内部データ ----
 
@@ -141,6 +142,7 @@ namespace ThemeParkGame.Visitor
         {
             navAgent = GetComponent<NavMeshAgent>();
             emotionBubble = GetComponentInChildren<EmotionBubble>();
+            visualController = GetComponent<VisitorVisualController>();
 
             parameters = new VisitorParameters();
             profile = new VisitorProfile();
@@ -267,6 +269,11 @@ namespace ThemeParkGame.Visitor
             if (emotionBubble != null)
             {
                 emotionBubble.ForceHide();
+            }
+
+            if (visualController != null)
+            {
+                visualController.ResetVisual();
             }
         }
 
@@ -1378,6 +1385,10 @@ namespace ThemeParkGame.Visitor
             actionTimer = 0f;
 
             OnStateEntered(newState);
+
+            // ビジュアルコントローラーに状態変更を通知
+            if (visualController != null)
+                visualController.OnStateChanged(newState);
 
             Debug.Log($"[VisitorAI] Visitor {visitorId}: {previousState} -> {newState}");
         }

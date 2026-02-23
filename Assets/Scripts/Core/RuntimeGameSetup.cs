@@ -408,14 +408,18 @@ namespace ThemeParkGame.Core
             visual.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
             Object.Destroy(visual.GetComponent<Collider>());
 
-            var renderer = visual.GetComponent<Renderer>();
-            if (renderer != null)
+            var bodyRenderer = visual.GetComponent<Renderer>();
+            if (bodyRenderer != null)
             {
                 var shader = Shader.Find("Standard");
                 if (shader == null) shader = Shader.Find("UI/Default");
                 if (shader != null)
-                    renderer.material = new Material(shader) { color = new Color(0.3f, 0.6f, 1.0f) };
+                    bodyRenderer.material = new Material(shader) { color = new Color(0.3f, 0.6f, 1.0f) };
             }
+
+            // VisitorVisualController: 状態別プロシージャルアニメ
+            var visualCtrl = prefab.AddComponent<VisitorVisualController>();
+            visualCtrl.Setup(bodyRenderer);
 
             // DontDestroyOnLoad対象にして破棄を防ぐ
             DontDestroyOnLoad(prefab);

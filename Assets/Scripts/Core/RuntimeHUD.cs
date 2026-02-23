@@ -289,7 +289,7 @@ namespace ThemeParkGame.Core
             if (GameManager.Instance.VisitorManager == null) return;
 
             float infoW = 210f;
-            float infoH = 180f;
+            float infoH = 240f;
             float infoX = 10f;
             float infoY = sh - infoH - 10f;
 
@@ -302,18 +302,36 @@ namespace ThemeParkGame.Core
             GUI.Label(new Rect(lx, ly, lw, 20f), "来場者状況", _headerStyle);
             ly += 24f;
 
-            DrawStatLine(lx, ly, lw, "移動中(Attr)", _walkingToAttrCount, _yellowLabelStyle); ly += 18f;
-            DrawStatLine(lx, ly, lw, "待ち行列", _waitingCount, _yellowLabelStyle); ly += 18f;
-            DrawStatLine(lx, ly, lw, "搭乗中", _ridingCount, _greenLabelStyle); ly += 18f;
-            DrawStatLine(lx, ly, lw, "買い物/食事", _shoppingCount, _smallLabelStyle); ly += 18f;
-            DrawStatLine(lx, ly, lw, "散策/休憩", _idleCount, _smallLabelStyle); ly += 18f;
-            DrawStatLine(lx, ly, lw, "退園中", _leavingCount, _redLabelStyle);
+            // 状態カウント + カラードット（VisitorVisualControllerの色に対応）
+            DrawColorStatLine(lx, ly, lw, "移動中", _walkingToAttrCount, new Color(0.3f, 0.8f, 0.5f)); ly += 18f;
+            DrawColorStatLine(lx, ly, lw, "待ち行列", _waitingCount, new Color(1.0f, 0.85f, 0.2f)); ly += 18f;
+            DrawColorStatLine(lx, ly, lw, "搭乗中", _ridingCount, new Color(1.0f, 0.45f, 0.1f)); ly += 18f;
+            DrawColorStatLine(lx, ly, lw, "買い物/食事", _shoppingCount, new Color(0.9f, 0.6f, 0.8f)); ly += 18f;
+            DrawColorStatLine(lx, ly, lw, "散策/休憩", _idleCount, new Color(0.3f, 0.6f, 1.0f)); ly += 18f;
+            DrawColorStatLine(lx, ly, lw, "退園中", _leavingCount, new Color(0.5f, 0.5f, 0.5f)); ly += 24f;
+
+            // カラー凡例ヘッダー
+            GUI.Label(new Rect(lx, ly, lw, 16f), "色 = 来場者の状態", _smallLabelStyle);
         }
 
         private void DrawStatLine(float lx, float ly, float lw, string label, int count, GUIStyle style)
         {
             GUI.Label(new Rect(lx, ly, lw - 40f, 18f), label, style);
             GUI.Label(new Rect(lx + lw - 50f, ly, 50f, 18f), count.ToString(), style);
+        }
+
+        /// <summary>カラードット付き統計行を描画する</summary>
+        private void DrawColorStatLine(float lx, float ly, float lw, string label, int count, Color dotColor)
+        {
+            // カラードット (12x12)
+            var prevColor = GUI.color;
+            GUI.color = dotColor;
+            GUI.DrawTexture(new Rect(lx, ly + 3f, 12f, 12f), Texture2D.whiteTexture);
+            GUI.color = prevColor;
+
+            // ラベル
+            GUI.Label(new Rect(lx + 16f, ly, lw - 66f, 18f), label, _smallLabelStyle);
+            GUI.Label(new Rect(lx + lw - 50f, ly, 50f, 18f), count.ToString(), _labelStyle);
         }
 
         // ================================================================
