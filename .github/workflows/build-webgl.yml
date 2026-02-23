@@ -63,6 +63,8 @@ jobs:
           targetPlatform: WebGL
           buildName: ThemeParkGame
           buildsPath: build
+          versioning: None
+          allowDirtyBuild: true
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
