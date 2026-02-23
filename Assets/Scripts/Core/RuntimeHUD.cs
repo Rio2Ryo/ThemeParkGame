@@ -5,6 +5,7 @@
 // ============================================================
 
 using UnityEngine;
+using ThemeParkGame.Attraction;
 using ThemeParkGame.Visitor;
 
 namespace ThemeParkGame.Core
@@ -12,6 +13,7 @@ namespace ThemeParkGame.Core
     /// <summary>
     /// プレハブ/Canvas設定なしで動作するOnGUIベースのHUD。
     /// 入場者数・収益・満足度・ゲーム速度をリアルタイム表示する。
+    /// アトラクション稼働状況パネルを含む。
     /// WebGLデモ用の軽量実装。
     /// </summary>
     public class RuntimeHUD : MonoBehaviour
@@ -21,6 +23,9 @@ namespace ThemeParkGame.Core
         private GUIStyle _headerStyle;
         private GUIStyle _buttonStyle;
         private GUIStyle _smallLabelStyle;
+        private GUIStyle _greenLabelStyle;
+        private GUIStyle _yellowLabelStyle;
+        private GUIStyle _redLabelStyle;
         private bool _stylesInitialized;
 
         // 表示データキャッシュ（毎フレーム更新は重いので0.5秒ごと）
@@ -35,6 +40,19 @@ namespace ThemeParkGame.Core
         private string _weatherText = "---";
         private int _currentSpeed = 1;
 
+        // アトラクションキャッシュ
+        private Attraction.Attraction[] _attractions;
+        private float _attractionCacheTimer;
+        private const float AttractionCacheInterval = 2f;
+
+        // 来場者状態キャッシュ
+        private int _ridingCount;
+        private int _waitingCount;
+        private int _walkingToAttrCount;
+        private int _shoppingCount;
+        private int _idleCount;
+        private int _leavingCount;
+
         private void InitStyles()
         {
             if (_stylesInitialized) return;
@@ -47,14 +65,14 @@ namespace ThemeParkGame.Core
 
             _labelStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 16,
+                fontSize = 15,
                 normal = { textColor = Color.white },
                 fontStyle = FontStyle.Normal
             };
 
             _headerStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 20,
+                fontSize = 18,
                 fontStyle = FontStyle.Bold,
                 normal = { textColor = new Color(0.9f, 0.85f, 0.5f) },
                 alignment = TextAnchor.MiddleCenter
@@ -70,6 +88,24 @@ namespace ThemeParkGame.Core
             {
                 fontSize = 13,
                 normal = { textColor = new Color(0.7f, 0.7f, 0.8f) }
+            };
+
+            _greenLabelStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 13,
+                normal = { textColor = new Color(0.4f, 0.9f, 0.4f) }
+            };
+
+            _yellowLabelStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 13,
+                normal = { textColor = new Color(0.9f, 0.9f, 0.3f) }
+            };
+
+            _redLabelStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 13,
+                normal = { textColor = new Color(0.9f, 0.3f, 0.3f) }
             };
         }
 
@@ -95,7 +131,7 @@ namespace ThemeParkGame.Core
             {
                 float money = gm.EconomyManager.CurrentMoney;
                 _moneyText = $"${money:N0}";
-                _revenueText = $"当月収入: ${gm.EconomyManager.CurrentMonthRevenue:N0}  支出: ${gm.EconomyManager.CurrentMonthExpenses:N0}";
+                _revenueText = $"収入: ${gm.EconomyManager.CurrentMonthRevenue:N0}  支出: ${gm.EconomyManager.CurrentMonthExpenses:N0}";
             }
 
             // 来場者
@@ -103,8 +139,34 @@ namespace ThemeParkGame.Core
             {
                 int active = gm.VisitorManager.ActiveVisitorCount;
                 int today = gm.VisitorManager.TotalVisitorsToday;
-                _visitorText = $"{active} 人 (本日計: {today})";
+                _visitorText = $"{active} ({today})";
                 _happinessText = $"{gm.VisitorManager.AverageHappiness:F0}%";
+
+                // 来場者状態集計
+                var counts = gm.VisitorManager.GetVisitorCountByState();
+                _ridingCount = 0; _waitingCount = 0; _walkingToAttrCount = 0;
+                _shoppingCount = 0; _idleCount = 0; _leavingCount = 0;
+
+                foreach (var kv in counts)
+                {
+                    switch (kv.Key)
+                    {
+                        case VisitorBehaviorState.RidingAttraction:
+                            _ridingCount += kv.Value; break;
+                        case VisitorBehaviorState.WaitingInQueue:
+                            _waitingCount += kv.Value; break;
+                        case VisitorBehaviorState.WalkingToAttraction:
+                            _walkingToAttrCount += kv.Value; break;
+                        case VisitorBehaviorState.Eating:
+                        case VisitorBehaviorState.Drinking:
+                        case VisitorBehaviorState.WalkingToShop:
+                            _shoppingCount += kv.Value; break;
+                        case VisitorBehaviorState.LeavingPark:
+                            _leavingCount += kv.Value; break;
+                        default:
+                            _idleCount += kv.Value; break;
+                    }
+                }
             }
 
             // 時間
@@ -119,10 +181,18 @@ namespace ThemeParkGame.Core
             // 天候
             if (gm.WeatherSystem != null)
             {
-                _weatherText = GetWeatherEmoji(gm.WeatherSystem.CurrentWeather);
+                _weatherText = GetWeatherLabel(gm.WeatherSystem.CurrentWeather);
             }
 
             _currentSpeed = gm.SpeedLevel;
+
+            // アトラクション情報のキャッシュ更新（2秒ごと）
+            _attractionCacheTimer -= UpdateInterval;
+            if (_attractionCacheTimer <= 0f)
+            {
+                _attractionCacheTimer = AttractionCacheInterval;
+                _attractions = FindObjectsOfType<Attraction.Attraction>();
+            }
         }
 
         private void OnGUI()
@@ -135,9 +205,20 @@ namespace ThemeParkGame.Core
             float sw = Screen.width;
             float sh = Screen.height;
 
-            // --- トップバー ---
-            float topBarHeight = 90f;
-            float topBarWidth = Mathf.Min(sw - 20f, 700f);
+            DrawTopBar(sw);
+            DrawSpeedControls(sw);
+            DrawVisitorPanel(sh);
+            DrawAttractionPanel(sw, sh);
+        }
+
+        // ================================================================
+        // トップバー（資金・来場者・満足度・時間）
+        // ================================================================
+
+        private void DrawTopBar(float sw)
+        {
+            float topBarHeight = 82f;
+            float topBarWidth = Mathf.Min(sw - 20f, 680f);
             float topBarX = (sw - topBarWidth) * 0.5f;
 
             GUI.Box(new Rect(topBarX, 5f, topBarWidth, topBarHeight), "", _boxStyle);
@@ -146,24 +227,30 @@ namespace ThemeParkGame.Core
             float y = 10f;
 
             // ヘッダー行: 時間 + 天候
-            GUI.Label(new Rect(x, y, topBarWidth - 24f, 24f), $"{_weatherText}  {_timeText}", _headerStyle);
-            y += 28f;
+            GUI.Label(new Rect(x, y, topBarWidth - 24f, 22f), $"{_weatherText}  {_timeText}", _headerStyle);
+            y += 26f;
 
             // 情報行1: 資金 | 来場者 | 満足度
             float colW = (topBarWidth - 36f) / 3f;
-            GUI.Label(new Rect(x, y, colW, 22f), $"資金: {_moneyText}", _labelStyle);
-            GUI.Label(new Rect(x + colW, y, colW, 22f), $"来場者: {_visitorText}", _labelStyle);
-            GUI.Label(new Rect(x + colW * 2f, y, colW, 22f), $"満足度: {_happinessText}", _labelStyle);
-            y += 26f;
+            GUI.Label(new Rect(x, y, colW, 20f), $"資金: {_moneyText}", _labelStyle);
+            GUI.Label(new Rect(x + colW, y, colW, 20f), $"来場者: {_visitorText}", _labelStyle);
+            GUI.Label(new Rect(x + colW * 2f, y, colW, 20f), $"満足度: {_happinessText}", _labelStyle);
+            y += 22f;
 
             // 情報行2: 収支
             GUI.Label(new Rect(x, y, topBarWidth - 24f, 18f), _revenueText, _smallLabelStyle);
+        }
 
-            // --- 速度コントロール (右上) ---
+        // ================================================================
+        // 速度コントロール
+        // ================================================================
+
+        private void DrawSpeedControls(float sw)
+        {
             float speedBoxW = 200f;
             float speedBoxH = 40f;
             float speedX = sw - speedBoxW - 10f;
-            float speedY = topBarHeight + 15f;
+            float speedY = 95f;
 
             GUI.Box(new Rect(speedX, speedY, speedBoxW, speedBoxH), "", _boxStyle);
 
@@ -185,46 +272,90 @@ namespace ThemeParkGame.Core
 
             if (DrawSpeedButton(btnX, btnY, btnW, ">>>", _currentSpeed == 3))
                 GameManager.Instance.SpeedLevel = 3;
+        }
 
-            // --- 左下: 状態別来場者数 ---
-            if (GameManager.Instance.VisitorManager != null)
+        // ================================================================
+        // 左下: 来場者状況パネル
+        // ================================================================
+
+        private void DrawVisitorPanel(float sh)
+        {
+            if (GameManager.Instance.VisitorManager == null) return;
+
+            float infoW = 210f;
+            float infoH = 180f;
+            float infoX = 10f;
+            float infoY = sh - infoH - 10f;
+
+            GUI.Box(new Rect(infoX, infoY, infoW, infoH), "", _boxStyle);
+
+            float ly = infoY + 6f;
+            float lx = infoX + 8f;
+            float lw = infoW - 16f;
+
+            GUI.Label(new Rect(lx, ly, lw, 20f), "来場者状況", _headerStyle);
+            ly += 24f;
+
+            DrawStatLine(lx, ly, lw, "移動中(Attr)", _walkingToAttrCount, _yellowLabelStyle); ly += 18f;
+            DrawStatLine(lx, ly, lw, "待ち行列", _waitingCount, _yellowLabelStyle); ly += 18f;
+            DrawStatLine(lx, ly, lw, "搭乗中", _ridingCount, _greenLabelStyle); ly += 18f;
+            DrawStatLine(lx, ly, lw, "買い物/食事", _shoppingCount, _smallLabelStyle); ly += 18f;
+            DrawStatLine(lx, ly, lw, "散策/休憩", _idleCount, _smallLabelStyle); ly += 18f;
+            DrawStatLine(lx, ly, lw, "退園中", _leavingCount, _redLabelStyle);
+        }
+
+        private void DrawStatLine(float lx, float ly, float lw, string label, int count, GUIStyle style)
+        {
+            GUI.Label(new Rect(lx, ly, lw - 40f, 18f), label, style);
+            GUI.Label(new Rect(lx + lw - 50f, ly, 50f, 18f), count.ToString(), style);
+        }
+
+        // ================================================================
+        // 右下: アトラクション稼働状況パネル
+        // ================================================================
+
+        private void DrawAttractionPanel(float sw, float sh)
+        {
+            if (_attractions == null || _attractions.Length == 0) return;
+
+            float panelW = 280f;
+            float lineH = 20f;
+            float headerH = 28f;
+            float padding = 8f;
+            float panelH = headerH + (_attractions.Length * (lineH * 2 + 4f)) + padding * 2;
+            float panelX = sw - panelW - 10f;
+            float panelY = sh - panelH - 10f;
+
+            GUI.Box(new Rect(panelX, panelY, panelW, panelH), "", _boxStyle);
+
+            float ly = panelY + padding;
+            float lx = panelX + padding;
+            float lw = panelW - padding * 2;
+
+            GUI.Label(new Rect(lx, ly, lw, 22f), "Attraction Status", _headerStyle);
+            ly += headerH;
+
+            foreach (var attr in _attractions)
             {
-                var vm = GameManager.Instance.VisitorManager;
-                float infoW = 220f;
-                float infoH = 140f;
-                float infoX = 10f;
-                float infoY = sh - infoH - 10f;
+                if (attr == null) continue;
 
-                GUI.Box(new Rect(infoX, infoY, infoW, infoH), "", _boxStyle);
+                // 名前と状態
+                string stateName = GetCycleStateName(attr.CurrentCycleState);
+                GUIStyle stateStyle = GetCycleStateStyle(attr.CurrentCycleState);
 
-                float ly = infoY + 6f;
-                GUI.Label(new Rect(infoX + 8f, ly, infoW - 16f, 20f), "来場者状況", _headerStyle);
-                ly += 24f;
+                GUI.Label(new Rect(lx, ly, lw, lineH), attr.DisplayName, _labelStyle);
+                ly += lineH;
 
-                var counts = vm.GetVisitorCountByState();
-                int riding = 0, waiting = 0, shopping = 0, idle = 0;
-                foreach (var kv in counts)
-                {
-                    switch (kv.Key)
-                    {
-                        case VisitorBehaviorState.RidingAttraction: riding += kv.Value; break;
-                        case VisitorBehaviorState.WaitingInQueue: waiting += kv.Value; break;
-                        case VisitorBehaviorState.Eating:
-                        case VisitorBehaviorState.Drinking:
-                        case VisitorBehaviorState.WalkingToShop:
-                            shopping += kv.Value; break;
-                        case VisitorBehaviorState.Idle:
-                        case VisitorBehaviorState.Resting:
-                            idle += kv.Value; break;
-                    }
-                }
-
-                GUI.Label(new Rect(infoX + 8f, ly, infoW, 18f), $"搭乗中: {riding}", _smallLabelStyle); ly += 20f;
-                GUI.Label(new Rect(infoX + 8f, ly, infoW, 18f), $"待ち行列: {waiting}", _smallLabelStyle); ly += 20f;
-                GUI.Label(new Rect(infoX + 8f, ly, infoW, 18f), $"買い物中: {shopping}", _smallLabelStyle); ly += 20f;
-                GUI.Label(new Rect(infoX + 8f, ly, infoW, 18f), $"散策/休憩: {idle}", _smallLabelStyle);
+                // 状態 | 行列 | 乗車数
+                string detail = $"  {stateName}  Queue:{attr.QueueLength}/{attr.MaxQueueLength}  Rides:{attr.TotalRiderCount}";
+                GUI.Label(new Rect(lx, ly, lw, lineH), detail, stateStyle);
+                ly += lineH + 4f;
             }
         }
+
+        // ================================================================
+        // ヘルパー
+        // ================================================================
 
         private bool DrawSpeedButton(float bx, float by, float bw, string label, bool active)
         {
@@ -236,7 +367,7 @@ namespace ThemeParkGame.Core
             return pressed;
         }
 
-        private string GetWeatherEmoji(Weather weather)
+        private string GetWeatherLabel(Weather weather)
         {
             switch (weather)
             {
@@ -246,6 +377,33 @@ namespace ThemeParkGame.Core
                 case Weather.Snowy: return "[Snowy]";
                 case Weather.Hot: return "[Hot]";
                 default: return "";
+            }
+        }
+
+        private string GetCycleStateName(RideCycleState state)
+        {
+            switch (state)
+            {
+                case RideCycleState.WaitingForRiders: return "[Waiting]";
+                case RideCycleState.Loading: return "[Loading]";
+                case RideCycleState.Running: return "[Running]";
+                case RideCycleState.Unloading: return "[Unloading]";
+                case RideCycleState.BrokenDown: return "[BROKEN]";
+                case RideCycleState.Accident: return "[ACCIDENT]";
+                default: return "[---]";
+            }
+        }
+
+        private GUIStyle GetCycleStateStyle(RideCycleState state)
+        {
+            switch (state)
+            {
+                case RideCycleState.Running: return _greenLabelStyle;
+                case RideCycleState.Loading:
+                case RideCycleState.Unloading: return _yellowLabelStyle;
+                case RideCycleState.BrokenDown:
+                case RideCycleState.Accident: return _redLabelStyle;
+                default: return _smallLabelStyle;
             }
         }
 

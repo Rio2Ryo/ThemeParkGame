@@ -38,7 +38,7 @@ namespace ThemeParkGame.Core
 
             // スポーン/出口ポイント作成
             Transform spawnPoint = CreateMarker("SpawnPoint", new Vector3(0f, 0f, -5f));
-            Transform exitPoint = CreateMarker("ExitPoint", new Vector3(0f, 0f, -8f));
+            Transform exitPoint = CreateMarker("ExitPoint", new Vector3(0f, 0f, -8f), "ParkExit");
 
             // サンプルアトラクション生成
             CreateSampleAttractions();
@@ -105,19 +105,19 @@ namespace ThemeParkGame.Core
 
             CreateAttraction(parent, "ドラゴンコースター",
                 AttractionCategory.GForce, 7.5f, 0.3f, 20, 30f,
-                8000, 500, new Vector3(15f, 0f, 15f));
+                8000, 50, new Vector3(15f, 0f, 15f));
 
             CreateAttraction(parent, "マジカル観覧車",
                 AttractionCategory.Observation, 4.0f, 0.05f, 30, 45f,
-                6000, 300, new Vector3(-15f, 0f, 15f));
+                6000, 30, new Vector3(-15f, 0f, 15f));
 
             CreateAttraction(parent, "スピンカップ",
                 AttractionCategory.HorizontalRotation, 5.5f, 0.2f, 16, 20f,
-                4000, 350, new Vector3(15f, 0f, -15f));
+                4000, 35, new Vector3(15f, 0f, -15f));
 
             CreateAttraction(parent, "お化け屋敷ダーク",
                 AttractionCategory.ShowAttraction, 6.0f, 0.1f, 12, 25f,
-                5500, 400, new Vector3(-15f, 0f, -15f));
+                5500, 40, new Vector3(-15f, 0f, -15f));
 
             Debug.Log("[RuntimeGameSetup] サンプルアトラクション4基を生成");
         }
@@ -427,10 +427,15 @@ namespace ThemeParkGame.Core
         // ユーティリティ
         // ================================================================
 
-        private Transform CreateMarker(string markerName, Vector3 position)
+        private Transform CreateMarker(string markerName, Vector3 position, string tag = null)
         {
             var go = new GameObject(markerName);
             go.transform.position = position;
+            if (!string.IsNullOrEmpty(tag))
+            {
+                try { go.tag = tag; }
+                catch (System.Exception) { /* tag not registered */ }
+            }
             return go.transform;
         }
 

@@ -273,6 +273,7 @@ namespace ThemeParkGame.Visitor
         /// </summary>
         private void TrySpawnVisitor()
         {
+            if (visitorPrefab == null) return;
             if (activeVisitors.Count >= maxVisitors) return;
 
             VisitorType type = DetermineVisitorType();
