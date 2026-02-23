@@ -26,7 +26,7 @@ PlayerSettings:
   m_StereoRenderingPath: 0
   m_ActiveColorSpace: 1
   m_MTRendering: 1
-  mipStripping: 0
+  mipStripping: 1
   numberOfMipsStripped: 0
   m_StackTraceTypes: 010000000100000001000000010000000100000001000000
   iosShowActivityIndicatorOnLoading: -1
@@ -71,3 +71,45 @@ PlayerSettings:
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
   virtualTexturingSupportEnabled: 0
+  # ============================================================
+  # Scripting & Stripping (全プラットフォーム共通)
+  # ============================================================
+  stripEngineCode: 1
+  m_ManagedStrippingLevel:
+    WebGL: 2
+  # ============================================================
+  # WebGL 固有設定
+  # ============================================================
+  webGLMemorySize: 512
+  webGLExceptionSupport: 0
+  webGLCompressionFormat: 1
+  webGLLinkerTarget: 1
+  webGLThreadsSupport: 0
+  webGLDecompressionFallback: 1
+  webGLPowerPreference: 2
+  webGLTemplate: APPLICATION:Default
+  # ============================================================
+  # Scripting Backend (プラットフォーム別)
+  # IL2CPP=1, Mono=0 — WebGLはIL2CPP必須
+  # ============================================================
+  scriptingBackend:
+    WebGL: 1
+    Standalone: 0
+    Android: 1
+    iPhone: 1
+  # ============================================================
+  # ビルド設定
+  # ============================================================
+  m_BuildTargetGraphicsAPIs:
+    WebGL:
+    - 11
+  m_BuildTargetBatching:
+    WebGL:
+      staticBatching: 1
+      dynamicBatching: 0
+  # IL2CPP コンパイラ構成
+  il2cppCompilerConfiguration:
+    WebGL: 1
+  # Development Build を無効化
+  enableNativePlatformBackendsForNewInputSystem: 0
+  disableOldInputManagerSupport: 0
