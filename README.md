@@ -380,13 +380,41 @@ OpenAI: https://platform.openai.com/api-keys
 Claude: https://console.anthropic.com/
 ```
 
-### ビルド
+### ビルド (ローカル)
 
 ```bash
 # Unity Editor → File → Build Settings
-# Platform: iOS / Android
+# Platform: iOS / Android / WebGL
 # Build → 出力先を選択
 ```
+
+### WebGL ビルド & GitHub Pages デプロイ (CI/CD)
+
+GitHub Actions（GameCI）による自動ビルド・デプロイが設定されています。
+`main` または `master` ブランチへの push で自動的に WebGL ビルドが実行され、GitHub Pages にデプロイされます。
+
+**公開URL:** https://rio2ryo.github.io/ThemeParkGame/
+
+#### GitHub Secrets の設定 (必須)
+
+リポジトリの **Settings → Secrets and variables → Actions** で以下のシークレットを追加してください:
+
+| シークレット名 | 説明 | 取得方法 |
+|---|---|---|
+| `UNITY_LICENSE` | Unityライセンスファイル (.ulf) の内容 | 下記手順を参照 |
+| `UNITY_EMAIL` | Unity アカウントのメールアドレス | Unity ID に登録したメール |
+| `UNITY_PASSWORD` | Unity アカウントのパスワード | Unity ID のパスワード |
+
+#### UNITY_LICENSE の取得手順
+
+1. `UNITY_LICENSE` を未設定のままワークフローを実行する
+2. ワークフローが失敗し、Artifacts に `Unity_Activation_File` (.alf) が生成される
+3. https://license.unity3d.com/manual にアクセスし、.alf ファイルをアップロード
+4. 「Unity Personal」を選択してライセンスファイル (.ulf) をダウンロード
+5. .ulf ファイルの内容をすべてコピーし、GitHub Secrets の `UNITY_LICENSE` に貼り付け
+6. ワークフローを再実行
+
+詳細は [WEBGL_SETUP.md](WEBGL_SETUP.md) を参照してください。
 
 ---
 
@@ -425,7 +453,8 @@ Claude: https://console.anthropic.com/
 - [ ] 3Dモデル・アニメーションアセット
 - [ ] オーディオアセット (BGM/SE)
 - [ ] NavMeshの設定
-- [ ] ビルドパイプライン (iOS/Android)
+- [x] WebGL ビルド & GitHub Pages デプロイ (GitHub Actions CI/CD)
+- [ ] ビルドパイプライン (iOS/Android ネイティブ)
 - [ ] パフォーマンス最適化 (オブジェクトプール, LOD)
 - [ ] ローカライズ (英語対応)
 - [ ] 課金システム統合
