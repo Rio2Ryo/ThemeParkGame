@@ -223,6 +223,9 @@ namespace ThemeParkGame.Staff
                 return null;
             }
 
+            // アクティベート（プレハブが非アクティブの場合があるため）
+            staffObj.SetActive(true);
+
             // 初期化
             int staffId = nextStaffId++;
             string name = staffName ?? GenerateStaffName(type, staffId);
@@ -791,6 +794,21 @@ namespace ThemeParkGame.Staff
         // ============================================================
         // ユーティリティ
         // ============================================================
+
+        /// <summary>
+        /// ランタイムでスタッフプレハブを設定する。
+        /// RuntimeGameSetupから呼ばれる（エディタ外でのプレハブ注入用）。
+        /// </summary>
+        public void ConfigureRuntimePrefabs(
+            GameObject mechanic, GameObject cleaner,
+            GameObject entertainer, GameObject guard, GameObject scientist)
+        {
+            mechanicPrefab = mechanic;
+            cleanerPrefab = cleaner;
+            entertainerPrefab = entertainer;
+            guardPrefab = guard;
+            scientistPrefab = scientist;
+        }
 
         /// <summary>スタッフ種別に対応するプレハブを取得する</summary>
         private GameObject GetPrefabForType(StaffType type)

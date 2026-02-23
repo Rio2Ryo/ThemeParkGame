@@ -39,6 +39,7 @@ namespace ThemeParkGame.Core
         private string _revenueText = "---";
         private string _totalRevenueText = "---";
         private string _weatherText = "---";
+        private string _staffText = "---";
         private int _currentSpeed = 1;
 
         // アトラクションキャッシュ
@@ -186,6 +187,12 @@ namespace ThemeParkGame.Core
                 _weatherText = GetWeatherLabel(gm.WeatherSystem.CurrentWeather);
             }
 
+            // スタッフ
+            if (gm.StaffManager != null)
+            {
+                _staffText = $"Staff: {gm.StaffManager.TotalStaffCount}名";
+            }
+
             _currentSpeed = gm.SpeedLevel;
 
             // アトラクション情報のキャッシュ更新（2秒ごと）
@@ -243,8 +250,10 @@ namespace ThemeParkGame.Core
             GUI.Label(new Rect(x, y, topBarWidth - 24f, 18f), _totalRevenueText, _greenLabelStyle);
             y += 18f;
 
-            // 情報行3: 月次収支
-            GUI.Label(new Rect(x, y, topBarWidth - 24f, 18f), _revenueText, _smallLabelStyle);
+            // 情報行3: 月次収支 + スタッフ数
+            float halfW = (topBarWidth - 24f) * 0.6f;
+            GUI.Label(new Rect(x, y, halfW, 18f), _revenueText, _smallLabelStyle);
+            GUI.Label(new Rect(x + halfW, y, topBarWidth - 24f - halfW, 18f), _staffText, _smallLabelStyle);
         }
 
         // ================================================================

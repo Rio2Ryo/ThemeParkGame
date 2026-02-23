@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using ThemeParkGame.Attraction;
 using ThemeParkGame.Visitor;
+using ThemeParkGame.Staff;
 
 namespace ThemeParkGame.Core
 {
@@ -33,21 +34,24 @@ namespace ThemeParkGame.Core
         {
             Debug.Log("[RuntimeGameSetup] === ゲームワールド構築開始 ===");
 
-            // NavMeshをランタイムで構築
-            BakeNavMesh();
-
             // スポーン/出口ポイント作成
             Transform spawnPoint = CreateMarker("SpawnPoint", new Vector3(0f, 0f, -5f));
             Transform exitPoint = CreateMarker("ExitPoint", new Vector3(0f, 0f, -8f), "ParkExit");
 
-            // サンプルアトラクション生成
+            // サンプルアトラクション生成（5基）
             CreateSampleAttractions();
 
             // サンプルショップ生成
             CreateSampleShops();
 
-            // サンプルトイレ・ベンチ
+            // サンプルトイレ・ベンチ・スタッフルーム
             CreateSampleFacilities();
+
+            // NavMeshをランタイムで構築（全施設配置後、スタッフ/Visitor配置前にBake）
+            BakeNavMesh();
+
+            // スタッフ配置（NavMesh上に配置するため、Bake後に実行）
+            SetupStaff();
 
             // VisitorManagerの設定
             SetupVisitorManager(spawnPoint, exitPoint);
@@ -119,7 +123,11 @@ namespace ThemeParkGame.Core
                 AttractionCategory.ShowAttraction, 6.0f, 0.1f, 12, 25f,
                 5500, 40, new Vector3(-15f, 0f, -15f));
 
-            Debug.Log("[RuntimeGameSetup] サンプルアトラクション4基を生成");
+            CreateAttraction(parent, "メリーゴーランド",
+                AttractionCategory.RideAttraction, 3.5f, 0.02f, 24, 35f,
+                3000, 25, new Vector3(0f, 0f, 25f));
+
+            Debug.Log("[RuntimeGameSetup] サンプルアトラクション5基を生成");
         }
 
         private void CreateAttraction(Transform parent, string nameJP,
@@ -178,6 +186,8 @@ namespace ThemeParkGame.Core
                         color = new Color(0.2f, 0.5f, 0.9f); break;
                     case AttractionCategory.HorizontalRotation:
                         color = new Color(0.9f, 0.7f, 0.2f); break;
+                    case AttractionCategory.RideAttraction:
+                        color = new Color(0.3f, 0.9f, 0.5f); break;
                     default:
                         color = new Color(0.5f, 0.2f, 0.8f); break;
                 }
@@ -217,7 +227,7 @@ namespace ThemeParkGame.Core
             CreateShop(parent, "マジカルジュース", FacilityType.DrinkShop,
                 new Vector3(-8f, 0f, 0f), "DrinkShop");
             CreateShop(parent, "おみやげ城", FacilityType.SouvenirShop,
-                new Vector3(0f, 0f, 20f), "SouvenirShop");
+                new Vector3(0f, 0f, -2f), "SouvenirShop");
 
             Debug.Log("[RuntimeGameSetup] サンプルショップ3店を生成");
         }
@@ -312,10 +322,20 @@ namespace ThemeParkGame.Core
                 CreateSimpleFacility(parent, $"ベンチ{i + 1}", "Bench", pos, new Color(0.6f, 0.4f, 0.2f));
             }
 
-            Debug.Log("[RuntimeGameSetup] サンプル施設（トイレ2、ベンチ6）を生成");
+            // スタッフルーム
+            var staffRoom = CreateSimpleFacility(parent, "スタッフルーム", "Untagged",
+                new Vector3(-25f, 0f, -20f), new Color(0.4f, 0.6f, 0.4f));
+            // StaffManagerにスタッフルームを登録
+            var sm = GameManager.Instance?.StaffManager;
+            if (sm != null && staffRoom != null)
+            {
+                sm.RegisterStaffRoom(staffRoom.transform);
+            }
+
+            Debug.Log("[RuntimeGameSetup] サンプル施設（トイレ2、ベンチ6、スタッフルーム1）を生成");
         }
 
-        private void CreateSimpleFacility(Transform parent, string facilityName,
+        private GameObject CreateSimpleFacility(Transform parent, string facilityName,
             string tag, Vector3 position, Color color)
         {
             var go = new GameObject(facilityName);
@@ -347,6 +367,130 @@ namespace ThemeParkGame.Core
                 if (shader != null)
                     renderer.material = new Material(shader) { color = color };
             }
+
+            return go;
+        }
+
+        // ================================================================
+        // スタッフ配置
+        // ================================================================
+
+        private void SetupStaff()
+        {
+            var sm = GameManager.Instance?.StaffManager;
+            if (sm == null)
+            {
+                Debug.LogWarning("[RuntimeGameSetup] StaffManager未検出");
+                return;
+            }
+
+            // ランタイムでスタッフプレハブを作成してStaffManagerに注入
+            var mechanicPrefab = CreateStaffPrefab<MechanicStaff>("MechanicPrefab", new Color(1f, 0.5f, 0f));
+            var cleanerPrefab = CreateStaffPrefab<CleanerStaff>("CleanerPrefab", new Color(0.2f, 0.9f, 0.2f));
+            var entertainerPrefab = CreateStaffPrefab<EntertainerStaff>("EntertainerPrefab", new Color(0.9f, 0.2f, 0.9f));
+            var guardPrefab = CreateStaffPrefab<GuardStaff>("GuardPrefab", new Color(0.2f, 0.2f, 0.8f));
+            var scientistPrefab = CreateStaffPrefab<ScientistStaff>("ScientistPrefab", new Color(1f, 1f, 0.3f));
+
+            sm.ConfigureRuntimePrefabs(mechanicPrefab, cleanerPrefab,
+                entertainerPrefab, guardPrefab, scientistPrefab);
+
+            // アトラクション位置情報を取得してスタッフを近くに配置
+            var attractions = FindObjectsOfType<Attraction.Attraction>();
+
+            // メカニック2名: アトラクション近辺に配置
+            if (attractions.Length >= 2)
+            {
+                sm.HireStaff(StaffType.Mechanic,
+                    attractions[0].transform.position + new Vector3(3f, 0f, 0f), "メカニック太郎");
+                sm.HireStaff(StaffType.Mechanic,
+                    attractions[2 % attractions.Length].transform.position + new Vector3(3f, 0f, 0f), "メカニック次郎");
+            }
+
+            // クリーナー2名: パーク中央付近
+            sm.HireStaff(StaffType.Cleaner, new Vector3(5f, 0f, 5f), "クリーナーA");
+            sm.HireStaff(StaffType.Cleaner, new Vector3(-5f, 0f, -5f), "クリーナーB");
+
+            // エンターテイナー1名: 入口付近
+            sm.HireStaff(StaffType.Entertainer, new Vector3(0f, 0f, -3f), "パフォーマー花子");
+
+            // ガード1名: パーク中央
+            sm.HireStaff(StaffType.Guard, new Vector3(0f, 0f, 10f), "ガードマン一号");
+
+            // スタッフにパトロールエリアを自動割り当て
+            // パーク全体 (-30,-30) ~ (30,30) の範囲
+            Bounds parkBounds = new Bounds(Vector3.zero, new Vector3(60f, 10f, 60f));
+            foreach (var staff in sm.GetAllStaff())
+            {
+                if (!staff.HasPatrolArea)
+                {
+                    staff.SetPatrolArea(parkBounds);
+                }
+            }
+
+            Debug.Log($"[RuntimeGameSetup] スタッフ{sm.TotalStaffCount}名を配置");
+        }
+
+        /// <summary>スタッフプレハブをランタイムで生成する</summary>
+        private GameObject CreateStaffPrefab<T>(string prefabName, Color bodyColor) where T : StaffMember
+        {
+            var prefab = new GameObject(prefabName);
+            prefab.SetActive(false);
+
+            // NavMeshAgent
+            var agent = prefab.AddComponent<NavMeshAgent>();
+            agent.speed = 3.0f;
+            agent.angularSpeed = 120f;
+            agent.acceleration = 8f;
+            agent.stoppingDistance = 1.5f;
+            agent.radius = 0.3f;
+            agent.height = 1.8f;
+            agent.enabled = false;
+
+            // CapsuleCollider
+            var col = prefab.AddComponent<CapsuleCollider>();
+            col.radius = 0.3f;
+            col.height = 1.8f;
+            col.center = new Vector3(0f, 0.9f, 0f);
+
+            // StaffMember派生コンポーネント
+            prefab.AddComponent<T>();
+
+            // ビジュアル: 少し太めのカプセルでVisitorと区別
+            var visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            visual.name = "Body";
+            visual.transform.SetParent(prefab.transform);
+            visual.transform.localPosition = new Vector3(0f, 0.9f, 0f);
+            visual.transform.localScale = new Vector3(0.6f, 0.5f, 0.6f);
+            Object.Destroy(visual.GetComponent<Collider>());
+
+            var bodyRenderer = visual.GetComponent<Renderer>();
+            if (bodyRenderer != null)
+            {
+                var shader = Shader.Find("Standard");
+                if (shader == null) shader = Shader.Find("UI/Default");
+                if (shader != null)
+                    bodyRenderer.material = new Material(shader) { color = bodyColor };
+            }
+
+            // 頭上マーカー: 小さな球で「スタッフ」と分かるようにする
+            var marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            marker.name = "StaffMarker";
+            marker.transform.SetParent(prefab.transform);
+            marker.transform.localPosition = new Vector3(0f, 2.0f, 0f);
+            marker.transform.localScale = new Vector3(0.25f, 0.25f, 0.25f);
+            Object.Destroy(marker.GetComponent<Collider>());
+
+            var markerRenderer = marker.GetComponent<Renderer>();
+            if (markerRenderer != null)
+            {
+                var shader = Shader.Find("Standard");
+                if (shader == null) shader = Shader.Find("UI/Default");
+                if (shader != null)
+                    markerRenderer.material = new Material(shader) { color = Color.white };
+            }
+
+            DontDestroyOnLoad(prefab);
+            return prefab;
         }
 
         // ================================================================
