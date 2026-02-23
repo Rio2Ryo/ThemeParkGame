@@ -108,23 +108,23 @@ namespace ThemeParkGame.Core
             var parent = new GameObject("--- Attractions ---").transform;
 
             CreateAttraction(parent, "ドラゴンコースター",
-                AttractionCategory.GForce, 7.5f, 0.3f, 20, 30f,
+                AttractionCategory.GForce, 7.5f, 0.3f, 20, 8f,
                 8000, 50, new Vector3(15f, 0f, 15f));
 
             CreateAttraction(parent, "マジカル観覧車",
-                AttractionCategory.Observation, 4.0f, 0.05f, 30, 45f,
+                AttractionCategory.Observation, 4.0f, 0.05f, 30, 12f,
                 6000, 30, new Vector3(-15f, 0f, 15f));
 
             CreateAttraction(parent, "スピンカップ",
-                AttractionCategory.HorizontalRotation, 5.5f, 0.2f, 16, 20f,
+                AttractionCategory.HorizontalRotation, 5.5f, 0.2f, 16, 6f,
                 4000, 35, new Vector3(15f, 0f, -15f));
 
             CreateAttraction(parent, "お化け屋敷ダーク",
-                AttractionCategory.ShowAttraction, 6.0f, 0.1f, 12, 25f,
+                AttractionCategory.ShowAttraction, 6.0f, 0.1f, 12, 10f,
                 5500, 40, new Vector3(-15f, 0f, -15f));
 
             CreateAttraction(parent, "メリーゴーランド",
-                AttractionCategory.RideAttraction, 3.5f, 0.02f, 24, 35f,
+                AttractionCategory.RideAttraction, 3.5f, 0.02f, 24, 8f,
                 3000, 25, new Vector3(0f, 0f, 25f));
 
             Debug.Log("[RuntimeGameSetup] サンプルアトラクション5基を生成");
@@ -511,7 +511,7 @@ namespace ThemeParkGame.Core
 
             // 公開メソッドで設定
             vm.ConfigureRuntime(prefab, spawnPoint, exitPoint,
-                maxVis: 50, poolSize: 10, spawnInterval: 30f);
+                maxVis: 50, poolSize: 10, spawnInterval: 10f);
 
             // 再初期化
             vm.Initialize();

@@ -184,7 +184,7 @@ namespace ThemeParkGame.Attraction
         private float _cycleTimer;
 
         /// <summary>乗車・降車にかかる時間（秒）</summary>
-        private const float LoadUnloadDuration = 5f;
+        private const float LoadUnloadDuration = 2f;
 
         // ---- ランタイム初期化 ----
 

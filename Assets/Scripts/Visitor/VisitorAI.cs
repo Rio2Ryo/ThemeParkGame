@@ -366,7 +366,7 @@ namespace ThemeParkGame.Visitor
             }
 
             // 優先度4: 興奮を求める → アトラクションに行く
-            if (parameters.Excitement < 50f && parameters.HasMoney)
+            if (parameters.Excitement < 85f && parameters.HasMoney)
             {
                 if (currentState != VisitorBehaviorState.WalkingToAttraction &&
                     currentState != VisitorBehaviorState.WaitingInQueue &&
@@ -991,10 +991,10 @@ namespace ThemeParkGame.Visitor
             // パーク閉園
             if (isParkClosing) return true;
 
-            // お金がなく、空腹か渇いている
-            if (!parameters.HasMoney && (parameters.IsHungry || parameters.IsThirsty))
+            // お金がなくなった → これ以上楽しめないので退園
+            if (!parameters.HasMoney)
             {
-                Debug.Log($"[VisitorAI] Visitor {visitorId} leaving: no money and hungry/thirsty.");
+                Debug.Log($"[VisitorAI] Visitor {visitorId} leaving: out of money.");
                 return true;
             }
 
