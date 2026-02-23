@@ -395,7 +395,7 @@ namespace ThemeParkGame.UI
             }
 
             // カメラシステムにフォロー対象を通知
-            if (_isFollowing && _currentVisitorTransform != null)
+            if (_isFollowing && _currentVisitorId >= 0)
             {
                 GameEvents.FireCameraFollowRequested(_currentVisitorId);
             }

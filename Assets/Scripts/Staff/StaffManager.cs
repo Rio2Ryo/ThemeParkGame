@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using ThemeParkGame.Core;
+using ThemeParkGame.UI;
 
 namespace ThemeParkGame.Staff
 {
@@ -592,6 +593,121 @@ namespace ThemeParkGame.Staff
         }
 
         // ============================================================
+        // UI向けデータ取得
+        // ============================================================
+
+        /// <summary>種別ごとのスタッフ数を取得する（GetStaffCountByTypeのエイリアス）</summary>
+        public int GetStaffCount(StaffType type)
+        {
+            return GetStaffCountByType(type);
+        }
+
+        /// <summary>
+        /// 指定スタッフのUI表示用データを取得する。
+        /// </summary>
+        /// <param name="staffId">スタッフID</param>
+        /// <returns>スタッフ表示データ。見つからない場合はnull</returns>
+        public StaffDisplayData GetStaffData(int staffId)
+        {
+            if (!allStaff.TryGetValue(staffId, out StaffMember staff))
+            {
+                return null;
+            }
+
+            return ConvertToDisplayData(staff);
+        }
+
+        /// <summary>
+        /// 指定種別のスタッフ一覧をUI表示用データのリストとして取得する。
+        /// </summary>
+        /// <param name="type">スタッフ種別</param>
+        /// <returns>スタッフ表示データのリスト</returns>
+        public List<StaffDisplayData> GetStaffListByType(StaffType type)
+        {
+            if (!staffByType.ContainsKey(type))
+            {
+                return new List<StaffDisplayData>();
+            }
+
+            var result = new List<StaffDisplayData>();
+            foreach (var staff in staffByType[type])
+            {
+                result.Add(ConvertToDisplayData(staff));
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// StaffMemberからStaffDisplayDataへ変換するヘルパー。
+        /// </summary>
+        private StaffDisplayData ConvertToDisplayData(StaffMember staff)
+        {
+            return new StaffDisplayData
+            {
+                StaffId = staff.Id,
+                Name = staff.Name,
+                Type = staff.StaffType,
+                Portrait = null, // ポートレートはプレハブ側で管理
+                SkillLevel = (float)(staff.SkillLevel - StaffMember.MinSkillLevel)
+                             / (StaffMember.MaxSkillLevel - StaffMember.MinSkillLevel),
+                Fatigue = staff.Fatigue / StaffMember.MaxFatigue,
+                BehaviorState = staff.CurrentState
+            };
+        }
+
+        // ============================================================
+        // UI操作向けコマンド
+        // ============================================================
+
+        /// <summary>
+        /// パトロールエリア指定モードを開始する。
+        /// UIからパトロールエリア割り当て操作が開始された際に呼ばれる。
+        /// 実際のエリア選択はInputManager等で処理し、完了時にAssignPatrolAreaが呼ばれる想定。
+        /// </summary>
+        /// <param name="staffId">パトロールを指定するスタッフのID</param>
+        public void StartPatrolAreaAssignment(int staffId)
+        {
+            if (!allStaff.TryGetValue(staffId, out StaffMember staff))
+            {
+                Debug.LogWarning($"[StaffManager] スタッフ (ID:{staffId}) が見つかりません");
+                return;
+            }
+
+            Debug.Log($"[StaffManager] パトロールエリア指定モード開始: {staff.Name} (ID:{staffId})");
+            // TODO: InputManagerやCameraControllerと連携して
+            // ゲームフィールド上でのエリア選択UIを表示する
+        }
+
+        /// <summary>
+        /// スタッフをスタッフルームへ送って休憩させる。
+        /// </summary>
+        /// <param name="staffId">休憩させるスタッフのID</param>
+        public void SendToStaffRoom(int staffId)
+        {
+            if (!allStaff.TryGetValue(staffId, out StaffMember staff))
+            {
+                Debug.LogWarning($"[StaffManager] スタッフ (ID:{staffId}) が見つかりません");
+                return;
+            }
+
+            if (staff.IsOnStrike)
+            {
+                Debug.LogWarning($"[StaffManager] {staff.Name} はストライキ中のため休憩指示できません");
+                return;
+            }
+
+            // 最寄りのスタッフルームを設定して休息を開始
+            Transform nearestRoom = FindNearestStaffRoom(staff.transform.position);
+            if (nearestRoom != null)
+            {
+                staff.SetStaffRoom(nearestRoom);
+            }
+
+            staff.SendToRest();
+            Debug.Log($"[StaffManager] {staff.Name} をスタッフルームへ送りました");
+        }
+
+        // ============================================================
         // 統計
         // ============================================================
 
@@ -630,8 +746,8 @@ namespace ThemeParkGame.Staff
             {
                 Type = type,
                 Count = list.Count,
-                AverageSkillLevel = list.Count > 0 ? list.Average(s => s.SkillLevel) : 0f,
-                AverageFatigue = list.Count > 0 ? list.Average(s => s.Fatigue) : 0f,
+                AverageSkillLevel = list.Count > 0 ? (float)list.Average(s => s.SkillLevel) : 0f,
+                AverageFatigue = list.Count > 0 ? (float)list.Average(s => s.Fatigue) : 0f,
                 StrikingCount = list.Count(s => s.IsOnStrike),
                 TotalMonthlySalary = list.Sum(s => s.Salary)
             };

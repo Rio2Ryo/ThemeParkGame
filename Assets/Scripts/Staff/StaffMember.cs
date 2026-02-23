@@ -511,6 +511,16 @@ namespace ThemeParkGame.Staff
             staffRoomTarget = room;
         }
 
+        /// <summary>
+        /// 外部（StaffManager）から休息を指示するための公開メソッド。
+        /// ストライキ中でない場合に休息状態へ遷移する。
+        /// </summary>
+        public void SendToRest()
+        {
+            if (IsOnStrike) return;
+            BeginResting();
+        }
+
         // ============================================================
         // パトロール
         // ============================================================

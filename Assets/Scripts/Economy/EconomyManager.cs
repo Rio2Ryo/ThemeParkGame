@@ -94,6 +94,9 @@ namespace ThemeParkGame.Economy
         /// <summary>現在の所持金</summary>
         public float CurrentBalance { get; private set; }
 
+        /// <summary>CurrentBalanceの別名。UI層からの簡易アクセス用。</summary>
+        public float CurrentMoney => CurrentBalance;
+
         /// <summary>価格管理システム</summary>
         public PricingSystem Pricing { get; private set; }
 
@@ -321,6 +324,17 @@ namespace ThemeParkGame.Economy
         public bool CanAfford(float amount)
         {
             return CurrentBalance >= amount;
+        }
+
+        /// <summary>
+        /// 汎用の支出メソッド。UI層からカテゴリを意識せずに支出する場合に使用する。
+        /// 内部的にはPayExpense(amount, ExpenseCategory.Construction)を呼び出す。
+        /// </summary>
+        /// <param name="amount">支出額（正の値）</param>
+        /// <returns>支払いが成功したか</returns>
+        public bool SpendMoney(float amount)
+        {
+            return PayExpense(amount, ExpenseCategory.Construction);
         }
 
         // ================================================================

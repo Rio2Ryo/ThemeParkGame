@@ -772,6 +772,53 @@ namespace ThemeParkGame.UI
     /// </summary>
     public static class BuildItemDatabase
     {
+        // BuildCategory → ResearchCategory のマッピング
+        // アトラクション系カテゴリはResearchCategory.Attractions、
+        // ショップ系はResearchCategory.Shops、施設系はResearchCategory.Facilities
+        private static readonly Dictionary<BuildPanelUI.BuildCategory, ThemeParkGame.Attraction.ResearchCategory> CategoryToResearchCategory
+            = new Dictionary<BuildPanelUI.BuildCategory, ThemeParkGame.Attraction.ResearchCategory>
+        {
+            // アトラクション系
+            { BuildPanelUI.BuildCategory.GForce,             ThemeParkGame.Attraction.ResearchCategory.Attractions },
+            { BuildPanelUI.BuildCategory.VerticalRotation,   ThemeParkGame.Attraction.ResearchCategory.Attractions },
+            { BuildPanelUI.BuildCategory.HorizontalRotation, ThemeParkGame.Attraction.ResearchCategory.Attractions },
+            { BuildPanelUI.BuildCategory.Observation,        ThemeParkGame.Attraction.ResearchCategory.Attractions },
+            { BuildPanelUI.BuildCategory.ShowAttraction,     ThemeParkGame.Attraction.ResearchCategory.Attractions },
+            { BuildPanelUI.BuildCategory.RideAttraction,     ThemeParkGame.Attraction.ResearchCategory.Attractions },
+            // ショップ系
+            { BuildPanelUI.BuildCategory.FoodShop,           ThemeParkGame.Attraction.ResearchCategory.Shops },
+            { BuildPanelUI.BuildCategory.DrinkShop,          ThemeParkGame.Attraction.ResearchCategory.Shops },
+            { BuildPanelUI.BuildCategory.SouvenirShop,       ThemeParkGame.Attraction.ResearchCategory.Shops },
+            // 施設系
+            { BuildPanelUI.BuildCategory.Toilet,             ThemeParkGame.Attraction.ResearchCategory.Facilities },
+            { BuildPanelUI.BuildCategory.Bench,              ThemeParkGame.Attraction.ResearchCategory.Facilities },
+            { BuildPanelUI.BuildCategory.TrashCan,           ThemeParkGame.Attraction.ResearchCategory.Facilities },
+            { BuildPanelUI.BuildCategory.InfoBoard,          ThemeParkGame.Attraction.ResearchCategory.Facilities },
+            { BuildPanelUI.BuildCategory.StaffRoom,          ThemeParkGame.Attraction.ResearchCategory.Facilities },
+            { BuildPanelUI.BuildCategory.ResearchLab,        ThemeParkGame.Attraction.ResearchCategory.Facilities },
+        };
+
+        // BuildCategory → FacilityType のマッピング（研究結果フィルタ用）
+        private static readonly Dictionary<BuildPanelUI.BuildCategory, FacilityType> CategoryToFacilityType
+            = new Dictionary<BuildPanelUI.BuildCategory, FacilityType>
+        {
+            { BuildPanelUI.BuildCategory.GForce,             FacilityType.Attraction },
+            { BuildPanelUI.BuildCategory.VerticalRotation,   FacilityType.Attraction },
+            { BuildPanelUI.BuildCategory.HorizontalRotation, FacilityType.Attraction },
+            { BuildPanelUI.BuildCategory.Observation,        FacilityType.Attraction },
+            { BuildPanelUI.BuildCategory.ShowAttraction,     FacilityType.Attraction },
+            { BuildPanelUI.BuildCategory.RideAttraction,     FacilityType.Attraction },
+            { BuildPanelUI.BuildCategory.FoodShop,           FacilityType.FoodShop },
+            { BuildPanelUI.BuildCategory.DrinkShop,          FacilityType.DrinkShop },
+            { BuildPanelUI.BuildCategory.SouvenirShop,       FacilityType.SouvenirShop },
+            { BuildPanelUI.BuildCategory.Toilet,             FacilityType.Toilet },
+            { BuildPanelUI.BuildCategory.Bench,              FacilityType.Bench },
+            { BuildPanelUI.BuildCategory.TrashCan,           FacilityType.TrashCan },
+            { BuildPanelUI.BuildCategory.InfoBoard,          FacilityType.InfoBoard },
+            { BuildPanelUI.BuildCategory.StaffRoom,          FacilityType.StaffRoom },
+            { BuildPanelUI.BuildCategory.ResearchLab,        FacilityType.ResearchLab },
+        };
+
         /// <summary>カテゴリに一致するアイテム一覧を取得する</summary>
         public static List<BuildItemData> GetItemsByCategory(BuildPanelUI.BuildCategory category)
         {
@@ -782,88 +829,60 @@ namespace ThemeParkGame.UI
 
             var researchManager = GameManager.Instance.ResearchManager;
 
-            switch (category)
+            // このBuildCategoryに対応するResearchCategoryとFacilityTypeを取得
+            if (!CategoryToResearchCategory.TryGetValue(category, out var researchCategory))
+                return items;
+            if (!CategoryToFacilityType.TryGetValue(category, out var facilityType))
+                return items;
+
+            // 対応する研究カテゴリの完了済み研究からアイテムを取得
+            foreach (var research in researchManager.GetResearchByCategory(researchCategory))
             {
-                case BuildPanelUI.BuildCategory.Attractions:
-                    foreach (var research in researchManager.GetResearchByCategory(
-                        ThemeParkGame.Attraction.ResearchCategory.Attractions))
-                    {
-                        if (research.CurrentState == ThemeParkGame.Attraction.ResearchState.Completed)
-                        {
-                            items.Add(new BuildItemData
-                            {
-                                ItemId = research.UnlockedAttractionId,
-                                DisplayName = research.NameJP,
-                                Description = research.Description,
-                                BuildCost = research.ResearchCost * 2,
-                                GridWidth = 3,
-                                GridHeight = 3,
-                                IsUnlocked = true
-                            });
-                        }
-                    }
-                    break;
+                // UnlockedFacilityType でフィルタし、このBuildCategoryに該当するもののみ追加
+                if (research.CurrentState == ResearchState.Completed &&
+                    research.UnlockedFacilityType == facilityType)
+                {
+                    bool isAttraction = researchCategory == ThemeParkGame.Attraction.ResearchCategory.Attractions;
+                    string idSource = isAttraction ? research.UnlockedAttractionId : research.ResearchId;
+                    float cost = isAttraction ? research.ResearchCost * 2f : research.ResearchCost;
+                    float size = isAttraction ? 3f : 2f;
 
-                case BuildPanelUI.BuildCategory.Shops:
-                    foreach (var research in researchManager.GetResearchByCategory(
-                        ThemeParkGame.Attraction.ResearchCategory.Shops))
-                    {
-                        if (research.CurrentState == ThemeParkGame.Attraction.ResearchState.Completed)
-                        {
-                            items.Add(new BuildItemData
-                            {
-                                ItemId = research.ResearchId,
-                                DisplayName = research.NameJP,
-                                Description = research.Description,
-                                BuildCost = research.ResearchCost,
-                                GridWidth = 2,
-                                GridHeight = 2,
-                                IsUnlocked = true
-                            });
-                        }
-                    }
-                    break;
-
-                case BuildPanelUI.BuildCategory.Facilities:
-                    foreach (var research in researchManager.GetResearchByCategory(
-                        ThemeParkGame.Attraction.ResearchCategory.Facilities))
-                    {
-                        if (research.CurrentState == ThemeParkGame.Attraction.ResearchState.Completed)
-                        {
-                            items.Add(new BuildItemData
-                            {
-                                ItemId = research.ResearchId,
-                                DisplayName = research.NameJP,
-                                Description = research.Description,
-                                BuildCost = research.ResearchCost,
-                                GridWidth = 2,
-                                GridHeight = 2,
-                                IsUnlocked = true
-                            });
-                        }
-                    }
-                    // トイレとベンチはデフォルトで利用可能
                     items.Add(new BuildItemData
                     {
-                        ItemId = "TOILET",
-                        DisplayName = "トイレ",
-                        Description = "来場者のトイレ欲求を満たす基本施設",
-                        BuildCost = 500,
-                        GridWidth = 1,
-                        GridHeight = 1,
+                        ItemId = idSource?.GetHashCode() ?? 0,
+                        DisplayName = research.NameJP,
+                        Description = research.Description,
+                        Cost = cost,
+                        PlacementSize = new Vector3(size, 1f, size),
                         IsUnlocked = true
                     });
-                    items.Add(new BuildItemData
-                    {
-                        ItemId = "BENCH",
-                        DisplayName = "ベンチ",
-                        Description = "来場者が休憩できるベンチ",
-                        BuildCost = 100,
-                        GridWidth = 1,
-                        GridHeight = 1,
-                        IsUnlocked = true
-                    });
-                    break;
+                }
+            }
+
+            // トイレとベンチはデフォルトで利用可能（研究不要）
+            if (category == BuildPanelUI.BuildCategory.Toilet)
+            {
+                items.Add(new BuildItemData
+                {
+                    ItemId = "TOILET".GetHashCode(),
+                    DisplayName = "トイレ",
+                    Description = "来場者のトイレ欲求を満たす基本施設",
+                    Cost = 500f,
+                    PlacementSize = new Vector3(1f, 1f, 1f),
+                    IsUnlocked = true
+                });
+            }
+            else if (category == BuildPanelUI.BuildCategory.Bench)
+            {
+                items.Add(new BuildItemData
+                {
+                    ItemId = "BENCH".GetHashCode(),
+                    DisplayName = "ベンチ",
+                    Description = "来場者が休憩できるベンチ",
+                    Cost = 100f,
+                    PlacementSize = new Vector3(1f, 1f, 1f),
+                    IsUnlocked = true
+                });
             }
 
             return items;

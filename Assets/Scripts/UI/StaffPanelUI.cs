@@ -10,6 +10,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using ThemeParkGame.Core;
+using ThemeParkGame.Staff;
 
 namespace ThemeParkGame.UI
 {
@@ -316,22 +317,22 @@ namespace ThemeParkGame.UI
             var gm = GameManager.Instance;
             if (gm?.StaffManager == null || gm.EconomyManager == null) return;
 
-            int hireCost = HireCostTable.GetValueOrDefault(_selectedStaffType, 2000);
-
-            if (gm.EconomyManager.CurrentMoney < hireCost)
+            // 資金チェック（StaffManager.HireStaff内でも行われるが、UIフィードバック用に事前チェック）
+            float hireCost = gm.StaffManager.GetHiringCost(_selectedStaffType);
+            if (!gm.EconomyManager.CanAfford(hireCost))
             {
                 Debug.LogWarning("[StaffPanelUI] 雇用資金が不足しています");
                 return;
             }
 
-            // 雇用実行
-            gm.EconomyManager.SpendMoney(hireCost);
-            int newStaffId = gm.StaffManager.HireStaff(_selectedStaffType);
+            // 雇用実行（費用はStaffManager内で処理される）
+            // スポーン位置はパークの入口付近をデフォルトとする
+            Vector3 spawnPosition = gm.transform.position;
+            StaffMember newStaff = gm.StaffManager.HireStaff(_selectedStaffType, spawnPosition);
 
-            if (newStaffId >= 0)
+            if (newStaff != null)
             {
-                GameEvents.FireStaffHired(newStaffId, _selectedStaffType);
-                Debug.Log($"[StaffPanelUI] スタッフ雇用完了: {_selectedStaffType}, ID={newStaffId}");
+                Debug.Log($"[StaffPanelUI] スタッフ雇用完了: {_selectedStaffType}, ID={newStaff.Id}");
             }
 
             // リスト更新

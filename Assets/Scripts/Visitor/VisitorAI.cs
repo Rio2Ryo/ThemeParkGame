@@ -126,6 +126,10 @@ namespace ThemeParkGame.Visitor
         /// <summary>アクティブかどうか（初期化済みかつ退園していない）</summary>
         public bool IsActive => isInitialized && currentState != VisitorBehaviorState.LeavingPark;
 
+        /// <summary>現在の感情バブルタイプ</summary>
+        public EmotionBubbleType CurrentEmotionType =>
+            emotionBubble != null ? emotionBubble.CurrentType : EmotionBubbleType.Resting;
+
         // ---- Unity ライフサイクル ----
 
         private void Awake()
@@ -822,7 +826,7 @@ namespace ThemeParkGame.Visitor
                     parameters.ModifyHappiness(happyBonus);
                     profile.RecordSouvenirPurchase();
                     if (emotionBubble != null)
-                        emotionBubble.ShowBubble(EmotionBubbleType.Happy, EmotionBubbleColor.LightBlue);
+                        emotionBubble.ShowBubble(EmotionBubbleType.LovingIt, EmotionBubbleColor.Blue);
                     Debug.Log($"[VisitorAI] Visitor {visitorId} bought souvenir for {actualPrice}. {parameters}");
                     TransitionTo(VisitorBehaviorState.Idle);
                     break;

@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using ThemeParkGame.Core;
+using ThemeParkGame.Attraction;
 
 namespace ThemeParkGame.Staff
 {

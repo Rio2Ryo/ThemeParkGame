@@ -278,9 +278,8 @@ namespace ThemeParkGame.Core
 
         private void LoadConfigData()
         {
-            // AttractionDatabaseへのJSONロード
-            var attractionDb = AttractionDatabase.Instance;
-            if (attractionDb != null && attractionDb.IsLoaded)
+            // AttractionDatabaseへのJSONロード（静的クラスのため直接参照）
+            if (AttractionDatabase.Count > 0)
             {
                 if (verboseLogging)
                     Debug.Log("[SceneBootstrapper] AttractionDatabase 既にロード済み");

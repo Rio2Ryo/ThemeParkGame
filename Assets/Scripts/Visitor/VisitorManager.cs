@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using ThemeParkGame.Core;
+using ThemeParkGame.UI;
 
 namespace ThemeParkGame.Visitor
 {
@@ -469,6 +470,56 @@ namespace ThemeParkGame.Visitor
         public IReadOnlyList<VisitorAI> GetAllActiveVisitors()
         {
             return activeVisitors.AsReadOnly();
+        }
+
+        /// <summary>
+        /// UI表示用の来場者データを取得する。
+        /// VisitorInfoPanelなどのUI側から呼び出される。
+        /// </summary>
+        /// <param name="visitorId">来場者ID</param>
+        /// <returns>表示用データ。見つからない場合はnull</returns>
+        public VisitorDisplayData GetVisitorData(int visitorId)
+        {
+            VisitorAI visitor = FindVisitorById(visitorId);
+            if (visitor == null) return null;
+
+            var data = new VisitorDisplayData
+            {
+                VisitorId = visitor.VisitorId,
+                Name = visitor.Profile?.VisitorName ?? $"Visitor #{visitorId}",
+                Type = visitor.Type,
+                Portrait = null, // ポートレートはプレハブ側で設定
+
+                // パラメータを0-1に正規化（UIバーは0-1を想定）
+                Happiness = visitor.Parameters.Happiness / VisitorParameters.MaxValue,
+                Hunger = visitor.Parameters.Hunger / VisitorParameters.MaxValue,
+                Thirst = visitor.Parameters.Thirst / VisitorParameters.MaxValue,
+                ToiletUrgency = visitor.Parameters.ToiletNeed / VisitorParameters.MaxValue,
+                Energy = 1f - (visitor.Parameters.Nausea / VisitorParameters.MaxValue), // 体力は吐き気の逆
+                Nausea = visitor.Parameters.Nausea / VisitorParameters.MaxValue,
+                Excitement = visitor.Parameters.Excitement / VisitorParameters.MaxValue,
+
+                // 状態
+                CurrentEmotion = visitor.CurrentEmotionType,
+                CurrentBehaviorState = visitor.CurrentState,
+                CashRemaining = visitor.Parameters.Cash,
+            };
+
+            // 訪問履歴を変換
+            if (visitor.Profile?.AttractionMemories != null)
+            {
+                foreach (var memory in visitor.Profile.AttractionMemories)
+                {
+                    data.VisitedAttractions.Add(new VisitedAttractionEntry
+                    {
+                        AttractionId = memory.AttractionId,
+                        AttractionName = memory.AttractionName,
+                        SatisfactionRating = Mathf.Clamp01((memory.SatisfactionScore + 100f) / 200f)
+                    });
+                }
+            }
+
+            return data;
         }
 
         // ---- 統計 ----
