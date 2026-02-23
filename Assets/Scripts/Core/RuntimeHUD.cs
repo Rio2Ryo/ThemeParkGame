@@ -37,6 +37,7 @@ namespace ThemeParkGame.Core
         private string _happinessText = "---";
         private string _timeText = "---";
         private string _revenueText = "---";
+        private string _totalRevenueText = "---";
         private string _weatherText = "---";
         private int _currentSpeed = 1;
 
@@ -131,7 +132,8 @@ namespace ThemeParkGame.Core
             {
                 float money = gm.EconomyManager.CurrentMoney;
                 _moneyText = $"${money:N0}";
-                _revenueText = $"収入: ${gm.EconomyManager.CurrentMonthRevenue:N0}  支出: ${gm.EconomyManager.CurrentMonthExpenses:N0}";
+                _totalRevenueText = $"総収益: ${gm.EconomyManager.TotalRevenueEarned:N0}";
+                _revenueText = $"月収: ${gm.EconomyManager.CurrentMonthRevenue:N0}  月支出: ${gm.EconomyManager.CurrentMonthExpenses:N0}";
             }
 
             // 来場者
@@ -217,8 +219,8 @@ namespace ThemeParkGame.Core
 
         private void DrawTopBar(float sw)
         {
-            float topBarHeight = 82f;
-            float topBarWidth = Mathf.Min(sw - 20f, 680f);
+            float topBarHeight = 100f;
+            float topBarWidth = Mathf.Min(sw - 20f, 720f);
             float topBarX = (sw - topBarWidth) * 0.5f;
 
             GUI.Box(new Rect(topBarX, 5f, topBarWidth, topBarHeight), "", _boxStyle);
@@ -233,11 +235,15 @@ namespace ThemeParkGame.Core
             // 情報行1: 資金 | 来場者 | 満足度
             float colW = (topBarWidth - 36f) / 3f;
             GUI.Label(new Rect(x, y, colW, 20f), $"資金: {_moneyText}", _labelStyle);
-            GUI.Label(new Rect(x + colW, y, colW, 20f), $"来場者: {_visitorText}", _labelStyle);
+            GUI.Label(new Rect(x + colW, y, colW, 20f), $"入場者: {_visitorText}", _labelStyle);
             GUI.Label(new Rect(x + colW * 2f, y, colW, 20f), $"満足度: {_happinessText}", _labelStyle);
             y += 22f;
 
-            // 情報行2: 収支
+            // 情報行2: 総収益
+            GUI.Label(new Rect(x, y, topBarWidth - 24f, 18f), _totalRevenueText, _greenLabelStyle);
+            y += 18f;
+
+            // 情報行3: 月次収支
             GUI.Label(new Rect(x, y, topBarWidth - 24f, 18f), _revenueText, _smallLabelStyle);
         }
 
@@ -247,14 +253,14 @@ namespace ThemeParkGame.Core
 
         private void DrawSpeedControls(float sw)
         {
-            float speedBoxW = 200f;
+            float speedBoxW = 220f;
             float speedBoxH = 40f;
             float speedX = sw - speedBoxW - 10f;
-            float speedY = 95f;
+            float speedY = 112f;
 
             GUI.Box(new Rect(speedX, speedY, speedBoxW, speedBoxH), "", _boxStyle);
 
-            float btnW = 42f;
+            float btnW = 46f;
             float btnX = speedX + 8f;
             float btnY = speedY + 6f;
 
@@ -262,16 +268,16 @@ namespace ThemeParkGame.Core
                 GameManager.Instance.SpeedLevel = 0;
             btnX += btnW + 4f;
 
-            if (DrawSpeedButton(btnX, btnY, btnW, ">", _currentSpeed == 1))
+            if (DrawSpeedButton(btnX, btnY, btnW, "x1", _currentSpeed == 1))
                 GameManager.Instance.SpeedLevel = 1;
             btnX += btnW + 4f;
 
-            if (DrawSpeedButton(btnX, btnY, btnW, ">>", _currentSpeed == 2))
+            if (DrawSpeedButton(btnX, btnY, btnW, "x2", _currentSpeed == 2))
                 GameManager.Instance.SpeedLevel = 2;
             btnX += btnW + 4f;
 
-            if (DrawSpeedButton(btnX, btnY, btnW, ">>>", _currentSpeed == 3))
-                GameManager.Instance.SpeedLevel = 3;
+            if (DrawSpeedButton(btnX, btnY, btnW, "x5", _currentSpeed == 5))
+                GameManager.Instance.SpeedLevel = 5;
         }
 
         // ================================================================

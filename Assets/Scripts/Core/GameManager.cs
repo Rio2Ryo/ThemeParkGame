@@ -51,7 +51,7 @@ namespace ThemeParkGame.Core
             get => _speedLevel;
             set
             {
-                _speedLevel = Mathf.Clamp(value, 0, 3);
+                _speedLevel = Mathf.Clamp(value, 0, 5);
                 Time.timeScale = _speedLevel * gameSpeedMultiplier;
             }
         }
