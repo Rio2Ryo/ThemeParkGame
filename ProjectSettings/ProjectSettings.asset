@@ -89,7 +89,7 @@ PlayerSettings:
     iPhone: 1
   m_BuildTargetGraphicsAPIs:
     WebGL:
-    - 11
+    - 15
   m_BuildTargetBatching:
     WebGL:
       staticBatching: 1
