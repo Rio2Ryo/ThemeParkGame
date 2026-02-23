@@ -223,7 +223,7 @@ namespace ThemeParkGame.Visitor
             float breath = Mathf.Sin(t * 0.8f) * 0.015f;
             float sink = -0.05f; // 座っている感
             _bodyTransform.localPosition = _baseLocalPos + new Vector3(0f, sink + breath, 0f);
-            _bodyTransform.localScale = _baseLocalScale * new Vector3(1.05f, 0.9f, 1.05f);
+            _bodyTransform.localScale = Vector3.Scale(_baseLocalScale, new Vector3(1.05f, 0.9f, 1.05f));
         }
 
         /// <summary>退園: ボブしながら徐々に色が薄くなる</summary>
