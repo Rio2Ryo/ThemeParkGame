@@ -276,8 +276,14 @@ namespace ThemeParkGame.Visitor
             if (visitorPrefab == null) return;
             if (activeVisitors.Count >= maxVisitors) return;
 
-            VisitorType type = DetermineVisitorType();
-            SpawnVisitor(type);
+            // 1〜3人を一度にスポーン（ユーザー要件: 30秒ごとに1〜3人）
+            int count = UnityEngine.Random.Range(1, 4);
+            for (int i = 0; i < count; i++)
+            {
+                if (activeVisitors.Count >= maxVisitors) break;
+                VisitorType type = DetermineVisitorType();
+                SpawnVisitor(type);
+            }
         }
 
         /// <summary>
@@ -366,7 +372,7 @@ namespace ThemeParkGame.Visitor
 
             // 知名度倍率（高いほど短く）
             float fame = GetParkFame();
-            float fameMultiplier = Mathf.Lerp(2.0f, 0.3f, fame / 100f);
+            float fameMultiplier = Mathf.Lerp(1.0f, 0.3f, fame / 100f);
             interval *= fameMultiplier;
 
             // 天候倍率
@@ -389,7 +395,7 @@ namespace ThemeParkGame.Visitor
             }
 
             // 最小/最大間隔の制限
-            return Mathf.Clamp(interval, 1f, 30f);
+            return Mathf.Clamp(interval, 5f, 60f);
         }
 
         /// <summary>スポーン位置を取得する（少しランダムにずらす）</summary>

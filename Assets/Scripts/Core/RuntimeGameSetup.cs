@@ -367,7 +367,7 @@ namespace ThemeParkGame.Core
 
             // 公開メソッドで設定
             vm.ConfigureRuntime(prefab, spawnPoint, exitPoint,
-                maxVis: 50, poolSize: 10, spawnInterval: 3f);
+                maxVis: 50, poolSize: 10, spawnInterval: 30f);
 
             // 再初期化
             vm.Initialize();
