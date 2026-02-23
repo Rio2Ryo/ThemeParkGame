@@ -354,21 +354,115 @@ git clone https://github.com/Rio2Ryo/ThemeParkGame.git
 ### Unity での初期設定
 
 1. **Unity Hub** でプロジェクトを開く
-2. **Build Settings** → **Switch Platform** で iOS または Android に切り替え
+2. **Build Settings** → **Switch Platform** で iOS / Android / WebGL に切り替え
 3. **Player Settings** で以下を設定:
    - Company Name / Product Name
    - Bundle Identifier
    - Minimum API Level (Android 7.0+ / iOS 14.0+)
-4. **Scene構築**: `Assets/Scenes/` にメインシーンを作成し、以下のGameObjectを配置:
-   - `GameManager` (GameManager, TimeManager, SaveSystem をアタッチ)
-   - `AudioManager` (AudioManager をアタッチ, DontDestroyOnLoad)
-   - `InputManager` (InputManager をアタッチ)
-   - `ParkManager` (ParkManager, WeatherSystem, ParkRating をアタッチ)
-   - `VisitorManager` (VisitorManager をアタッチ)
-   - `StaffManager` (StaffManager をアタッチ)
-   - `EconomyManager` (EconomyManager をアタッチ)
-   - `AIConversationManager` (AIConversationManager, DynamicQuestSystem, SNSReputationSystem をアタッチ)
-   - `Canvas` (HUDController, BuildPanelUI, StaffPanelUI, VisitorInfoPanel, ConversationUI, TutorialSystem をアタッチ)
+
+### SampleScene のセットアップ
+
+新しいシーンを作成するか、`Assets/Scenes/SampleScene.unity` を開いて以下のGameObjectを配置します。
+`SceneBootstrapper` コンポーネントをシーンに1つ配置しておくと、GameManager が存在しない場合に自動初期化されます。
+
+#### 方法A: SceneBootstrapper による自動構築（推奨）
+
+1. 空のシーンを作成: **File → New Scene → Empty Scene**
+2. 空の GameObject を作成: **GameObject → Create Empty** → 名前を `Bootstrapper` に変更
+3. `SceneBootstrapper` コンポーネントをアタッチ
+4. Play → GameManager・カメラ・ライト・地面が自動生成される
+
+SceneBootstrapper は以下を自動作成します:
+- `GameManager` (全サブシステムを含むシングルトン)
+- `MainCamera` (God View: 位置 0,30,-20 / 角度 60°)
+- `DirectionalLight` (太陽光)
+- `Ground` (100×100 の地面メッシュ)
+- `ParkEntrance` (パーク出口タグ付き)
+
+#### 方法B: 手動でシーンを構築
+
+以下の階層構造でGameObjectを配置してください:
+
+```
+SampleScene
+├── --- Managers ---
+│   ├── GameManager          ← GameManager.cs をアタッチ
+│   │   (自動追加: TimeManager, EconomyManager, ParkManager,
+│   │    VisitorManager, StaffManager, ResearchManager,
+│   │    WeatherSystem, AIConversationManager, AttractionManager)
+│   ├── AudioManager         ← AudioManager.cs をアタッチ
+│   └── InputManager         ← InputManager.cs をアタッチ
+│
+├── --- Environment ---
+│   ├── Main Camera          [Camera, AudioListener]
+│   ├── Directional Light    [Light]
+│   ├── Ground               [MeshRenderer, BoxCollider] Layer:Ground
+│   └── ParkEntrance         Tag: "ParkExit"
+│
+├── --- Park Content ---
+│   ├── Attractions          (アトラクション配置の親オブジェクト)
+│   ├── Shops                (ショップ配置の親オブジェクト)
+│   └── Facilities           (トイレ・ベンチ等の親オブジェクト)
+│
+├── --- Entities ---
+│   ├── Visitors             (来場者インスタンスの親)
+│   └── Staff                (スタッフインスタンスの親)
+│
+├── --- UI ---
+│   ├── Canvas               [Canvas, CanvasScaler, GraphicRaycaster]
+│   │   ├── HUD              ← HUDController.cs
+│   │   ├── BuildPanel       ← BuildPanelUI.cs (初期非表示)
+│   │   ├── StaffPanel       ← StaffPanelUI.cs (初期非表示)
+│   │   ├── VisitorInfoPanel ← VisitorInfoPanel.cs (初期非表示)
+│   │   ├── ConversationUI   ← ConversationUI.cs (初期非表示)
+│   │   └── TutorialPanel    ← TutorialSystem.cs
+│   └── EventSystem          [EventSystem, StandaloneInputModule]
+│
+└── --- Navigation ---
+    └── NavMeshSurface       [NavMeshSurface] Ground上にBake
+```
+
+> **重要**: `GameManager` は `GetOrAddComponent<T>()` により、必要なサブシステムを自動的に同一 GameObject に追加します。手動でサブシステムをアタッチする必要はありません。
+
+### マネージャー配置ガイド
+
+| コンポーネント | 配置先 | 説明 |
+|---|---|---|
+| `GameManager` | GameManager オブジェクト | シングルトン。全サブシステムを自動追加。DontDestroyOnLoad |
+| `AttractionManager` | GameManager に自動追加 | アトラクションの建設→稼働→故障→修理のライフサイクル管理 |
+| `StaffManager` | GameManager に自動追加 | スタッフ雇用・配置・給与・疲労管理 |
+| `VisitorManager` | GameManager に自動追加 | 来場者スポーン・プール管理。Inspector で `visitorPrefab` を設定 |
+| `EconomyManager` | GameManager に自動追加 | 収支管理・ローン・財務レポート |
+| `ParkManager` | GameManager に自動追加 | グリッドベース施設配置・ゾーン管理 |
+| `AudioManager` | 専用オブジェクト (DontDestroyOnLoad) | BGM/SE/環境音。Inspector で AudioClip を設定 |
+| `InputManager` | 専用オブジェクト | タッチ/マウス入力検出・カメラ制御 |
+
+### アトラクション・施設の配置
+
+1. `Attractions` 親オブジェクトの子として空のGameObjectを作成
+2. `Attraction` コンポーネントをアタッチ
+3. Inspector で `AttractionData` (ScriptableObject) を設定
+4. `BoxCollider` を設定（自動追加される）
+5. Play → `AttractionManager.RegisterAttraction()` で自動登録
+
+ショップ・トイレ・ベンチも同様に、対応するコンポーネント (`Shop`, `ToiletFacility`, `BenchFacility`) をアタッチして配置します。
+
+### 来場者 (Visitor) プレハブ
+
+`VisitorManager` の Inspector で `visitorPrefab` に来場者プレハブを設定してください。プレハブには以下が必要です:
+
+- `NavMeshAgent` — パス探索用
+- `CapsuleCollider` — 当たり判定
+- `VisitorAI` — 行動AI (自動で VisitorParameters, VisitorProfile を内包)
+- `EmotionBubble` (子オブジェクト) — 感情バブル表示
+
+### NavMesh の設定
+
+1. Ground オブジェクトを選択
+2. **Window → AI → Navigation** を開く
+3. Ground を **Navigation Static** に設定
+4. **Bake** タブで NavMesh をベイク
+5. 各施設の `BoxCollider` が **NavMesh Obstacle** として機能
 
 ### LLM APIキーの設定
 

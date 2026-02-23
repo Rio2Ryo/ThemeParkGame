@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using ThemeParkGame.Core;
 using ThemeParkGame.Economy;
+using ThemeParkGame.Visitor;
 
 namespace ThemeParkGame.Attraction
 {
@@ -270,6 +271,7 @@ namespace ThemeParkGame.Attraction
 
         /// <summary>
         /// 乗車フェーズ。キューから定員まで乗客をライドに移す。
+        /// 各来場者の VisitorAI に搭乗開始を通知する。
         /// </summary>
         private void UpdateLoading()
         {
@@ -279,8 +281,11 @@ namespace ThemeParkGame.Attraction
             int capacity = EffectiveCapacity;
             while (_currentRiders.Count < capacity && _visitorQueue.Count > 0)
             {
-                int visitorId = _visitorQueue.Dequeue();
-                _currentRiders.Add(visitorId);
+                int vid = _visitorQueue.Dequeue();
+                _currentRiders.Add(vid);
+
+                // VisitorAI に搭乗開始を通知（WaitingInQueue → RidingAttraction）
+                NotifyVisitorStartRiding(vid);
             }
 
             // 乗車時間が経過したら運転開始
@@ -378,21 +383,18 @@ namespace ThemeParkGame.Attraction
                 GameEvents.FireRevenueEarned(cycleRevenue);
             }
 
-            // 各乗客の満足度評価と嘔吐判定
-            foreach (int visitorId in _currentRiders)
+            // 各乗客の満足度評価・搭乗効果適用・嘔吐判定
+            float excitementGain = EffectiveExcitement;
+            float nauseaGain = GetEffectiveNauseaFactor() * 30f; // 嘔吐因子を吐き気増加量に変換
+
+            foreach (int vid in _currentRiders)
             {
-                float satisfaction = CalculateRiderSatisfaction(visitorId);
+                float satisfaction = CalculateRiderSatisfaction(vid);
                 RecordSatisfaction(satisfaction);
 
-                // 嘔吐判定: 嘔吐率に基づいて確率的に発生
-                float effectiveNausea = GetEffectiveNauseaFactor();
-                if (UnityEngine.Random.value < effectiveNausea)
-                {
-                    GameEvents.FireVisitorVomited(visitorId);
-                }
-
-                // 来場者に乗車完了を通知
-                OnVisitorLeave(visitorId);
+                // VisitorAI に搭乗完了を通知（RidingAttraction → Idle + 効果適用 + 記憶記録）
+                NotifyVisitorFinishRiding(vid, excitementGain, nauseaGain,
+                    satisfaction * 100f, FacilityId, DisplayName);
             }
 
             _currentRiders.Clear();
@@ -500,16 +502,23 @@ namespace ThemeParkGame.Attraction
         {
             if (IsBrokenDown || HasAccident) return;
 
-            // 乗客がいる場合は緊急降車
+            // 乗客がいる場合は緊急降車（満足度ペナルティ付き）
             if (_currentRiders.Count > 0)
             {
-                foreach (int visitorId in _currentRiders)
+                foreach (int vid in _currentRiders)
                 {
-                    // 故障時の降車は満足度ペナルティ
                     RecordSatisfaction(0.1f);
-                    OnVisitorLeave(visitorId);
+                    // 故障時: 興奮0、吐き気大、満足度マイナスで強制降車
+                    NotifyVisitorFinishRiding(vid, 0f, 15f, -30f, FacilityId, DisplayName);
                 }
                 _currentRiders.Clear();
+            }
+
+            // 待ち行列の来場者も解放する（WaitingInQueue → Idle）
+            while (_visitorQueue.Count > 0)
+            {
+                int vid = _visitorQueue.Dequeue();
+                NotifyVisitorQueueAbandoned(vid);
             }
 
             currentCycleState = RideCycleState.BrokenDown;
@@ -532,7 +541,11 @@ namespace ThemeParkGame.Attraction
             TotalAccidentCount++;
 
             // 待ち行列の来場者を全員追い出す
-            _visitorQueue.Clear();
+            while (_visitorQueue.Count > 0)
+            {
+                int vid = _visitorQueue.Dequeue();
+                NotifyVisitorQueueAbandoned(vid);
+            }
 
             GameEvents.FireAttractionAccident(FacilityId);
             Debug.LogWarning($"[Attraction] 事故発生: {DisplayName} (ID: {FacilityId})");
@@ -651,9 +664,72 @@ namespace ThemeParkGame.Attraction
         /// </summary>
         public override void OnVisitorLeave(int visitorId)
         {
-            // 現在のライダーリストから除去（降車完了通知用）
+            // 現在のライダーリストから除去
             _currentRiders.Remove(visitorId);
         }
+
+        /// <summary>
+        /// 来場者が待ち行列から自主離脱する（忍耐切れ等）。
+        /// Queue は先頭以外の要素を直接削除できないため、再構築する。
+        /// </summary>
+        public void RemoveFromQueue(int visitorId)
+        {
+            if (_visitorQueue.Count == 0) return;
+
+            int count = _visitorQueue.Count;
+            for (int i = 0; i < count; i++)
+            {
+                int id = _visitorQueue.Dequeue();
+                if (id != visitorId)
+                {
+                    _visitorQueue.Enqueue(id);
+                }
+            }
+        }
+
+        // ---- VisitorAI 通知ヘルパー ----
+
+        /// <summary>VisitorAI を ID から解決する</summary>
+        private VisitorAI ResolveVisitorAI(int visitorId)
+        {
+            if (GameManager.Instance == null || GameManager.Instance.VisitorManager == null)
+                return null;
+            return GameManager.Instance.VisitorManager.FindVisitorById(visitorId);
+        }
+
+        /// <summary>来場者に搭乗開始を通知する（WaitingInQueue → RidingAttraction）</summary>
+        private void NotifyVisitorStartRiding(int visitorId)
+        {
+            var ai = ResolveVisitorAI(visitorId);
+            if (ai != null)
+            {
+                ai.StartRiding();
+            }
+        }
+
+        /// <summary>来場者に搭乗完了を通知する（RidingAttraction → Idle + 効果適用）</summary>
+        private void NotifyVisitorFinishRiding(int visitorId, float excitementGain,
+            float nauseaGain, float satisfactionGain, int attractionId, string attractionName)
+        {
+            var ai = ResolveVisitorAI(visitorId);
+            if (ai != null)
+            {
+                ai.FinishRiding(excitementGain, nauseaGain, satisfactionGain,
+                    attractionId, attractionName);
+            }
+        }
+
+        /// <summary>故障/事故により行列から追い出された来場者を通知する</summary>
+        private void NotifyVisitorQueueAbandoned(int visitorId)
+        {
+            var ai = ResolveVisitorAI(visitorId);
+            if (ai != null)
+            {
+                ai.OnQueueAbandoned();
+            }
+        }
+
+        // ---- 魅力度計算 ----
 
         /// <summary>
         /// 来場者にとってのこのアトラクションの魅力度を計算する。

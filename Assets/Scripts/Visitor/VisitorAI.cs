@@ -637,6 +637,10 @@ namespace ThemeParkGame.Visitor
                     emotionBubble.ShowBubble(EmotionBubbleType.LongWait, EmotionBubbleColor.Gray);
 
                 Debug.Log($"[VisitorAI] Visitor {visitorId} left queue after {queueWaitTimer:F0}s (patience exceeded)");
+
+                // アトラクションのキューから自分を除去する
+                LeaveAttractionQueue();
+
                 TransitionTo(VisitorBehaviorState.Idle);
                 return;
             }
@@ -837,9 +841,43 @@ namespace ThemeParkGame.Visitor
             switch (currentState)
             {
                 case VisitorBehaviorState.WalkingToAttraction:
-                    // アトラクション前に到着 → 行列に並ぶ
-                    queueWaitTimer = 0f;
-                    TransitionTo(VisitorBehaviorState.WaitingInQueue);
+                    // アトラクション前に到着 → チケット購入 → キューに登録
+                    if (currentTarget != null)
+                    {
+                        var attraction = currentTarget.GetComponent<ThemeParkGame.Attraction.Attraction>();
+                        if (attraction != null && attraction.CanAcceptVisitor(visitorId))
+                        {
+                            // チケット料金を支払う
+                            float ticketCost = attraction.TicketPrice;
+                            if (!parameters.SpendCash(ticketCost))
+                            {
+                                // お金が足りない → 別行動
+                                Debug.Log($"[VisitorAI] Visitor {visitorId} can't afford {attraction.DisplayName} (${ticketCost})");
+                                TransitionTo(VisitorBehaviorState.Idle);
+                            }
+                            else if (attraction.OnVisitorArrive(visitorId))
+                            {
+                                queueWaitTimer = 0f;
+                                TransitionTo(VisitorBehaviorState.WaitingInQueue);
+                            }
+                            else
+                            {
+                                // キューが満員 → 返金して別行動
+                                parameters.AddCash(ticketCost);
+                                Debug.Log($"[VisitorAI] Visitor {visitorId} couldn't join queue at {attraction.DisplayName}");
+                                TransitionTo(VisitorBehaviorState.Idle);
+                            }
+                        }
+                        else
+                        {
+                            Debug.Log($"[VisitorAI] Visitor {visitorId} arrived but attraction unavailable");
+                            TransitionTo(VisitorBehaviorState.Idle);
+                        }
+                    }
+                    else
+                    {
+                        TransitionTo(VisitorBehaviorState.Idle);
+                    }
                     break;
 
                 case VisitorBehaviorState.WalkingToShop:
@@ -1308,6 +1346,17 @@ namespace ThemeParkGame.Visitor
             actionTimer = 0f;
         }
 
+        /// <summary>アトラクションの行列から自分を除去する（忍耐切れ等）</summary>
+        private void LeaveAttractionQueue()
+        {
+            if (currentTarget == null) return;
+            var attraction = currentTarget.GetComponent<ThemeParkGame.Attraction.Attraction>();
+            if (attraction != null)
+            {
+                attraction.RemoveFromQueue(visitorId);
+            }
+        }
+
         /// <summary>時間のかかるアクション実行中かどうか</summary>
         private bool IsInAction()
         {
@@ -1366,22 +1415,29 @@ namespace ThemeParkGame.Visitor
             };
             profile.RecordAttractionVisit(memory);
 
-            // 搭乗料金
-            // アトラクション料金を取得（Attractionコンポーネントがあればそこから、なければランダム）
-            float rideCost = UnityEngine.Random.Range(5f, 25f);
-            var attrComp = currentTarget != null
-                ? currentTarget.GetComponent<ThemeParkGame.Attraction.Attraction>()
-                : null;
-            if (attrComp != null) rideCost = attrComp.TicketPrice;
-            if (parameters.SpendCash(rideCost))
-            {
-                GameEvents.FireRevenueEarned(rideCost);
-            }
+            // 注: チケット料金は行列参加時(OnReachedDestination)に支払い済み。
+            //     収益計上は Attraction.ProcessRideCompletion() → EconomyManager で実施。
 
             GameEvents.FireVisitorHappinessChanged(visitorId, parameters.Happiness);
             Debug.Log($"[VisitorAI] Visitor {visitorId} finished riding '{attractionName}'. {parameters}");
 
             TransitionTo(VisitorBehaviorState.Idle);
+        }
+
+        /// <summary>
+        /// アトラクション故障/事故により行列から追い出された時に呼ばれる。
+        /// WaitingInQueue → Idle に遷移し、幸福度にペナルティを適用する。
+        /// </summary>
+        public void OnQueueAbandoned()
+        {
+            if (currentState == VisitorBehaviorState.WaitingInQueue)
+            {
+                parameters.ModifyHappiness(-15f);
+                if (emotionBubble != null)
+                    emotionBubble.ShowBubble(EmotionBubbleType.LongWait, EmotionBubbleColor.Gray);
+                Debug.Log($"[VisitorAI] Visitor {visitorId} forced out of queue (attraction breakdown).");
+                TransitionTo(VisitorBehaviorState.Idle);
+            }
         }
 
         /// <summary>
