@@ -81,6 +81,10 @@ namespace ThemeParkGame.Core
         private Text[] _slotTexts;
         private Text _saveLoadMessage;
 
+        // ---- 通知バッジ ----
+        private GameObject _notifBadge;
+        private Text _notifBadgeText;
+
         // ---- データキャッシュ ----
         private float _updateTimer;
         private const float UpdateInterval = 0.3f;
@@ -455,6 +459,17 @@ namespace ThemeParkGame.Core
 
             var label = MakeLabel(rt, "Label", "MENU", 18, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(label.rectTransform);
+
+            // 通知バッジ（未読数）
+            _notifBadge = MakePanel(rt, "NotifBadge", 24f, 24f, new Color(0.9f, 0.25f, 0.2f));
+            var badgeRt = _notifBadge.GetComponent<RectTransform>();
+            badgeRt.anchorMin = badgeRt.anchorMax = new Vector2(1f, 1f);
+            badgeRt.pivot = new Vector2(0.5f, 0.5f);
+            badgeRt.anchoredPosition = new Vector2(4f, 4f);
+            _notifBadgeText = MakeLabel(badgeRt, "Count", "0", 12, Color.white,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(_notifBadgeText.rectTransform);
+            _notifBadge.SetActive(false);
         }
 
         // ================================================================
@@ -485,22 +500,27 @@ namespace ThemeParkGame.Core
             // 「続ける」ボタン
             MakeCenterButton(rt, "ResumeBtn", "続ける",
                 new Color(0.18f, 0.55f, 0.34f), new Color(0.22f, 0.65f, 0.40f), new Color(0.14f, 0.45f, 0.28f),
-                new Vector2(0f, 80f), OnResumeClicked);
+                new Vector2(0f, 120f), OnResumeClicked);
 
             // 「セーブ/ロード」ボタン
             MakeCenterButton(rt, "SaveLoadBtn", "SAVE / LOAD",
                 new Color(0.3f, 0.4f, 0.6f), new Color(0.38f, 0.5f, 0.72f), new Color(0.22f, 0.3f, 0.48f),
-                new Vector2(0f, 0f), OnSaveLoadClicked);
+                new Vector2(0f, 45f), OnSaveLoadClicked);
 
             // 「実績」ボタン
             MakeCenterButton(rt, "AchievementBtn", "ACHIEVEMENTS",
                 new Color(0.55f, 0.45f, 0.2f), new Color(0.65f, 0.55f, 0.28f), new Color(0.42f, 0.34f, 0.15f),
-                new Vector2(0f, -80f), OnAchievementClicked);
+                new Vector2(0f, -30f), OnAchievementClicked);
+
+            // 「イベントログ」ボタン
+            MakeCenterButton(rt, "EventLogBtn", "EVENT LOG",
+                new Color(0.3f, 0.45f, 0.55f), new Color(0.38f, 0.55f, 0.65f), new Color(0.22f, 0.35f, 0.44f),
+                new Vector2(0f, -105f), OnEventLogClicked);
 
             // 「ゲーム終了」ボタン
             MakeCenterButton(rt, "EndGameBtn", "ゲーム終了",
                 new Color(0.65f, 0.2f, 0.2f), new Color(0.75f, 0.3f, 0.3f), new Color(0.5f, 0.15f, 0.15f),
-                new Vector2(0f, -160f), OnEndGameClicked);
+                new Vector2(0f, -180f), OnEndGameClicked);
 
             _pauseOverlay.SetActive(false);
         }
@@ -850,6 +870,12 @@ namespace ThemeParkGame.Core
                 AchievementSystem.Instance.ShowAchievementList();
         }
 
+        private void OnEventLogClicked()
+        {
+            if (NotificationSystem.Instance != null)
+                NotificationSystem.Instance.ShowLogPanel();
+        }
+
         private void OnEndGameClicked()
         {
             if (GameManager.Instance == null) return;
@@ -1150,6 +1176,15 @@ namespace ThemeParkGame.Core
 
             // ---- シナリオ目標 ----
             RefreshScenarioPanel();
+
+            // ---- 通知バッジ ----
+            if (_notifBadge != null && NotificationSystem.Instance != null)
+            {
+                int unread = NotificationSystem.Instance.UnreadCount;
+                _notifBadge.SetActive(unread > 0);
+                if (_notifBadgeText != null && unread > 0)
+                    _notifBadgeText.text = unread > 99 ? "99+" : unread.ToString();
+            }
         }
 
         private void RefreshVisitorStates(VisitorManager vm)
