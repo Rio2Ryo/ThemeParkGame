@@ -510,8 +510,12 @@ namespace ThemeParkGame.Core
             GameObject prefab = CreateVisitorPrefab();
 
             // 公開メソッドで設定
+            var difficulty = GameManager.Instance.CurrentDifficulty;
+            float spawnInterval = GameManager.GetSpawnInterval(difficulty);
+            int maxVis = GameManager.GetMaxVisitors(difficulty);
+
             vm.ConfigureRuntime(prefab, spawnPoint, exitPoint,
-                maxVis: 50, poolSize: 10, spawnInterval: 5f);
+                maxVis: maxVis, poolSize: 10, spawnInterval: spawnInterval);
 
             // 再初期化
             vm.Initialize();

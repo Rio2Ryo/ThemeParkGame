@@ -197,6 +197,14 @@ namespace ThemeParkGame.Core
         Hard     // むずかしい
     }
 
+    /// <summary>ゲーム難易度（サンドボックスモード用）</summary>
+    public enum GameDifficulty
+    {
+        Easy,    // 簡単: スポーン遅め・初期資金多め
+        Normal,  // 普通: 標準設定
+        Hard     // 難しい: スポーン速い・初期資金少ない
+    }
+
     /// <summary>視点モード</summary>
     public enum ViewMode
     {

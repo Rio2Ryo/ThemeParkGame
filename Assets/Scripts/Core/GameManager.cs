@@ -44,6 +44,9 @@ namespace ThemeParkGame.Core
         public int GoldenTickets { get; private set; }
         public bool IsPaused => CurrentState == GameState.Paused;
 
+        // 難易度
+        public GameDifficulty CurrentDifficulty { get; private set; } = GameDifficulty.Normal;
+
         // ゲーム速度: 0=一時停止, 1=通常, 2=2倍速, 3=3倍速
         private int _speedLevel = 1;
         public int SpeedLevel
@@ -91,9 +94,12 @@ namespace ThemeParkGame.Core
         }
 
         /// <summary>新しいゲームを開始する</summary>
-        public void StartNewGame(ThemeZone startingZone)
+        public void StartNewGame(ThemeZone startingZone, GameDifficulty difficulty = GameDifficulty.Normal)
         {
-            EconomyManager.Initialize(startingMoney);
+            CurrentDifficulty = difficulty;
+            int money = GetStartingMoney(difficulty);
+
+            EconomyManager.Initialize(money);
             ParkManager.Initialize(startingZone);
             TimeManager.Initialize();
             VisitorManager.Initialize();
@@ -106,7 +112,40 @@ namespace ThemeParkGame.Core
             SpeedLevel = 1;
 
             GameEvents.FireParkOpened();
-            Debug.Log($"[GameManager] New game started in {startingZone}");
+            Debug.Log($"[GameManager] New game started in {startingZone} (Difficulty: {difficulty}, Money: {money})");
+        }
+
+        /// <summary>難易度に応じた初期資金を返す</summary>
+        public static int GetStartingMoney(GameDifficulty difficulty)
+        {
+            switch (difficulty)
+            {
+                case GameDifficulty.Easy:   return 80000;
+                case GameDifficulty.Hard:   return 30000;
+                default:                    return 50000;
+            }
+        }
+
+        /// <summary>難易度に応じたスポーン間隔（秒）を返す</summary>
+        public static float GetSpawnInterval(GameDifficulty difficulty)
+        {
+            switch (difficulty)
+            {
+                case GameDifficulty.Easy:   return 8f;
+                case GameDifficulty.Hard:   return 2.5f;
+                default:                    return 5f;
+            }
+        }
+
+        /// <summary>難易度に応じた最大来場者数を返す</summary>
+        public static int GetMaxVisitors(GameDifficulty difficulty)
+        {
+            switch (difficulty)
+            {
+                case GameDifficulty.Easy:   return 30;
+                case GameDifficulty.Hard:   return 80;
+                default:                    return 50;
+            }
         }
 
         /// <summary>シナリオモードを開始する</summary>
@@ -211,13 +250,8 @@ namespace ThemeParkGame.Core
         public void RestartGame()
         {
             Time.timeScale = 1f;
-
-            // パーク閉園イベント（VisitorManagerのスポーン停止等）
             GameEvents.FireParkClosed();
-
-            // 新しいゲームを開始
-            StartNewGame(ThemeZone.LostKingdom);
-
+            StartNewGame(ThemeZone.LostKingdom, CurrentDifficulty);
             Debug.Log("[GameManager] ゲームをリスタートしました");
         }
 

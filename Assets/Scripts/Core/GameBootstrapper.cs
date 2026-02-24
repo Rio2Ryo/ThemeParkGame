@@ -244,29 +244,41 @@ namespace ThemeParkGame.Core
             descText.lineSpacing = 1.4f;
             SetAnchored(desc.GetComponent<RectTransform>(), 0, 20, 700, 70);
 
-            // ---- スタートボタン ----
-            var btnGo = CreateUIElement("StartButton", canvasGo.transform);
-            var btnImg = btnGo.AddComponent<Image>();
-            btnImg.color = new Color(0.15f, 0.55f, 0.3f, 1f);
-            var btn = btnGo.AddComponent<Button>();
-            var btnColors = btn.colors;
-            btnColors.highlightedColor = new Color(0.2f, 0.65f, 0.38f);
-            btnColors.pressedColor = new Color(0.1f, 0.42f, 0.22f);
-            btn.colors = btnColors;
-            btn.targetGraphic = btnImg;
-            SetAnchored(btnGo.GetComponent<RectTransform>(), 0, -80, 360, 80);
+            // ---- 難易度選択ラベル ----
+            var diffLabel = CreateUIElement("DiffLabel", canvasGo.transform);
+            var diffLabelText = diffLabel.AddComponent<Text>();
+            diffLabelText.text = "SELECT DIFFICULTY";
+            diffLabelText.font = GetBuiltinFont();
+            diffLabelText.fontSize = 22;
+            diffLabelText.fontStyle = FontStyle.Bold;
+            diffLabelText.alignment = TextAnchor.MiddleCenter;
+            diffLabelText.color = new Color(0.6f, 0.65f, 0.75f);
+            SetAnchored(diffLabel.GetComponent<RectTransform>(), 0, -40, 600, 30);
 
-            var btnLabel = CreateUIElement("Label", btnGo.transform);
-            var btnText = btnLabel.AddComponent<Text>();
-            btnText.text = "GAME START";
-            btnText.font = GetBuiltinFont();
-            btnText.fontSize = 40;
-            btnText.fontStyle = FontStyle.Bold;
-            btnText.alignment = TextAnchor.MiddleCenter;
-            btnText.color = Color.white;
-            StretchFull(btnLabel.GetComponent<RectTransform>());
+            // ---- 難易度ボタン3つ（横並び） ----
+            float btnW = 200f;
+            float btnH = 70f;
+            float gap = 16f;
+            float totalW = btnW * 3 + gap * 2;
+            float startX = -totalW / 2f + btnW / 2f;
 
-            btn.onClick.AddListener(ctrl.OnStartClicked);
+            // Easy
+            CreateDifficultyButton(canvasGo.transform, ctrl, "EasyBtn",
+                "EASY", "初期資金: $80,000\nスポーン: ゆっくり",
+                new Color(0.2f, 0.6f, 0.35f), new Color(0.25f, 0.7f, 0.42f), new Color(0.15f, 0.48f, 0.28f),
+                startX, -90f, btnW, btnH, GameDifficulty.Easy);
+
+            // Normal
+            CreateDifficultyButton(canvasGo.transform, ctrl, "NormalBtn",
+                "NORMAL", "初期資金: $50,000\nスポーン: 標準",
+                new Color(0.25f, 0.45f, 0.65f), new Color(0.3f, 0.55f, 0.75f), new Color(0.18f, 0.35f, 0.52f),
+                startX + btnW + gap, -90f, btnW, btnH, GameDifficulty.Normal);
+
+            // Hard
+            CreateDifficultyButton(canvasGo.transform, ctrl, "HardBtn",
+                "HARD", "初期資金: $30,000\nスポーン: 高速",
+                new Color(0.65f, 0.25f, 0.2f), new Color(0.75f, 0.35f, 0.3f), new Color(0.5f, 0.18f, 0.15f),
+                startX + (btnW + gap) * 2, -90f, btnW, btnH, GameDifficulty.Hard);
 
             // ---- 操作ヒント ----
             var hint = CreateUIElement("Hint", canvasGo.transform);
@@ -309,6 +321,60 @@ namespace ThemeParkGame.Core
             crRect.sizeDelta = new Vector2(400, 30);
 
             Debug.Log("[GameBootstrapper] タイトル画面を生成");
+        }
+
+        // ================================================================
+        // 難易度ボタン生成ヘルパー
+        // ================================================================
+
+        private static void CreateDifficultyButton(Transform parent, StartScreenController ctrl,
+            string name, string label, string description,
+            Color normal, Color highlight, Color pressed,
+            float x, float y, float w, float h, GameDifficulty difficulty)
+        {
+            var btnGo = CreateUIElement(name, parent);
+            var btnImg = btnGo.AddComponent<Image>();
+            btnImg.color = normal;
+            var btn = btnGo.AddComponent<Button>();
+            var c = btn.colors;
+            c.highlightedColor = highlight;
+            c.pressedColor = pressed;
+            btn.colors = c;
+            btn.targetGraphic = btnImg;
+            SetAnchored(btnGo.GetComponent<RectTransform>(), x, y, w, h);
+
+            // ラベル（上部）
+            var labelGo = CreateUIElement("Label", btnGo.transform);
+            var labelText = labelGo.AddComponent<Text>();
+            labelText.text = label;
+            labelText.font = GetBuiltinFont();
+            labelText.fontSize = 28;
+            labelText.fontStyle = FontStyle.Bold;
+            labelText.alignment = TextAnchor.MiddleCenter;
+            labelText.color = Color.white;
+            var labelRt = labelGo.GetComponent<RectTransform>();
+            labelRt.anchorMin = new Vector2(0f, 0.45f);
+            labelRt.anchorMax = new Vector2(1f, 1f);
+            labelRt.offsetMin = Vector2.zero;
+            labelRt.offsetMax = Vector2.zero;
+
+            // 説明（下部）
+            var descGo = CreateUIElement("Desc", btnGo.transform);
+            var descText = descGo.AddComponent<Text>();
+            descText.text = description;
+            descText.font = GetBuiltinFont();
+            descText.fontSize = 12;
+            descText.alignment = TextAnchor.MiddleCenter;
+            descText.color = new Color(0.85f, 0.88f, 0.92f, 0.8f);
+            descText.lineSpacing = 1.1f;
+            var descRt = descGo.GetComponent<RectTransform>();
+            descRt.anchorMin = new Vector2(0f, 0f);
+            descRt.anchorMax = new Vector2(1f, 0.45f);
+            descRt.offsetMin = Vector2.zero;
+            descRt.offsetMax = Vector2.zero;
+
+            var diff = difficulty; // closure capture
+            btn.onClick.AddListener(() => ctrl.OnStartWithDifficulty(diff));
         }
 
         // ================================================================
@@ -362,15 +428,15 @@ namespace ThemeParkGame.Core
             }
         }
 
-        public void OnStartClicked()
+        public void OnStartWithDifficulty(GameDifficulty difficulty)
         {
             if (GameManager.Instance == null)
             {
                 Debug.LogError("[GameBootstrapper] GameManager が見つかりません");
                 return;
             }
-            GameManager.Instance.StartNewGame(ThemeZone.LostKingdom);
-            Debug.Log("[GameBootstrapper] ゲーム開始!");
+            GameManager.Instance.StartNewGame(ThemeZone.LostKingdom, difficulty);
+            Debug.Log($"[GameBootstrapper] ゲーム開始! 難易度: {difficulty}");
             Destroy(gameObject);
         }
     }
