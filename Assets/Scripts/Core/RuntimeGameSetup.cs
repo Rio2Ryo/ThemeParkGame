@@ -62,6 +62,14 @@ namespace ThemeParkGame.Core
                 gameObject.AddComponent<RuntimeHUD>();
             }
 
+            // 天候エフェクトコントローラーの追加
+            if (FindObjectOfType<WeatherEffectController>() == null)
+            {
+                var weatherFx = new GameObject("WeatherEffectController");
+                weatherFx.AddComponent<WeatherEffectController>();
+                Debug.Log("[RuntimeGameSetup] WeatherEffectController を生成");
+            }
+
             Debug.Log("[RuntimeGameSetup] === ゲームワールド構築完了 ===");
         }
 
