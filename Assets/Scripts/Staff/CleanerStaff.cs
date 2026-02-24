@@ -72,7 +72,9 @@ namespace ThemeParkGame.Staff
         // ============================================================
 
         [Header("Cleaner Settings")]
+        #pragma warning disable CS0414
         [SerializeField] private float cleaningRange = 1.5f;
+        #pragma warning restore CS0414
 
         /// <summary>現在の清掃対象</summary>
         private GameObject currentTarget;

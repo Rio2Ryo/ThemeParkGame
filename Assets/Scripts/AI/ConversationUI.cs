@@ -72,7 +72,9 @@ namespace ThemeParkGame.AI
         private AIConversationManager _aiManager;
         private int _currentNpcId = -1;
         private bool _isConversationActive;
+        #pragma warning disable CS0414
         private bool _isTypingAnimationRunning;
+        #pragma warning restore CS0414
         private bool _isWaitingForResponse;
         private readonly List<ChatBubbleData> _chatHistory = new List<ChatBubbleData>();
         private readonly List<GameObject> _spawnedBubbles = new List<GameObject>();

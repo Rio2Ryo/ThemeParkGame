@@ -12,7 +12,9 @@ namespace ThemeParkGame.Attraction
     {
         [Header("Toilet Settings")]
         [SerializeField] private int maxCapacity = 5;
+        #pragma warning disable CS0414
         [SerializeField] private float useTime = 30f;
+        #pragma warning restore CS0414
 
         private int currentUsers;
 

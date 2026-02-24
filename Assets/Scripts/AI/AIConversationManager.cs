@@ -28,7 +28,9 @@ namespace ThemeParkGame.AI
 
         [Header("Conversation Settings")]
         [SerializeField] private int maxConversationHistory = 10;
+        #pragma warning disable CS0414
         [SerializeField] private float conversationTimeout = 60f;
+        #pragma warning restore CS0414
         [SerializeField] private int maxPersonalityCacheSize = 50;
 
         // LLM Client
