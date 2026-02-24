@@ -485,17 +485,22 @@ namespace ThemeParkGame.Core
             // 「続ける」ボタン
             MakeCenterButton(rt, "ResumeBtn", "続ける",
                 new Color(0.18f, 0.55f, 0.34f), new Color(0.22f, 0.65f, 0.40f), new Color(0.14f, 0.45f, 0.28f),
-                new Vector2(0f, 50f), OnResumeClicked);
+                new Vector2(0f, 80f), OnResumeClicked);
 
             // 「セーブ/ロード」ボタン
             MakeCenterButton(rt, "SaveLoadBtn", "SAVE / LOAD",
                 new Color(0.3f, 0.4f, 0.6f), new Color(0.38f, 0.5f, 0.72f), new Color(0.22f, 0.3f, 0.48f),
-                new Vector2(0f, -30f), OnSaveLoadClicked);
+                new Vector2(0f, 0f), OnSaveLoadClicked);
+
+            // 「実績」ボタン
+            MakeCenterButton(rt, "AchievementBtn", "ACHIEVEMENTS",
+                new Color(0.55f, 0.45f, 0.2f), new Color(0.65f, 0.55f, 0.28f), new Color(0.42f, 0.34f, 0.15f),
+                new Vector2(0f, -80f), OnAchievementClicked);
 
             // 「ゲーム終了」ボタン
             MakeCenterButton(rt, "EndGameBtn", "ゲーム終了",
                 new Color(0.65f, 0.2f, 0.2f), new Color(0.75f, 0.3f, 0.3f), new Color(0.5f, 0.15f, 0.15f),
-                new Vector2(0f, -110f), OnEndGameClicked);
+                new Vector2(0f, -160f), OnEndGameClicked);
 
             _pauseOverlay.SetActive(false);
         }
@@ -839,6 +844,12 @@ namespace ThemeParkGame.Core
             GameManager.Instance.ResumeGame();
         }
 
+        private void OnAchievementClicked()
+        {
+            if (AchievementSystem.Instance != null)
+                AchievementSystem.Instance.ShowAchievementList();
+        }
+
         private void OnEndGameClicked()
         {
             if (GameManager.Instance == null) return;
@@ -913,12 +924,16 @@ namespace ThemeParkGame.Core
 
             int attrCount = (_attractions != null) ? _attractions.Length : 0;
 
+            string achText = AchievementSystem.Instance != null
+                ? $"{AchievementSystem.Instance.UnlockedCount}/{AchievementSystem.Instance.TotalCount}"
+                : "---";
+
             _resultsBody.text =
                 $"  Visitors: {visitors}  (Peak: {peak})         Satisfaction: {avgHappy:F0}%\n" +
                 $"  Revenue: {revenue}         Expenses: {expenses}\n" +
                 $"  Final Balance: {money}\n" +
                 $"  Attractions: {attrCount}         Golden Tickets: {tickets}\n" +
-                $"  Date: {time}\n" +
+                $"  Date: {time}         Achievements: {achText}\n" +
                 $"\n" +
                 $"  Score Breakdown:\n" +
                 $"    Visitors x10 = {(gm.VisitorManager != null ? gm.VisitorManager.TotalVisitorsToday * 10 : 0):N0}\n" +

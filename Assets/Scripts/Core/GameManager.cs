@@ -41,6 +41,7 @@ namespace ThemeParkGame.Core
         public AttractionManager AttractionManager { get; private set; }
         public ScenarioManager ScenarioManager { get; private set; }
         public TutorialSystem TutorialSystem { get; private set; }
+        public AchievementSystem AchievementSystem { get; private set; }
 
         // ゲーム状態
         public GameState CurrentState { get; private set; } = GameState.MainMenu;
@@ -89,6 +90,7 @@ namespace ThemeParkGame.Core
             AttractionManager = GetOrAddComponent<AttractionManager>();
             ScenarioManager = GetOrAddComponent<ScenarioManager>();
             TutorialSystem = GetOrAddComponent<TutorialSystem>();
+            AchievementSystem = GetOrAddComponent<AchievementSystem>();
         }
 
         private T GetOrAddComponent<T>() where T : Component

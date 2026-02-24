@@ -497,5 +497,11 @@ namespace ThemeParkGame.Core
         {
             PlaySE(clipCheer);
         }
+
+        /// <summary>実績解除SEを再生する（ゴールデンチケットSE流用）</summary>
+        public void PlayAchievementSE()
+        {
+            PlaySE(clipGoldenTicket);
+        }
     }
 }
