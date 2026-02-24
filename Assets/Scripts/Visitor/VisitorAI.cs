@@ -635,7 +635,8 @@ namespace ThemeParkGame.Visitor
         private void ExecuteIdle(float deltaTime)
         {
             // Idle中は特に何もしない。MakeDecisionで次の行動が決まる。
-            StopNavigation();
+            // StopNavigationはOnStateEntered(Idle)で一度だけ呼ばれる。
+            // ここで毎フレーム呼ぶとWanderRandomlyのパスがキャンセルされるため削除。
         }
 
         private void ExecuteWalking(float deltaTime)
@@ -1379,6 +1380,13 @@ namespace ThemeParkGame.Visitor
         private void TransitionTo(VisitorBehaviorState newState)
         {
             if (currentState == newState) return;
+
+            // WaitingInQueue から RidingAttraction 以外への遷移時はキューから自分を除去
+            if (currentState == VisitorBehaviorState.WaitingInQueue &&
+                newState != VisitorBehaviorState.RidingAttraction)
+            {
+                LeaveAttractionQueue();
+            }
 
             previousState = currentState;
             currentState = newState;
