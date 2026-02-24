@@ -48,7 +48,9 @@ namespace ThemeParkGame.Core
         private AudioClip clipWeatherChange;
 
         // ---- 環境音の状態 ----
+        #pragma warning disable CS0414
         private bool isPlayingCrowd;
+        #pragma warning restore CS0414
         private bool isPlayingRain;
 
         // ---- 前回のゲーム状態（BGM切替用） ----
