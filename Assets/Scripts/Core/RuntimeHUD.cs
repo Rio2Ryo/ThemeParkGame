@@ -3,10 +3,13 @@
 // uGUI (Canvas + Text) ベースのランタイムHUDオーバーレイ
 // プレハブ/シーン配置なしでコードからCanvasを構築し
 // 入場者数・収益・満足度・速度ボタンをリアルタイム表示する
+// 来場者クリックで個別情報パネルを表示
+// アトラクションごとの収益集計をUIに反映
 // ============================================================
 
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using ThemeParkGame.Attraction;
 using ThemeParkGame.Visitor;
@@ -17,11 +20,13 @@ namespace ThemeParkGame.Core
     /// uGUI Canvas をコードで構築するランタイムHUD。
     /// 画面上部に入場者数・収益・平均満足度を常時リアルタイム表示。
     /// 速度制御ボタン、来場者状態パネル、アトラクション稼働状況パネルを含む。
+    /// 来場者をクリックすると個別情報パネルを表示する。
     /// </summary>
     public class RuntimeHUD : MonoBehaviour
     {
         // ---- Canvas ----
         private Canvas _canvas;
+        private RectTransform _canvasRoot;
 
         // ---- トップバー ----
         private Text _moneyText;
@@ -43,6 +48,22 @@ namespace ThemeParkGame.Core
         private RectTransform _attrPanelRt;
         private readonly List<Text> _attrLines = new List<Text>();
 
+        // ---- 来場者情報パネル ----
+        private GameObject _visitorInfoPanel;
+        private RectTransform _visitorInfoRt;
+        private Text _viName;
+        private Text _viType;
+        private Text _viState;
+        private Text _viHappiness;
+        private Text _viCash;
+        private Text _viHunger;
+        private Text _viThirst;
+        private Text _viNausea;
+        private Text _viToilet;
+        private Text _viExcitement;
+        private Text _viRides;
+        private VisitorAI _selectedVisitor;
+
         // ---- データキャッシュ ----
         private float _updateTimer;
         private const float UpdateInterval = 0.3f;
@@ -63,6 +84,7 @@ namespace ThemeParkGame.Core
         private static readonly Color Muted      = new Color(0.7f, 0.72f, 0.8f);
         private static readonly Color BtnActive  = new Color(0.2f, 0.75f, 0.4f);
         private static readonly Color BtnNormal  = new Color(0.25f, 0.28f, 0.35f);
+        private static readonly Color Cyan       = new Color(0.4f, 0.85f, 0.95f);
 
         private static readonly string[] StatLabels =
             { "移動中", "待ち行列", "搭乗中", "買い物/食事", "散策/休憩", "退園中" };
@@ -101,12 +123,13 @@ namespace ThemeParkGame.Core
 
             cGo.AddComponent<GraphicRaycaster>();
 
-            var root = cGo.GetComponent<RectTransform>();
+            _canvasRoot = cGo.GetComponent<RectTransform>();
 
-            BuildTopBar(root);
-            BuildSpeedPanel(root);
-            BuildVisitorPanel(root);
-            BuildAttractionPanel(root);
+            BuildTopBar(_canvasRoot);
+            BuildSpeedPanel(_canvasRoot);
+            BuildVisitorPanel(_canvasRoot);
+            BuildAttractionPanel(_canvasRoot);
+            BuildVisitorInfoPanel(_canvasRoot);
         }
 
         // ================================================================
@@ -244,12 +267,12 @@ namespace ThemeParkGame.Core
         }
 
         // ================================================================
-        // アトラクションパネル（右下 300xN）
+        // アトラクションパネル（右下 320xN）
         // ================================================================
 
         private void BuildAttractionPanel(RectTransform root)
         {
-            float panelW = 300f;
+            float panelW = 320f;
             float panelH = 40f; // 初期値、後で動的に調整
 
             var bg = MakePanel(root, "AttractionPanel", panelW, panelH, BgDark);
@@ -263,6 +286,81 @@ namespace ThemeParkGame.Core
         }
 
         // ================================================================
+        // 来場者個別情報パネル（画面中央左 280x320）
+        // ================================================================
+
+        private void BuildVisitorInfoPanel(RectTransform root)
+        {
+            float panelW = 280f;
+            float panelH = 340f;
+
+            var bg = MakePanel(root, "VisitorInfoPanel", panelW, panelH, BgDark);
+            _visitorInfoPanel = bg;
+            _visitorInfoRt = bg.GetComponent<RectTransform>();
+            _visitorInfoRt.anchorMin = _visitorInfoRt.anchorMax = new Vector2(0f, 0.5f);
+            _visitorInfoRt.pivot = new Vector2(0f, 0.5f);
+            _visitorInfoRt.anchoredPosition = new Vector2(10f, 0f);
+
+            var rt = _visitorInfoRt;
+
+            // ヘッダー
+            var header = MakeLabel(rt, "VIHeader", "来場者情報", 16, Gold, FontStyle.Bold, TextAnchor.MiddleCenter);
+            PlaceInParent(header.rectTransform, 0f, panelH - 4f, panelW, 24f, new Vector2(0f, 1f));
+
+            // 閉じるボタン
+            var closeGo = MakePanel(rt, "CloseBtn", 28f, 28f, new Color(0.8f, 0.2f, 0.2f, 0.9f));
+            var closeRt = closeGo.GetComponent<RectTransform>();
+            closeRt.anchorMin = closeRt.anchorMax = new Vector2(1f, 1f);
+            closeRt.pivot = new Vector2(1f, 1f);
+            closeRt.anchoredPosition = new Vector2(-4f, -4f);
+            var closeImg = closeGo.GetComponent<Image>();
+            closeImg.raycastTarget = true;
+            var closeBtn = closeGo.AddComponent<Button>();
+            closeBtn.targetGraphic = closeImg;
+            closeBtn.onClick.AddListener(HideVisitorInfo);
+            var closeLabel = MakeLabel(closeRt, "X", "X", 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(closeLabel.rectTransform);
+
+            // 情報ラベル群
+            float lineH = 22f;
+            float y = panelH - 34f;
+            float lx = 12f;
+            float lw = panelW - 24f;
+
+            _viName    = MakeInfoLine(rt, "Name",    ref y, lineH, lx, lw, Color.white, FontStyle.Bold, 16);
+            _viType    = MakeInfoLine(rt, "Type",    ref y, lineH, lx, lw, Cyan, FontStyle.Normal, 14);
+            _viState   = MakeInfoLine(rt, "State",   ref y, lineH, lx, lw, Muted, FontStyle.Normal, 14);
+
+            y -= 6f; // セパレータ
+
+            _viHappiness  = MakeInfoLine(rt, "Happy",   ref y, lineH, lx, lw, Green, FontStyle.Bold, 14);
+            _viExcitement = MakeInfoLine(rt, "Excite",  ref y, lineH, lx, lw, Gold, FontStyle.Normal, 14);
+            _viCash       = MakeInfoLine(rt, "Cash",    ref y, lineH, lx, lw, Gold, FontStyle.Normal, 14);
+
+            y -= 6f;
+
+            _viHunger  = MakeInfoLine(rt, "Hunger",  ref y, lineH, lx, lw, Muted, FontStyle.Normal, 13);
+            _viThirst  = MakeInfoLine(rt, "Thirst",  ref y, lineH, lx, lw, Muted, FontStyle.Normal, 13);
+            _viNausea  = MakeInfoLine(rt, "Nausea",  ref y, lineH, lx, lw, Muted, FontStyle.Normal, 13);
+            _viToilet  = MakeInfoLine(rt, "Toilet",  ref y, lineH, lx, lw, Muted, FontStyle.Normal, 13);
+
+            y -= 6f;
+
+            _viRides   = MakeInfoLine(rt, "Rides",   ref y, lineH, lx, lw, Cyan, FontStyle.Normal, 13);
+
+            _visitorInfoPanel.SetActive(false);
+        }
+
+        private Text MakeInfoLine(RectTransform parent, string name, ref float y, float h,
+            float x, float w, Color color, FontStyle style, int fontSize)
+        {
+            var t = MakeLabel(parent, name, "", fontSize, color, style, TextAnchor.MiddleLeft);
+            PlaceInParent(t.rectTransform, x, y, w, h, new Vector2(0f, 1f));
+            y -= h;
+            return t;
+        }
+
+        // ================================================================
         // Update
         // ================================================================
 
@@ -271,12 +369,115 @@ namespace ThemeParkGame.Core
             if (GameManager.Instance == null) return;
             if (GameManager.Instance.CurrentState != GameState.Playing) return;
 
+            // クリック検出（来場者選択）
+            HandleVisitorClick();
+
+            // 定期UI更新
             _updateTimer -= Time.unscaledDeltaTime;
             if (_updateTimer > 0f) return;
             _updateTimer = UpdateInterval;
 
             RefreshAll();
+
+            // 選択中の来場者パネル更新
+            if (_selectedVisitor != null && _visitorInfoPanel.activeSelf)
+            {
+                RefreshVisitorInfo();
+            }
         }
+
+        // ================================================================
+        // 来場者クリック検出
+        // ================================================================
+
+        private void HandleVisitorClick()
+        {
+            if (!Input.GetMouseButtonDown(0)) return;
+
+            // UI上のクリックは無視
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+                return;
+
+            var cam = Camera.main;
+            if (cam == null) return;
+
+            Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray, out RaycastHit hit, 500f))
+            {
+                var visitor = hit.collider.GetComponent<VisitorAI>();
+                if (visitor != null && visitor.IsActive)
+                {
+                    ShowVisitorInfo(visitor);
+                    return;
+                }
+            }
+
+            // 何もヒットしなかった場合はパネルを閉じる
+            HideVisitorInfo();
+        }
+
+        private void ShowVisitorInfo(VisitorAI visitor)
+        {
+            _selectedVisitor = visitor;
+            _visitorInfoPanel.SetActive(true);
+            RefreshVisitorInfo();
+        }
+
+        private void HideVisitorInfo()
+        {
+            _selectedVisitor = null;
+            _visitorInfoPanel.SetActive(false);
+        }
+
+        private void RefreshVisitorInfo()
+        {
+            if (_selectedVisitor == null || !_selectedVisitor.IsActive)
+            {
+                HideVisitorInfo();
+                return;
+            }
+
+            var ai = _selectedVisitor;
+            var p = ai.Parameters;
+            var prof = ai.Profile;
+
+            _viName.text = !string.IsNullOrEmpty(prof.VisitorName)
+                ? prof.VisitorName
+                : $"来場者 #{ai.VisitorId}";
+
+            _viType.text = $"タイプ: {VisitorTypeLabel(ai.Type)}  年齢: {prof.Age}";
+            _viState.text = $"状態: {BehaviorStateLabel(ai.CurrentState)}";
+
+            // 幸福度（色分け）
+            _viHappiness.text = $"満足度: {p.Happiness:F0}%";
+            _viHappiness.color = p.Happiness >= 70f ? Green :
+                                 p.Happiness >= 40f ? Yellow : Red;
+
+            _viExcitement.text = $"興奮度: {p.Excitement:F0}%";
+            _viCash.text = $"所持金: ${p.Cash:F0}";
+
+            _viHunger.text = $"空腹: {p.Hunger:F0}%";
+            _viHunger.color = p.Hunger >= 60f ? Yellow : Muted;
+
+            _viThirst.text = $"渇き: {p.Thirst:F0}%";
+            _viThirst.color = p.Thirst >= 60f ? Yellow : Muted;
+
+            _viNausea.text = $"吐き気: {p.Nausea:F0}%";
+            _viNausea.color = p.Nausea >= 60f ? Red : Muted;
+
+            _viToilet.text = $"トイレ: {p.ToiletNeed:F0}%";
+            _viToilet.color = p.ToiletNeed >= 70f ? Red : Muted;
+
+            _viRides.text = $"搭乗回数: {prof.RidesExperienced}回";
+            if (prof.FavoriteAttraction.HasValue)
+            {
+                _viRides.text += $"  Best: {prof.FavoriteAttraction.Value.AttractionName}";
+            }
+        }
+
+        // ================================================================
+        // HUD定期更新
+        // ================================================================
 
         private void RefreshAll()
         {
@@ -381,41 +582,54 @@ namespace ThemeParkGame.Core
             }
             _attrPanelRt.gameObject.SetActive(true);
 
-            int needed = _attractions.Length * 2;
+            // 各アトラクション: 名前行 + 状態行 + 収益行 = 3行
+            int linesPerAttr = 3;
+            int needed = _attractions.Length * linesPerAttr;
             while (_attrLines.Count < needed)
             {
                 int idx = _attrLines.Count;
-                bool isName = (idx % 2 == 0);
-                var t = MakeLabel(_attrPanelRt, $"AL{idx}", "", isName ? 14 : 13,
-                    isName ? Color.white : Muted,
+                int lineType = idx % linesPerAttr;
+                bool isName = (lineType == 0);
+                bool isRevenue = (lineType == 2);
+                var t = MakeLabel(_attrPanelRt, $"AL{idx}", "",
+                    isName ? 14 : 12,
+                    isName ? Color.white : (isRevenue ? Gold : Muted),
                     isName ? FontStyle.Bold : FontStyle.Normal,
                     TextAnchor.MiddleLeft);
                 _attrLines.Add(t);
             }
 
-            // パネルサイズ更新
-            float panelH = 34f + _attractions.Length * 40f;
-            _attrPanelRt.sizeDelta = new Vector2(300f, panelH);
+            // パネルサイズ更新（3行 × 各lineH + ヘッダー + マージン）
+            float lineH = 18f;
+            float blockH = lineH * linesPerAttr + 6f; // 3行 + 余白
+            float panelH = 34f + _attractions.Length * blockH;
+            _attrPanelRt.sizeDelta = new Vector2(320f, panelH);
 
             // ライン位置更新 + テキスト
             for (int i = 0; i < _attractions.Length; i++)
             {
                 var attr = _attractions[i];
-                int ni = i * 2;
-                int di = i * 2 + 1;
+                int nameIdx = i * linesPerAttr;
+                int detailIdx = nameIdx + 1;
+                int revenueIdx = nameIdx + 2;
 
-                float nameY = panelH - 32f - i * 40f;
-                float detailY = nameY - 20f;
+                float baseY = panelH - 32f - i * blockH;
 
-                PlaceInParent(_attrLines[ni].rectTransform, 10f, nameY, 280f, 20f, new Vector2(0f, 1f));
-                PlaceInParent(_attrLines[di].rectTransform, 10f, detailY, 280f, 18f, new Vector2(0f, 1f));
+                PlaceInParent(_attrLines[nameIdx].rectTransform, 10f, baseY, 300f, lineH, new Vector2(0f, 1f));
+                PlaceInParent(_attrLines[detailIdx].rectTransform, 10f, baseY - lineH, 300f, lineH, new Vector2(0f, 1f));
+                PlaceInParent(_attrLines[revenueIdx].rectTransform, 10f, baseY - lineH * 2, 300f, lineH, new Vector2(0f, 1f));
 
                 if (attr != null)
                 {
-                    _attrLines[ni].text = attr.DisplayName;
+                    _attrLines[nameIdx].text = attr.DisplayName;
+
                     string st = CycleLabel(attr.CurrentCycleState);
-                    _attrLines[di].text = $"  {st}  Q:{attr.QueueLength}/{attr.MaxQueueLength}  乗車:{attr.TotalRiderCount}";
-                    _attrLines[di].color = CycleColor(attr.CurrentCycleState);
+                    _attrLines[detailIdx].text = $"  {st}  Q:{attr.QueueLength}/{attr.MaxQueueLength}  乗車:{attr.TotalRiderCount}";
+                    _attrLines[detailIdx].color = CycleColor(attr.CurrentCycleState);
+
+                    // 収益行: チケット価格 × 乗車回数 → 総収益
+                    _attrLines[revenueIdx].text = $"  Ticket:${attr.TicketPrice}  今日:${attr.TodayRevenue:N0}  累計:${attr.TotalRevenue:N0}";
+                    _attrLines[revenueIdx].color = attr.TotalRevenue > 0 ? Gold : Muted;
                 }
             }
         }
@@ -551,6 +765,43 @@ namespace ThemeParkGame.Core
                 case RideCycleState.BrokenDown:
                 case RideCycleState.Accident:               return Red;
                 default:                                    return Muted;
+            }
+        }
+
+        private static string VisitorTypeLabel(VisitorType t)
+        {
+            switch (t)
+            {
+                case VisitorType.Kids:   return "キッズ";
+                case VisitorType.Young:  return "ヤング";
+                case VisitorType.Family: return "ファミリー";
+                case VisitorType.Couple: return "カップル";
+                case VisitorType.Senior: return "シニア";
+                case VisitorType.VIP:    return "VIP";
+                default: return t.ToString();
+            }
+        }
+
+        private static string BehaviorStateLabel(VisitorBehaviorState s)
+        {
+            switch (s)
+            {
+                case VisitorBehaviorState.Idle:                  return "散策中";
+                case VisitorBehaviorState.WalkingToAttraction:   return "アトラクションへ移動中";
+                case VisitorBehaviorState.WaitingInQueue:        return "行列待ち";
+                case VisitorBehaviorState.RidingAttraction:      return "搭乗中";
+                case VisitorBehaviorState.WalkingToShop:         return "ショップへ移動中";
+                case VisitorBehaviorState.Eating:                return "食事中";
+                case VisitorBehaviorState.Drinking:              return "飲み物中";
+                case VisitorBehaviorState.WalkingToToilet:       return "トイレへ移動中";
+                case VisitorBehaviorState.UsingToilet:           return "トイレ使用中";
+                case VisitorBehaviorState.Resting:               return "休憩中";
+                case VisitorBehaviorState.WatchingEntertainment: return "ショー鑑賞中";
+                case VisitorBehaviorState.LookingAtMap:          return "マップ確認中";
+                case VisitorBehaviorState.Vomiting:              return "嘔吐中";
+                case VisitorBehaviorState.LeavingPark:           return "退園中";
+                case VisitorBehaviorState.TalkingToPlayer:       return "会話中";
+                default: return s.ToString();
             }
         }
     }
