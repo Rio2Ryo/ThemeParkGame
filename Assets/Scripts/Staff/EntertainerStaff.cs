@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using ThemeParkGame.Core;
+using ThemeParkGame.Visitor;
 
 namespace ThemeParkGame.Staff
 {
@@ -77,6 +78,18 @@ namespace ThemeParkGame.Staff
         /// <summary>パフォーマンス間のクールダウン（秒）</summary>
         private const float PerformanceCooldown = 3f;
 
+        /// <summary>声かけ対象とする満足度の閾値（これ以下の来場者に声かけする）</summary>
+        private const float LowSatisfactionThreshold = 40f;
+
+        /// <summary>声かけ時の一回あたりの幸福度上昇量</summary>
+        private const float GreetingHappinessBoost = 15f;
+
+        /// <summary>同一来場者への声かけ間隔（秒）</summary>
+        private const float GreetingCooldownPerVisitor = 60f;
+
+        /// <summary>声かけ対象を探す検索範囲の倍率（EffectRadius × この値）</summary>
+        private const float GreetingSearchRadiusMultiplier = 2f;
+
         // ============================================================
         // フィールド
         // ============================================================
@@ -96,6 +109,15 @@ namespace ThemeParkGame.Staff
 
         /// <summary>効果を与えた来場者の累計数（統計用）</summary>
         public int TotalVisitorsEntertained { get; private set; }
+
+        /// <summary>声かけ済み来場者のクールダウン管理（visitorId → 声かけ時刻）</summary>
+        private readonly Dictionary<int, float> _greetedVisitorCooldowns = new Dictionary<int, float>();
+
+        /// <summary>声かけモードで移動中かどうか</summary>
+        private bool _isGreetingMode;
+
+        /// <summary>声かけ対象の来場者</summary>
+        private VisitorAI _greetingTarget;
 
         // ============================================================
         // プロパティ
@@ -140,7 +162,7 @@ namespace ThemeParkGame.Staff
 
         /// <summary>
         /// エンターテイナーのタスク検索。
-        /// 近くに来場者が集まっている場所（キュー付近等）を優先的に探す。
+        /// 満足度の低い来場者への声かけを最優先し、次にパフォーマンス、混雑エリアの順に探す。
         /// </summary>
         protected override bool FindAndAssignTask()
         {
@@ -150,9 +172,19 @@ namespace ThemeParkGame.Staff
                 return false;
             }
 
+            // クールダウン期限切れのエントリを掃除
+            CleanupGreetingCooldowns();
+
+            // 最優先: 満足度が低い来場者を探して声かけに向かう
+            if (TryFindUnhappyVisitor())
+            {
+                return true;
+            }
+
             // 効果範囲内に来場者がいればその場でパフォーマンスを開始
             if (HasVisitorsNearby())
             {
+                _isGreetingMode = false;
                 StartPerformance();
                 return true;
             }
@@ -229,6 +261,114 @@ namespace ThemeParkGame.Staff
         }
 
         // ============================================================
+        // 声かけ（低満足度来場者への対応）
+        // ============================================================
+
+        /// <summary>
+        /// 満足度が低い来場者を検索し、最も不満な来場者に向かって移動する。
+        /// 最近声かけした来場者はクールダウン中のためスキップする。
+        /// </summary>
+        private bool TryFindUnhappyVisitor()
+        {
+            float searchRadius = EffectRadius * GreetingSearchRadiusMultiplier;
+            Collider[] hits = Physics.OverlapSphere(transform.position, searchRadius);
+
+            VisitorAI unhappiestVisitor = null;
+            float lowestHappiness = LowSatisfactionThreshold;
+
+            foreach (var hit in hits)
+            {
+                if (!hit.CompareTag("Visitor")) continue;
+
+                var visitor = hit.GetComponent<VisitorAI>();
+                if (visitor == null || !visitor.IsActive) continue;
+
+                // クールダウン中の来場者はスキップ
+                if (_greetedVisitorCooldowns.ContainsKey(visitor.VisitorId)) continue;
+
+                // パトロールエリア外はスキップ
+                if (!IsWithinPatrolArea(hit.transform.position)) continue;
+
+                float happiness = visitor.Happiness;
+                if (happiness < lowestHappiness)
+                {
+                    lowestHappiness = happiness;
+                    unhappiestVisitor = visitor;
+                }
+            }
+
+            if (unhappiestVisitor != null)
+            {
+                _isGreetingMode = true;
+                _greetingTarget = unhappiestVisitor;
+                NavigateTo(unhappiestVisitor.transform.position);
+                CurrentState = StaffBehaviorState.MovingToTask;
+
+                Debug.Log($"[Entertainer] {Name} が満足度の低い来場者 " +
+                          $"(ID:{unhappiestVisitor.VisitorId}, 幸福度:{lowestHappiness:F0}) " +
+                          $"に声かけに向かいます");
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>声かけを実行し、来場者の幸福度を直接上昇させる</summary>
+        private void PerformGreeting()
+        {
+            if (_greetingTarget == null || !_greetingTarget.IsActive)
+            {
+                _isGreetingMode = false;
+                _greetingTarget = null;
+                CompleteCurrentTask();
+                return;
+            }
+
+            // スキルレベルに応じた声かけ効果
+            float boost = GreetingHappinessBoost * WorkEfficiencyMultiplier;
+
+            // テーマゾーン一致ボーナス
+            if (IsCostumeMatchingZone)
+            {
+                boost *= ThemeMatchBonus;
+            }
+
+            // 幸福度を上昇させる
+            _greetingTarget.Parameters.ModifyHappiness(boost);
+            GameEvents.FireVisitorHappinessChanged(_greetingTarget.VisitorId, boost);
+
+            // クールダウンに登録
+            _greetedVisitorCooldowns[_greetingTarget.VisitorId] = Time.time;
+
+            TotalVisitorsEntertained++;
+
+            Debug.Log($"[Entertainer] {Name} が来場者 (ID:{_greetingTarget.VisitorId}) に声かけ完了 " +
+                      $"(幸福度 +{boost:F1})");
+
+            _isGreetingMode = false;
+            _greetingTarget = null;
+            CompleteCurrentTask();
+        }
+
+        /// <summary>クールダウン期限切れのエントリを削除する</summary>
+        private void CleanupGreetingCooldowns()
+        {
+            var expiredKeys = new List<int>();
+            float currentTime = Time.time;
+            foreach (var kvp in _greetedVisitorCooldowns)
+            {
+                if (currentTime - kvp.Value >= GreetingCooldownPerVisitor)
+                {
+                    expiredKeys.Add(kvp.Key);
+                }
+            }
+            foreach (var key in expiredKeys)
+            {
+                _greetedVisitorCooldowns.Remove(key);
+            }
+        }
+
+        // ============================================================
         // パフォーマンス実行
         // ============================================================
 
@@ -246,7 +386,14 @@ namespace ThemeParkGame.Staff
 
         protected override void OnTaskReached()
         {
-            StartPerformance();
+            if (_isGreetingMode)
+            {
+                PerformGreeting();
+            }
+            else
+            {
+                StartPerformance();
+            }
         }
 
         /// <summary>
