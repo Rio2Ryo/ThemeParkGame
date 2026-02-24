@@ -25,7 +25,9 @@ namespace ThemeParkGame.Core
 
         [Header("Game Settings")]
         [SerializeField] private float gameSpeedMultiplier = 1f;
+        #pragma warning disable CS0414
         [SerializeField] private int startingMoney = 50000;
+        #pragma warning restore CS0414
 
         // サブシステム参照
         public ParkManager ParkManager { get; private set; }
