@@ -199,6 +199,29 @@ namespace ThemeParkGame.Core
             CurrentState = GameState.Playing;
         }
 
+        /// <summary>ゲームを終了して結果画面へ遷移する</summary>
+        public void EndGame()
+        {
+            CurrentState = GameState.GameOver;
+            Time.timeScale = 0f;
+            Debug.Log("[GameManager] ゲーム終了 → 結果画面");
+        }
+
+        /// <summary>メインメニューに戻る</summary>
+        public void ReturnToMainMenu()
+        {
+            CurrentState = GameState.MainMenu;
+            Time.timeScale = 1f;
+
+            // スポーン停止（ParkClosedイベント経由でVisitorManagerが対応）
+            GameEvents.FireParkClosed();
+
+            // スタート画面を再生成する
+            GameBootstrapper.RecreateStartScreen();
+
+            Debug.Log("[GameManager] メインメニューに戻りました");
+        }
+
         private void OnDestroy()
         {
             if (Instance == this)

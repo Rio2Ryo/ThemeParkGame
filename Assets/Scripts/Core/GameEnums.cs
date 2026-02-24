@@ -23,7 +23,8 @@ namespace ThemeParkGame.Core
         ScenarioSelect,
         BuildMode,
         FirstPersonMode,  // 一人称視点モード
-        ResidentMode      // 住人視点モード
+        ResidentMode,     // 住人視点モード
+        GameOver          // ゲーム終了・結果表示
     }
 
     /// <summary>来場者タイプ</summary>

@@ -64,6 +64,14 @@ namespace ThemeParkGame.Core
         private Text _viRides;
         private VisitorAI _selectedVisitor;
 
+        // ---- メニュー/ポーズ/結果画面 ----
+        private GameObject _menuBtn;
+        private GameObject _pauseOverlay;
+        private GameObject _resultsOverlay;
+        private Text _resultsBody;
+        private bool _isPauseVisible;
+        private bool _isResultsVisible;
+
         // ---- データキャッシュ ----
         private float _updateTimer;
         private const float UpdateInterval = 0.3f;
@@ -130,6 +138,9 @@ namespace ThemeParkGame.Core
             BuildVisitorPanel(_canvasRoot);
             BuildAttractionPanel(_canvasRoot);
             BuildVisitorInfoPanel(_canvasRoot);
+            BuildMenuButton(_canvasRoot);
+            BuildPauseOverlay(_canvasRoot);
+            BuildResultsOverlay(_canvasRoot);
         }
 
         // ================================================================
@@ -361,13 +372,261 @@ namespace ThemeParkGame.Core
         }
 
         // ================================================================
+        // メニューボタン（画面右上）
+        // ================================================================
+
+        private void BuildMenuButton(RectTransform root)
+        {
+            var btnGo = MakePanel(root, "MenuBtn", 80f, 36f, new Color(0.3f, 0.35f, 0.5f, 0.9f));
+            _menuBtn = btnGo;
+            var rt = btnGo.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(1f, 1f);
+            rt.anchoredPosition = new Vector2(-10f, -10f);
+
+            var img = btnGo.GetComponent<Image>();
+            img.raycastTarget = true;
+            var btn = btnGo.AddComponent<Button>();
+            btn.targetGraphic = img;
+            var colors = btn.colors;
+            colors.highlightedColor = new Color(0.4f, 0.45f, 0.6f);
+            colors.pressedColor = new Color(0.2f, 0.25f, 0.4f);
+            btn.colors = colors;
+            btn.onClick.AddListener(OnMenuClicked);
+
+            var label = MakeLabel(rt, "Label", "MENU", 18, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(label.rectTransform);
+        }
+
+        // ================================================================
+        // ポーズオーバーレイ（全画面、半透明背景）
+        // ================================================================
+
+        private void BuildPauseOverlay(RectTransform root)
+        {
+            _pauseOverlay = new GameObject("PauseOverlay");
+            _pauseOverlay.transform.SetParent(root, false);
+            var rt = _pauseOverlay.AddComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+
+            // 半透明背景
+            var bgImg = _pauseOverlay.AddComponent<Image>();
+            bgImg.color = new Color(0f, 0f, 0f, 0.7f);
+            bgImg.raycastTarget = true;
+
+            // タイトル
+            var title = MakeLabel(rt, "PauseTitle", "PAUSED", 56, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            var titleRt = title.rectTransform;
+            titleRt.anchorMin = titleRt.anchorMax = new Vector2(0.5f, 0.5f);
+            titleRt.anchoredPosition = new Vector2(0f, 120f);
+            titleRt.sizeDelta = new Vector2(400f, 70f);
+
+            // 「続ける」ボタン
+            var resumeGo = MakePanel(rt, "ResumeBtn", 280f, 60f, new Color(0.18f, 0.55f, 0.34f));
+            var resumeRt = resumeGo.GetComponent<RectTransform>();
+            resumeRt.anchorMin = resumeRt.anchorMax = new Vector2(0.5f, 0.5f);
+            resumeRt.anchoredPosition = new Vector2(0f, 20f);
+            var resumeImg = resumeGo.GetComponent<Image>();
+            resumeImg.raycastTarget = true;
+            var resumeBtn = resumeGo.AddComponent<Button>();
+            resumeBtn.targetGraphic = resumeImg;
+            var rc = resumeBtn.colors;
+            rc.highlightedColor = new Color(0.22f, 0.65f, 0.40f);
+            rc.pressedColor = new Color(0.14f, 0.45f, 0.28f);
+            resumeBtn.colors = rc;
+            resumeBtn.onClick.AddListener(OnResumeClicked);
+            var resumeLabel = MakeLabel(resumeRt, "Label", "続ける", 32, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(resumeLabel.rectTransform);
+
+            // 「ゲーム終了」ボタン
+            var endGo = MakePanel(rt, "EndGameBtn", 280f, 60f, new Color(0.65f, 0.2f, 0.2f));
+            var endRt = endGo.GetComponent<RectTransform>();
+            endRt.anchorMin = endRt.anchorMax = new Vector2(0.5f, 0.5f);
+            endRt.anchoredPosition = new Vector2(0f, -60f);
+            var endImg = endGo.GetComponent<Image>();
+            endImg.raycastTarget = true;
+            var endBtn = endGo.AddComponent<Button>();
+            endBtn.targetGraphic = endImg;
+            var ec = endBtn.colors;
+            ec.highlightedColor = new Color(0.75f, 0.3f, 0.3f);
+            ec.pressedColor = new Color(0.5f, 0.15f, 0.15f);
+            endBtn.colors = ec;
+            endBtn.onClick.AddListener(OnEndGameClicked);
+            var endLabel = MakeLabel(endRt, "Label", "ゲーム終了", 32, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(endLabel.rectTransform);
+
+            _pauseOverlay.SetActive(false);
+        }
+
+        // ================================================================
+        // 結果画面オーバーレイ
+        // ================================================================
+
+        private void BuildResultsOverlay(RectTransform root)
+        {
+            _resultsOverlay = new GameObject("ResultsOverlay");
+            _resultsOverlay.transform.SetParent(root, false);
+            var rt = _resultsOverlay.AddComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+
+            // 背景
+            var bgImg = _resultsOverlay.AddComponent<Image>();
+            bgImg.color = new Color(0.05f, 0.08f, 0.15f, 0.95f);
+            bgImg.raycastTarget = true;
+
+            // タイトル
+            var title = MakeLabel(rt, "ResultsTitle", "GAME RESULTS", 48, Gold, FontStyle.Bold, TextAnchor.MiddleCenter);
+            var titleRt = title.rectTransform;
+            titleRt.anchorMin = titleRt.anchorMax = new Vector2(0.5f, 0.5f);
+            titleRt.anchoredPosition = new Vector2(0f, 220f);
+            titleRt.sizeDelta = new Vector2(600f, 60f);
+
+            // サブタイトル
+            var sub = MakeLabel(rt, "ResultsSub", "- スコアレポート -", 24, Muted, FontStyle.Normal, TextAnchor.MiddleCenter);
+            var subRt = sub.rectTransform;
+            subRt.anchorMin = subRt.anchorMax = new Vector2(0.5f, 0.5f);
+            subRt.anchoredPosition = new Vector2(0f, 175f);
+            subRt.sizeDelta = new Vector2(400f, 30f);
+
+            // スコアボディ
+            _resultsBody = MakeLabel(rt, "ResultsBody", "", 22, Color.white, FontStyle.Normal, TextAnchor.UpperCenter);
+            _resultsBody.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _resultsBody.verticalOverflow = VerticalWrapMode.Overflow;
+            var bodyRt = _resultsBody.rectTransform;
+            bodyRt.anchorMin = bodyRt.anchorMax = new Vector2(0.5f, 0.5f);
+            bodyRt.anchoredPosition = new Vector2(0f, 20f);
+            bodyRt.sizeDelta = new Vector2(500f, 280f);
+
+            // 「メインメニューに戻る」ボタン
+            var btnGo = MakePanel(rt, "ReturnMenuBtn", 320f, 60f, new Color(0.18f, 0.55f, 0.34f));
+            var btnRt = btnGo.GetComponent<RectTransform>();
+            btnRt.anchorMin = btnRt.anchorMax = new Vector2(0.5f, 0.5f);
+            btnRt.anchoredPosition = new Vector2(0f, -190f);
+            var btnImg = btnGo.GetComponent<Image>();
+            btnImg.raycastTarget = true;
+            var btn = btnGo.AddComponent<Button>();
+            btn.targetGraphic = btnImg;
+            var bc = btn.colors;
+            bc.highlightedColor = new Color(0.22f, 0.65f, 0.40f);
+            bc.pressedColor = new Color(0.14f, 0.45f, 0.28f);
+            btn.colors = bc;
+            btn.onClick.AddListener(OnReturnToMenuClicked);
+            var btnLabel = MakeLabel(btnRt, "Label", "メインメニューに戻る", 28, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(btnLabel.rectTransform);
+
+            _resultsOverlay.SetActive(false);
+        }
+
+        // ================================================================
+        // メニュー/ポーズ/結果のイベントハンドラ
+        // ================================================================
+
+        private void OnMenuClicked()
+        {
+            if (GameManager.Instance == null) return;
+            GameManager.Instance.PauseGame();
+        }
+
+        private void OnResumeClicked()
+        {
+            if (GameManager.Instance == null) return;
+            GameManager.Instance.ResumeGame();
+        }
+
+        private void OnEndGameClicked()
+        {
+            if (GameManager.Instance == null) return;
+            GameManager.Instance.EndGame();
+        }
+
+        private void OnReturnToMenuClicked()
+        {
+            if (GameManager.Instance == null) return;
+            GameManager.Instance.ReturnToMainMenu();
+        }
+
+        private void RefreshResults()
+        {
+            if (_resultsBody == null) return;
+
+            var gm = GameManager.Instance;
+            if (gm == null) return;
+
+            string money = gm.EconomyManager != null ? $"${gm.EconomyManager.CurrentMoney:N0}" : "---";
+            string revenue = gm.EconomyManager != null ? $"${gm.EconomyManager.TotalRevenueEarned:N0}" : "---";
+            string expenses = gm.EconomyManager != null ? $"${gm.EconomyManager.TotalExpensesPaid:N0}" : "---";
+            string visitors = gm.VisitorManager != null ? $"{gm.VisitorManager.TotalVisitorsToday}人" : "---";
+            string peak = gm.VisitorManager != null ? $"{gm.VisitorManager.PeakVisitorCount:F0}人" : "---";
+            string happiness = gm.VisitorManager != null ? $"{gm.VisitorManager.AverageHappiness:F0}%" : "---";
+            string tickets = $"{gm.GoldenTickets}枚";
+
+            string time = "---";
+            if (gm.TimeManager != null)
+            {
+                var tm = gm.TimeManager;
+                time = $"Y{tm.CurrentYear} M{tm.CurrentMonth} D{tm.CurrentDay}";
+            }
+
+            int attrCount = 0;
+            if (_attractions != null) attrCount = _attractions.Length;
+
+            _resultsBody.text =
+                $"最終資金: {money}\n" +
+                $"総収益: {revenue}\n" +
+                $"総支出: {expenses}\n" +
+                $"\n" +
+                $"来場者数（今日）: {visitors}\n" +
+                $"ピーク入場者数: {peak}\n" +
+                $"平均満足度: {happiness}\n" +
+                $"\n" +
+                $"アトラクション数: {attrCount}基\n" +
+                $"ゴールデンチケット: {tickets}\n" +
+                $"経過日数: {time}";
+        }
+
+        // ================================================================
         // Update
         // ================================================================
 
         private void Update()
         {
             if (GameManager.Instance == null) return;
-            if (GameManager.Instance.CurrentState != GameState.Playing) return;
+
+            var state = GameManager.Instance.CurrentState;
+
+            // メインメニュー時はHUD非表示
+            if (state == GameState.MainMenu)
+            {
+                if (_canvas != null) _canvas.gameObject.SetActive(false);
+                return;
+            }
+            if (_canvas != null && !_canvas.gameObject.activeSelf)
+                _canvas.gameObject.SetActive(true);
+
+            // ポーズ/結果画面の表示制御
+            if (_pauseOverlay != null)
+                _pauseOverlay.SetActive(state == GameState.Paused);
+            if (_resultsOverlay != null)
+                _resultsOverlay.SetActive(state == GameState.GameOver);
+
+            // メニューボタンはPlaying中のみ表示
+            if (_menuBtn != null)
+                _menuBtn.SetActive(state == GameState.Playing);
+
+            // GameOver表示時は結果テキストを更新
+            if (state == GameState.GameOver)
+            {
+                RefreshResults();
+                return;
+            }
+
+            if (state != GameState.Playing) return;
 
             // クリック検出（来場者選択）
             HandleVisitorClick();

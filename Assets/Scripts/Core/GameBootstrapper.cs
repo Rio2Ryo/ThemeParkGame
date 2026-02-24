@@ -163,6 +163,15 @@ namespace ThemeParkGame.Core
         // スタート画面
         // ================================================================
 
+        /// <summary>メインメニュー復帰時にスタート画面を再生成する</summary>
+        public static void RecreateStartScreen()
+        {
+            // 既存のスタート画面があれば削除
+            var existing = Object.FindObjectOfType<StartScreenController>();
+            if (existing != null) Object.Destroy(existing.gameObject);
+            CreateStartScreen();
+        }
+
         private static void CreateStartScreen()
         {
             var canvasGo = new GameObject("StartScreenCanvas");
