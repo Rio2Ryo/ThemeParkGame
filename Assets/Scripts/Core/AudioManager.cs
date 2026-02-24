@@ -1,80 +1,88 @@
 // ============================================================
 // ThemeParkGame - AudioManager
 // オーディオシステム（BGM・SE・環境音の管理）
+// ProceduralAudioLibraryで生成した波形をイベント駆動で再生
 // ============================================================
 
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace ThemeParkGame.Core
 {
     /// <summary>
     /// BGM・SE・環境音を一元管理するオーディオマネージャー。
-    /// テーマゾーンに応じたBGM切り替え、天候に応じた環境音、
-    /// アトラクション・来場者のSE再生を担当する。
+    /// ProceduralAudioLibraryで生成した波形データを使い、
+    /// ゲームイベントに応じて自動的に音を再生する。
     /// </summary>
     public class AudioManager : MonoBehaviour
     {
         public static AudioManager Instance { get; private set; }
 
-        [Header("Audio Sources")]
-        [SerializeField] private AudioSource bgmSource;
-        [SerializeField] private AudioSource seSource;
-        [SerializeField] private AudioSource ambientSource;
+        // ---- AudioSource ----
+        private AudioSource bgmSource;
+        private AudioSource seSource;
+        private AudioSource ambientSource;
 
-        [Header("Volume Settings")]
-        [SerializeField, Range(0f, 1f)] private float masterVolume = 1f;
-        [SerializeField, Range(0f, 1f)] private float bgmVolume = 0.7f;
-        [SerializeField, Range(0f, 1f)] private float seVolume = 1f;
-        [SerializeField, Range(0f, 1f)] private float ambientVolume = 0.5f;
+        // ---- 音量設定 ----
+        private float masterVolume = 1f;
+        private float bgmVolume = 0.5f;
+        private float seVolume = 0.8f;
+        private float ambientVolume = 0.3f;
 
-        [Header("BGM Clips")]
-        [SerializeField] private AudioClip mainMenuBGM;
-        [SerializeField] private AudioClip gameplayBGM;
-        [SerializeField] private AudioClip buildModeBGM;
+        // ---- プロシージャル生成クリップ ----
+        private AudioClip clipMenuBGM;
+        private AudioClip clipGameplayBGM;
+        private AudioClip clipGameOverBGM;
+        private AudioClip clipCrowdAmbient;
+        private AudioClip clipRainAmbient;
+        private AudioClip clipCheer;
+        private AudioClip clipAttractionRide;
+        private AudioClip clipCash;
+        private AudioClip clipClick;
+        private AudioClip clipBreakdownAlarm;
+        private AudioClip clipAccidentAlarm;
+        private AudioClip clipBuildComplete;
+        private AudioClip clipGoldenTicket;
+        private AudioClip clipVIPArrive;
+        private AudioClip clipVomit;
+        private AudioClip clipResearchComplete;
+        private AudioClip clipWeatherChange;
 
-        /// <summary>BGMクリップのキャッシュ</summary>
-        private readonly Dictionary<string, AudioClip> _clipCache = new Dictionary<string, AudioClip>();
+        // ---- 環境音の状態 ----
+        private bool isPlayingCrowd;
+        private bool isPlayingRain;
+
+        // ---- 前回のゲーム状態（BGM切替用） ----
+        private GameState lastBGMState = GameState.MainMenu;
+
+        // ---- プロパティ ----
 
         public float MasterVolume
         {
             get => masterVolume;
-            set
-            {
-                masterVolume = Mathf.Clamp01(value);
-                UpdateAllVolumes();
-            }
+            set { masterVolume = Mathf.Clamp01(value); UpdateAllVolumes(); }
         }
 
         public float BGMVolume
         {
             get => bgmVolume;
-            set
-            {
-                bgmVolume = Mathf.Clamp01(value);
-                if (bgmSource != null) bgmSource.volume = bgmVolume * masterVolume;
-            }
+            set { bgmVolume = Mathf.Clamp01(value); UpdateAllVolumes(); }
         }
 
         public float SEVolume
         {
             get => seVolume;
-            set
-            {
-                seVolume = Mathf.Clamp01(value);
-                if (seSource != null) seSource.volume = seVolume * masterVolume;
-            }
+            set { seVolume = Mathf.Clamp01(value); UpdateAllVolumes(); }
         }
 
         public float AmbientVolume
         {
             get => ambientVolume;
-            set
-            {
-                ambientVolume = Mathf.Clamp01(value);
-                if (ambientSource != null) ambientSource.volume = ambientVolume * masterVolume;
-            }
+            set { ambientVolume = Mathf.Clamp01(value); UpdateAllVolumes(); }
         }
+
+        // ================================================================
+        // Unity ライフサイクル
+        // ================================================================
 
         private void Awake()
         {
@@ -86,70 +94,102 @@ namespace ThemeParkGame.Core
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
-            EnsureAudioSources();
+            SetupAudioSources();
+            GenerateAllClips();
             SubscribeToEvents();
+
+            // メニューBGM開始
+            PlayBGM(clipMenuBGM);
+            Debug.Log("[AudioManager] Initialized with procedural audio");
         }
 
         private void OnDestroy()
         {
             UnsubscribeFromEvents();
+            if (Instance == this) Instance = null;
         }
 
-        private void EnsureAudioSources()
+        private void Update()
         {
-            if (bgmSource == null)
+            // ゲーム状態に応じたBGM自動切替
+            if (GameManager.Instance != null)
             {
-                bgmSource = gameObject.AddComponent<AudioSource>();
-                bgmSource.loop = true;
-                bgmSource.playOnAwake = false;
+                GameState current = GameManager.Instance.CurrentState;
+                if (current != lastBGMState)
+                {
+                    lastBGMState = current;
+                    OnGameStateChanged(current);
+                }
             }
-            if (seSource == null)
-            {
-                seSource = gameObject.AddComponent<AudioSource>();
-                seSource.playOnAwake = false;
-            }
-            if (ambientSource == null)
-            {
-                ambientSource = gameObject.AddComponent<AudioSource>();
-                ambientSource.loop = true;
-                ambientSource.playOnAwake = false;
-            }
+        }
+
+        // ================================================================
+        // AudioSource セットアップ
+        // ================================================================
+
+        private void SetupAudioSources()
+        {
+            bgmSource = gameObject.AddComponent<AudioSource>();
+            bgmSource.loop = true;
+            bgmSource.playOnAwake = false;
+            bgmSource.priority = 0; // 最高優先度
+
+            seSource = gameObject.AddComponent<AudioSource>();
+            seSource.playOnAwake = false;
+            seSource.priority = 128;
+
+            ambientSource = gameObject.AddComponent<AudioSource>();
+            ambientSource.loop = true;
+            ambientSource.playOnAwake = false;
+            ambientSource.priority = 64;
 
             UpdateAllVolumes();
         }
 
-        private void SubscribeToEvents()
+        // ================================================================
+        // プロシージャルクリップ生成
+        // ================================================================
+
+        private void GenerateAllClips()
         {
-            GameEvents.OnWeatherChanged += OnWeatherChanged;
-            GameEvents.OnAttractionBrokenDown += OnAttractionBrokenDown;
-            GameEvents.OnAttractionAccident += OnAttractionAccident;
-            GameEvents.OnCertificateAwarded += OnCertificateAwarded;
-            GameEvents.OnResearchCompleted += OnResearchCompleted;
+            // BGM
+            clipMenuBGM = ProceduralAudioLibrary.GenerateMenuBGM();
+            clipGameplayBGM = ProceduralAudioLibrary.GenerateGameplayBGM();
+            clipGameOverBGM = ProceduralAudioLibrary.GenerateGameOverBGM();
+
+            // 環境音
+            clipCrowdAmbient = ProceduralAudioLibrary.GenerateCrowdAmbient();
+            clipRainAmbient = ProceduralAudioLibrary.GenerateRainAmbient();
+
+            // SE
+            clipCheer = ProceduralAudioLibrary.GenerateCheerSE();
+            clipAttractionRide = ProceduralAudioLibrary.GenerateAttractionRideSE();
+            clipCash = ProceduralAudioLibrary.GenerateCashSE();
+            clipClick = ProceduralAudioLibrary.GenerateClickSE();
+            clipBreakdownAlarm = ProceduralAudioLibrary.GenerateBreakdownAlarmSE();
+            clipAccidentAlarm = ProceduralAudioLibrary.GenerateAccidentAlarmSE();
+            clipBuildComplete = ProceduralAudioLibrary.GenerateBuildCompleteSE();
+            clipGoldenTicket = ProceduralAudioLibrary.GenerateGoldenTicketSE();
+            clipVIPArrive = ProceduralAudioLibrary.GenerateVIPArriveSE();
+            clipVomit = ProceduralAudioLibrary.GenerateVomitSE();
+            clipResearchComplete = ProceduralAudioLibrary.GenerateResearchCompleteSE();
+            clipWeatherChange = ProceduralAudioLibrary.GenerateWeatherChangeSE();
+
+            Debug.Log("[AudioManager] All procedural audio clips generated");
         }
 
-        private void UnsubscribeFromEvents()
-        {
-            GameEvents.OnWeatherChanged -= OnWeatherChanged;
-            GameEvents.OnAttractionBrokenDown -= OnAttractionBrokenDown;
-            GameEvents.OnAttractionAccident -= OnAttractionAccident;
-            GameEvents.OnCertificateAwarded -= OnCertificateAwarded;
-            GameEvents.OnResearchCompleted -= OnResearchCompleted;
-        }
+        // ================================================================
+        // 再生API
+        // ================================================================
 
-        private void UpdateAllVolumes()
-        {
-            if (bgmSource != null) bgmSource.volume = bgmVolume * masterVolume;
-            if (seSource != null) seSource.volume = seVolume * masterVolume;
-            if (ambientSource != null) ambientSource.volume = ambientVolume * masterVolume;
-        }
-
-        /// <summary>BGMを再生する</summary>
-        public void PlayBGM(AudioClip clip, float fadeTime = 1f)
+        /// <summary>BGMを再生する（同じクリップなら何もしない）</summary>
+        public void PlayBGM(AudioClip clip)
         {
             if (bgmSource == null || clip == null) return;
             if (bgmSource.clip == clip && bgmSource.isPlaying) return;
 
             bgmSource.clip = clip;
+            bgmSource.volume = bgmVolume * masterVolume;
             bgmSource.Play();
         }
 
@@ -159,81 +199,301 @@ namespace ThemeParkGame.Core
             if (bgmSource != null) bgmSource.Stop();
         }
 
-        /// <summary>効果音を再生する</summary>
+        /// <summary>効果音をワンショット再生する</summary>
         public void PlaySE(AudioClip clip)
         {
             if (seSource == null || clip == null) return;
             seSource.PlayOneShot(clip, seVolume * masterVolume);
         }
 
-        /// <summary>指定位置に3D効果音を再生する</summary>
-        public void PlaySEAtPosition(AudioClip clip, Vector3 position)
+        /// <summary>UIクリック音を再生する</summary>
+        public void PlayClickSE()
         {
-            if (clip == null) return;
-            AudioSource.PlayClipAtPoint(clip, position, seVolume * masterVolume);
+            PlaySE(clipClick);
         }
 
         /// <summary>環境音を再生する</summary>
         public void PlayAmbient(AudioClip clip)
         {
             if (ambientSource == null || clip == null) return;
+            if (ambientSource.clip == clip && ambientSource.isPlaying) return;
+
             ambientSource.clip = clip;
+            ambientSource.volume = ambientVolume * masterVolume;
             ambientSource.Play();
         }
 
-        /// <summary>リソースフォルダからオーディオクリップをロードして再生する</summary>
-        public void PlaySEByName(string clipName)
+        /// <summary>環境音を停止する</summary>
+        public void StopAmbient()
         {
-            if (!_clipCache.TryGetValue(clipName, out AudioClip clip))
-            {
-                clip = Resources.Load<AudioClip>($"Audio/SE/{clipName}");
-                if (clip != null) _clipCache[clipName] = clip;
-            }
-            if (clip != null) PlaySE(clip);
+            if (ambientSource != null) ambientSource.Stop();
+            isPlayingCrowd = false;
+            isPlayingRain = false;
         }
 
-        /// <summary>ゲーム状態に応じたBGMを再生する</summary>
-        public void PlayBGMForGameState(GameState state)
+        // ================================================================
+        // 音量更新
+        // ================================================================
+
+        private void UpdateAllVolumes()
+        {
+            if (bgmSource != null) bgmSource.volume = bgmVolume * masterVolume;
+            if (seSource != null) seSource.volume = seVolume * masterVolume;
+            if (ambientSource != null) ambientSource.volume = ambientVolume * masterVolume;
+        }
+
+        // ================================================================
+        // ゲーム状態変化ハンドラ
+        // ================================================================
+
+        private void OnGameStateChanged(GameState state)
         {
             switch (state)
             {
                 case GameState.MainMenu:
-                    PlayBGM(mainMenuBGM);
+                    PlayBGM(clipMenuBGM);
+                    StopAmbient();
                     break;
+
                 case GameState.Playing:
-                    PlayBGM(gameplayBGM);
+                    PlayBGM(clipGameplayBGM);
+                    StartCrowdAmbient();
                     break;
+
+                case GameState.Paused:
+                    // BGMそのまま、音量少し下げる
+                    if (bgmSource != null)
+                        bgmSource.volume = bgmVolume * masterVolume * 0.3f;
+                    break;
+
                 case GameState.BuildMode:
-                    PlayBGM(buildModeBGM);
+                    // ゲームプレイBGMを継続（音量少し下げる）
+                    if (bgmSource != null)
+                        bgmSource.volume = bgmVolume * masterVolume * 0.5f;
+                    break;
+
+                case GameState.GameOver:
+                    PlayBGM(clipGameOverBGM);
+                    StopAmbient();
                     break;
             }
         }
 
+        // ================================================================
+        // 環境音制御
+        // ================================================================
+
+        private void StartCrowdAmbient()
+        {
+            if (!isPlayingRain)
+            {
+                PlayAmbient(clipCrowdAmbient);
+                isPlayingCrowd = true;
+            }
+        }
+
+        private void SwitchToRainAmbient()
+        {
+            PlayAmbient(clipRainAmbient);
+            isPlayingRain = true;
+            isPlayingCrowd = false;
+        }
+
+        private void SwitchToCrowdAmbient()
+        {
+            PlayAmbient(clipCrowdAmbient);
+            isPlayingCrowd = true;
+            isPlayingRain = false;
+        }
+
+        // ================================================================
+        // イベント購読
+        // ================================================================
+
+        private void SubscribeToEvents()
+        {
+            // パーク
+            GameEvents.OnParkOpened += OnParkOpened;
+            GameEvents.OnParkClosed += OnParkClosed;
+
+            // 天候
+            GameEvents.OnWeatherChanged += OnWeatherChanged;
+
+            // 来場者
+            GameEvents.OnVisitorEnterPark += OnVisitorEnterPark;
+            GameEvents.OnVisitorVomited += OnVisitorVomited;
+            GameEvents.OnVisitorHadAccident += OnVisitorHadAccident;
+
+            // VIP
+            GameEvents.OnVIPArrived += OnVIPArrived;
+
+            // アトラクション
+            GameEvents.OnAttractionBuilt += OnAttractionBuilt;
+            GameEvents.OnAttractionBrokenDown += OnAttractionBrokenDown;
+            GameEvents.OnAttractionAccident += OnAttractionAccident;
+            GameEvents.OnAttractionRepaired += OnAttractionRepaired;
+            GameEvents.OnAttractionUpgraded += OnAttractionUpgraded;
+
+            // 経済
+            GameEvents.OnRevenueEarned += OnRevenueEarned;
+
+            // ゴールデンチケット
+            GameEvents.OnGoldenTicketEarned += OnGoldenTicketEarned;
+
+            // 認定証
+            GameEvents.OnCertificateAwarded += OnCertificateAwarded;
+
+            // 研究
+            GameEvents.OnResearchCompleted += OnResearchCompleted;
+        }
+
+        private void UnsubscribeFromEvents()
+        {
+            GameEvents.OnParkOpened -= OnParkOpened;
+            GameEvents.OnParkClosed -= OnParkClosed;
+            GameEvents.OnWeatherChanged -= OnWeatherChanged;
+            GameEvents.OnVisitorEnterPark -= OnVisitorEnterPark;
+            GameEvents.OnVisitorVomited -= OnVisitorVomited;
+            GameEvents.OnVisitorHadAccident -= OnVisitorHadAccident;
+            GameEvents.OnVIPArrived -= OnVIPArrived;
+            GameEvents.OnAttractionBuilt -= OnAttractionBuilt;
+            GameEvents.OnAttractionBrokenDown -= OnAttractionBrokenDown;
+            GameEvents.OnAttractionAccident -= OnAttractionAccident;
+            GameEvents.OnAttractionRepaired -= OnAttractionRepaired;
+            GameEvents.OnAttractionUpgraded -= OnAttractionUpgraded;
+            GameEvents.OnRevenueEarned -= OnRevenueEarned;
+            GameEvents.OnGoldenTicketEarned -= OnGoldenTicketEarned;
+            GameEvents.OnCertificateAwarded -= OnCertificateAwarded;
+            GameEvents.OnResearchCompleted -= OnResearchCompleted;
+        }
+
+        // ================================================================
         // イベントハンドラ
+        // ================================================================
+
+        private void OnParkOpened()
+        {
+            PlayBGM(clipGameplayBGM);
+            StartCrowdAmbient();
+        }
+
+        private void OnParkClosed()
+        {
+            StopAmbient();
+        }
 
         private void OnWeatherChanged(Weather weather)
         {
-            PlaySEByName($"weather_{weather.ToString().ToLower()}");
+            PlaySE(clipWeatherChange);
+
+            // 雨天 → 雨音環境音に切替、それ以外 → 群衆音に戻す
+            if (weather == Weather.Rainy || weather == Weather.Snowy)
+            {
+                SwitchToRainAmbient();
+            }
+            else if (isPlayingRain)
+            {
+                SwitchToCrowdAmbient();
+            }
         }
 
-        private void OnAttractionBrokenDown(int id)
+        // ---- 来場者の歓声SE（一定確率で歓声を鳴らし連続再生を防ぐ） ----
+        private float lastCheerTime;
+        private const float CheerCooldown = 3f;
+
+        private void OnVisitorEnterPark(int visitorId)
         {
-            PlaySEByName("attraction_breakdown");
+            // 5人に1人くらいの割合で歓声
+            if (Time.time - lastCheerTime > CheerCooldown && visitorId % 5 == 0)
+            {
+                PlaySE(clipCheer);
+                lastCheerTime = Time.time;
+            }
         }
 
-        private void OnAttractionAccident(int id)
+        private void OnVisitorVomited(int visitorId)
         {
-            PlaySEByName("attraction_accident");
+            PlaySE(clipVomit);
+        }
+
+        private void OnVisitorHadAccident(int visitorId)
+        {
+            // トイレ事故は嘔吐SEを流用（控えめに）
+            PlaySE(clipVomit);
+        }
+
+        private void OnVIPArrived(int vipId)
+        {
+            PlaySE(clipVIPArrive);
+        }
+
+        private void OnAttractionBuilt(int attractionId)
+        {
+            PlaySE(clipBuildComplete);
+        }
+
+        private void OnAttractionBrokenDown(int attractionId)
+        {
+            PlaySE(clipBreakdownAlarm);
+        }
+
+        private void OnAttractionAccident(int attractionId)
+        {
+            PlaySE(clipAccidentAlarm);
+        }
+
+        private void OnAttractionRepaired(int attractionId)
+        {
+            PlaySE(clipBuildComplete); // 修理完了音 = 建設完了音を流用
+        }
+
+        private void OnAttractionUpgraded(int attractionId)
+        {
+            PlaySE(clipBuildComplete);
+        }
+
+        // ---- 収益SE（チャリン音、連続再生を抑制） ----
+        private float lastCashTime;
+        private const float CashCooldown = 1f;
+
+        private void OnRevenueEarned(float amount)
+        {
+            if (Time.time - lastCashTime > CashCooldown)
+            {
+                PlaySE(clipCash);
+                lastCashTime = Time.time;
+            }
+        }
+
+        private void OnGoldenTicketEarned(int count)
+        {
+            PlaySE(clipGoldenTicket);
         }
 
         private void OnCertificateAwarded(CertificateCategory category)
         {
-            PlaySEByName("certificate_awarded");
+            PlaySE(clipGoldenTicket); // 認定証はゴールデンチケットSEを流用
         }
 
         private void OnResearchCompleted(string researchId)
         {
-            PlaySEByName("research_complete");
+            PlaySE(clipResearchComplete);
+        }
+
+        // ================================================================
+        // アトラクション搭乗音（外部から呼び出し可能）
+        // ================================================================
+
+        /// <summary>アトラクション搭乗開始時に呼ぶ</summary>
+        public void PlayAttractionRideSE()
+        {
+            PlaySE(clipAttractionRide);
+        }
+
+        /// <summary>歓声SEを再生する（アトラクション降車後など）</summary>
+        public void PlayCheerSE()
+        {
+            PlaySE(clipCheer);
         }
     }
 }

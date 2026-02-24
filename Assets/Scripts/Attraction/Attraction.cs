@@ -302,6 +302,10 @@ namespace ThemeParkGame.Attraction
             // 乗車時間が経過したら運転開始
             if (_cycleTimer >= LoadUnloadDuration)
             {
+                // アトラクション動作音を再生
+                if (AudioManager.Instance != null)
+                    AudioManager.Instance.PlayAttractionRideSE();
+
                 TransitionTo(RideCycleState.Running);
             }
         }
@@ -407,6 +411,10 @@ namespace ThemeParkGame.Attraction
                 NotifyVisitorFinishRiding(vid, excitementGain, nauseaGain,
                     satisfaction * 100f, FacilityId, DisplayName);
             }
+
+            // 搭乗完了時に歓声SE
+            if (AudioManager.Instance != null && riderCount > 0)
+                AudioManager.Instance.PlayCheerSE();
 
             _currentRiders.Clear();
         }
