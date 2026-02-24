@@ -14,6 +14,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using ThemeParkGame.Attraction;
+using ThemeParkGame.Park;
 using ThemeParkGame.Visitor;
 
 namespace ThemeParkGame.Core
@@ -95,6 +96,10 @@ namespace ThemeParkGame.Core
         private GameObject _saveLoadPanel;
         private Text[] _slotTexts;
         private Text _saveLoadMessage;
+
+        // ---- 通路混雑度表示 ----
+        private Text _congestionText;
+        private Image _congestionBarFill;
 
         // ---- 通知バッジ ----
         private GameObject _notifBadge;
@@ -274,13 +279,33 @@ namespace ThemeParkGame.Core
             rt.anchoredPosition = new Vector2(0f, -88f);
 
             _moneyText = MakeLabel(rt, "Money", "", 14, Gold, FontStyle.Bold, TextAnchor.MiddleLeft);
-            PlaceInParent(_moneyText.rectTransform, 12f, barH, barW * 0.3f, barH, new Vector2(0f, 1f));
+            PlaceInParent(_moneyText.rectTransform, 12f, barH, barW * 0.22f, barH, new Vector2(0f, 1f));
 
             _timeWeatherText = MakeLabel(rt, "TimeWeather", "", 14, Color.white, FontStyle.Normal, TextAnchor.MiddleCenter);
-            PlaceInParent(_timeWeatherText.rectTransform, barW * 0.3f, barH, barW * 0.4f, barH, new Vector2(0f, 1f));
+            PlaceInParent(_timeWeatherText.rectTransform, barW * 0.22f, barH, barW * 0.3f, barH, new Vector2(0f, 1f));
+
+            // 混雑度インジケーター
+            _congestionText = MakeLabel(rt, "Congestion", "通路: 空き", 13, Green, FontStyle.Normal, TextAnchor.MiddleLeft);
+            PlaceInParent(_congestionText.rectTransform, barW * 0.52f, barH, 85f, barH, new Vector2(0f, 1f));
+
+            // 混雑度バー
+            var barBg = MakePanel(rt, "CongBarBg", 60f, 10f, new Color(0.15f, 0.15f, 0.2f));
+            var barBgRt = barBg.GetComponent<RectTransform>();
+            barBgRt.anchorMin = barBgRt.anchorMax = new Vector2(0f, 0.5f);
+            barBgRt.pivot = new Vector2(0f, 0.5f);
+            barBgRt.anchoredPosition = new Vector2(barW * 0.52f + 86f, 0f);
+
+            var fill = MakePanel(barBgRt, "CongBarFill", 60f, 10f, Green);
+            var fillRt = fill.GetComponent<RectTransform>();
+            fillRt.anchorMin = new Vector2(0f, 0f);
+            fillRt.anchorMax = new Vector2(0f, 1f);
+            fillRt.pivot = new Vector2(0f, 0.5f);
+            fillRt.anchoredPosition = Vector2.zero;
+            fillRt.sizeDelta = new Vector2(0f, 0f); // 初期は0幅
+            _congestionBarFill = fill.GetComponent<Image>();
 
             _staffText = MakeLabel(rt, "Staff", "", 14, Muted, FontStyle.Normal, TextAnchor.MiddleRight);
-            PlaceInParent(_staffText.rectTransform, barW * 0.7f, barH, barW * 0.28f, barH, new Vector2(0f, 1f));
+            PlaceInParent(_staffText.rectTransform, barW * 0.76f, barH, barW * 0.22f, barH, new Vector2(0f, 1f));
         }
 
         // ================================================================
@@ -1236,6 +1261,47 @@ namespace ThemeParkGame.Core
             });
         }
 
+        // ================================================================
+        // 通路混雑度表示
+        // ================================================================
+
+        private PathwaySystem _cachedPathwaySystem;
+        private float _pathwayCacheTimer;
+
+        private void UpdateCongestionDisplay()
+        {
+            if (_congestionText == null) return;
+
+            // PathwaySystemのキャッシュ（毎フレーム FindObjectOfType は重いので3秒間隔）
+            _pathwayCacheTimer -= Time.deltaTime;
+            if (_pathwayCacheTimer <= 0f || _cachedPathwaySystem == null)
+            {
+                _cachedPathwaySystem = FindObjectOfType<PathwaySystem>();
+                _pathwayCacheTimer = 3f;
+            }
+
+            if (_cachedPathwaySystem == null)
+            {
+                _congestionText.text = "通路: ---";
+                return;
+            }
+
+            float avg = _cachedPathwaySystem.AverageCongestion;
+            string label = PathwaySystem.GetCongestionLabel(avg);
+            Color displayColor = PathwaySystem.GetCongestionDisplayColor(avg);
+
+            _congestionText.text = $"通路: {label}";
+            _congestionText.color = displayColor;
+
+            // バーの更新
+            if (_congestionBarFill != null)
+            {
+                var fillRt = _congestionBarFill.rectTransform;
+                fillRt.sizeDelta = new Vector2(60f * avg, 0f);
+                _congestionBarFill.color = displayColor;
+            }
+        }
+
         private void UpdateFloatingScores()
         {
             Camera cam = Camera.main;
@@ -1339,6 +1405,9 @@ namespace ThemeParkGame.Core
             // ---- スタッフ ----
             if (gm.StaffManager != null)
                 _staffText.text = $"Staff: {gm.StaffManager.TotalStaffCount}名";
+
+            // ---- 通路混雑度 ----
+            UpdateCongestionDisplay();
 
             // ---- 速度 ----
             _currentSpeed = gm.SpeedLevel;

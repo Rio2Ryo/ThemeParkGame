@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 using ThemeParkGame.Core;
+using ThemeParkGame.Park;
 
 namespace ThemeParkGame.Visitor
 {
@@ -652,6 +653,9 @@ namespace ThemeParkGame.Visitor
 
         private void ExecuteWalking(float deltaTime)
         {
+            // 通路混雑度による歩行速度調整
+            UpdateWalkSpeedByCongestion();
+
             // フォールバック移動
             if (useFallbackMovement)
             {
@@ -1038,6 +1042,45 @@ namespace ThemeParkGame.Visitor
             Debug.Log($"[VisitorAI] Visitor {visitorId} left the park. Final: {parameters}");
 
             isInitialized = false;
+        }
+
+        // ---- 通路混雑による速度調整 ----
+
+        private static PathwaySystem s_pathwaySystem;
+        private static float s_pathwayCacheTime = -1f;
+        private float _congestionSpeedTimer;
+
+        /// <summary>
+        /// 通路の混雑度に応じてNavMeshAgentの速度を調整する。
+        /// 混雑しているほど遅くなる（最大40%減速）。
+        /// </summary>
+        private void UpdateWalkSpeedByCongestion()
+        {
+            _congestionSpeedTimer -= Time.deltaTime;
+            if (_congestionSpeedTimer > 0f) return;
+            _congestionSpeedTimer = 1f; // 1秒間隔
+
+            // PathwaySystemのキャッシュ
+            if (Time.time - s_pathwayCacheTime > 3f || s_pathwaySystem == null)
+            {
+                s_pathwaySystem = UnityEngine.Object.FindObjectOfType<PathwaySystem>();
+                s_pathwayCacheTime = Time.time;
+            }
+
+            float baseSpeed = GetWalkSpeed();
+
+            if (s_pathwaySystem != null)
+            {
+                float congestion = s_pathwaySystem.GetCongestionAt(transform.position);
+                // 混雑度0→100%速度、混雑度1→60%速度
+                float speedMul = Mathf.Lerp(1f, 0.6f, congestion);
+                float targetSpeed = baseSpeed * speedMul;
+
+                if (navAgent != null && navAgent.enabled && navAgent.isOnNavMesh)
+                {
+                    navAgent.speed = targetSpeed;
+                }
+            }
         }
 
         // ---- 施設探索 ----

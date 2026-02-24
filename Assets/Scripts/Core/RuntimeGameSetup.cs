@@ -7,6 +7,7 @@
 using UnityEngine;
 using UnityEngine.AI;
 using ThemeParkGame.Attraction;
+using ThemeParkGame.Park;
 using ThemeParkGame.Visitor;
 using ThemeParkGame.Staff;
 
@@ -47,6 +48,9 @@ namespace ThemeParkGame.Core
             // サンプルトイレ・ベンチ・スタッフルーム
             CreateSampleFacilities();
 
+            // 通路ネットワーク生成（NavMesh Bake前に配置）
+            CreatePathwayNetwork(spawnPoint.position);
+
             // NavMeshをランタイムで構築（全施設配置後、スタッフ/Visitor配置前にBake）
             BakeNavMesh();
 
@@ -71,6 +75,78 @@ namespace ThemeParkGame.Core
             }
 
             Debug.Log("[RuntimeGameSetup] === ゲームワールド構築完了 ===");
+        }
+
+        // ================================================================
+        // 通路ネットワーク
+        // ================================================================
+
+        private void CreatePathwayNetwork(Vector3 entrancePos)
+        {
+            var pathGo = new GameObject("PathwaySystem");
+            var pathSystem = pathGo.AddComponent<PathwaySystem>();
+
+            // 施設の位置を収集
+            var attractions = FindObjectsOfType<Attraction.Attraction>();
+            var shops = FindObjectsOfType<Shop>();
+
+            // メインストリート: 入口からパーク中央へ
+            Vector3 hub = new Vector3(0f, 0f, 5f);
+            pathSystem.CreateSegment(entrancePos, hub, 4f);
+
+            // 中央ハブから各アトラクションへ放射状に通路を生成
+            foreach (var attr in attractions)
+            {
+                Vector3 dest = attr.transform.position;
+                // 通路の終点をアトラクション手前に設定
+                Vector3 dir = (dest - hub).normalized;
+                Vector3 pathEnd = dest - dir * 3f;
+                pathEnd.y = 0f;
+
+                float dx = Mathf.Abs(pathEnd.x - hub.x);
+                float dz = Mathf.Abs(pathEnd.z - hub.z);
+
+                if (dx < 2f || dz < 2f)
+                {
+                    pathSystem.CreateSegment(hub, pathEnd, 3f);
+                }
+                else
+                {
+                    pathSystem.CreateLShapedPath(hub, pathEnd, 3f);
+                }
+            }
+
+            // ショップへの通路（中央ハブから）
+            foreach (var shop in shops)
+            {
+                Vector3 dest = shop.transform.position;
+                Vector3 dir = (dest - hub).normalized;
+                Vector3 pathEnd = dest - dir * 2f;
+                pathEnd.y = 0f;
+
+                pathSystem.CreateSegment(hub, pathEnd, 2.5f);
+            }
+
+            // 外周回遊通路（環状）
+            float radius = 20f;
+            int sides = 8;
+            Vector3[] ring = new Vector3[sides];
+            for (int i = 0; i < sides; i++)
+            {
+                float angle = (float)i / sides * Mathf.PI * 2f;
+                ring[i] = new Vector3(
+                    Mathf.Cos(angle) * radius,
+                    0f,
+                    Mathf.Sin(angle) * radius
+                );
+            }
+            for (int i = 0; i < sides; i++)
+            {
+                int next = (i + 1) % sides;
+                pathSystem.CreateSegment(ring[i], ring[next], 2f);
+            }
+
+            Debug.Log($"[RuntimeGameSetup] 通路ネットワーク生成: {pathSystem.Segments.Count}セグメント, 総延長{pathSystem.TotalPathLength:F0}m");
         }
 
         // ================================================================

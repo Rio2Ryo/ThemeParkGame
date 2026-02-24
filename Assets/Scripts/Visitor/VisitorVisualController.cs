@@ -6,6 +6,7 @@
 
 using UnityEngine;
 using ThemeParkGame.Core;
+using ThemeParkGame.Park;
 
 namespace ThemeParkGame.Visitor
 {
@@ -31,6 +32,11 @@ namespace ThemeParkGame.Visitor
         private VisitorBehaviorState _currentState = VisitorBehaviorState.Idle;
         private float _stateTime;
         private float _animPhase; // アニメーション位相（個体差用）
+
+        // ---- 混雑度影響 ----
+        private float _localCongestion;
+        private float _congestionCheckTimer;
+        private const float CongestionCheckInterval = 0.8f;
 
         // ---- 状態別カラーテーブル ----
 
@@ -102,6 +108,14 @@ namespace ThemeParkGame.Visitor
             float dt = Time.deltaTime;
             _stateTime += dt;
 
+            // 混雑度チェック（歩行状態時のみ）
+            _congestionCheckTimer -= dt;
+            if (_congestionCheckTimer <= 0f)
+            {
+                _congestionCheckTimer = CongestionCheckInterval;
+                UpdateLocalCongestion();
+            }
+
             float t = _stateTime + _animPhase;
 
             switch (_currentState)
@@ -163,15 +177,29 @@ namespace ThemeParkGame.Visitor
             _bodyTransform.localScale = _baseLocalScale;
         }
 
-        /// <summary>歩行: 大きめのボブ + 前後の微傾斜</summary>
+        /// <summary>歩行: 大きめのボブ + 左右揺れ。混雑時はボブが小さく・揺れが増す</summary>
         private void AnimateWalking(float t)
         {
-            float bob = Mathf.Abs(Mathf.Sin(t * 6f)) * 0.06f;
+            // 混雑度に応じてアニメーション変化
+            // 空き時: 大きなボブ、少ない揺れ → 軽快な歩行
+            // 混雑時: 小さなボブ、大きな揺れ → もたつく歩行
+            float congestionFactor = _localCongestion;
+
+            float bobSpeed = Mathf.Lerp(6f, 3f, congestionFactor);
+            float bobHeight = Mathf.Lerp(0.06f, 0.02f, congestionFactor);
+            float bob = Mathf.Abs(Mathf.Sin(t * bobSpeed)) * bobHeight;
             _bodyTransform.localPosition = _baseLocalPos + new Vector3(0f, bob, 0f);
 
-            // 左右揺れ
-            float sway = Mathf.Sin(t * 3f) * 2f;
+            // 混雑時は左右揺れが大きく、微妙なX振れも追加
+            float swayAmount = Mathf.Lerp(2f, 5f, congestionFactor);
+            float sway = Mathf.Sin(t * 3f) * swayAmount;
+            float xShift = Mathf.Sin(t * 1.5f + _animPhase) * congestionFactor * 0.03f;
+            _bodyTransform.localPosition += new Vector3(xShift, 0f, 0f);
             _bodyTransform.localRotation = Quaternion.Euler(0f, 0f, sway);
+
+            // 混雑時は体が少し縮む（圧迫感表現）
+            float scaleY = Mathf.Lerp(1f, 0.92f, congestionFactor);
+            _bodyTransform.localScale = Vector3.Scale(_baseLocalScale, new Vector3(1f, scaleY, 1f));
         }
 
         /// <summary>行列待ち: 左右によたよた + 上下ゆっくり</summary>
@@ -259,6 +287,33 @@ namespace ThemeParkGame.Visitor
             _bodyTransform.localPosition = _baseLocalPos;
             _bodyTransform.localRotation = Quaternion.Euler(nod, 0f, 0f);
             _bodyTransform.localScale = _baseLocalScale;
+        }
+
+        // ---- 混雑度取得 ----
+
+        /// <summary>現在位置の通路混雑度を取得する</summary>
+        private void UpdateLocalCongestion()
+        {
+            bool isWalking = _currentState == VisitorBehaviorState.WalkingToAttraction ||
+                             _currentState == VisitorBehaviorState.WalkingToShop ||
+                             _currentState == VisitorBehaviorState.WalkingToToilet ||
+                             _currentState == VisitorBehaviorState.LeavingPark;
+            if (!isWalking)
+            {
+                _localCongestion = Mathf.Lerp(_localCongestion, 0f, 0.3f);
+                return;
+            }
+
+            var pathSystem = Object.FindObjectOfType<PathwaySystem>();
+            if (pathSystem != null)
+            {
+                float target = pathSystem.GetCongestionAt(transform.position);
+                _localCongestion = Mathf.Lerp(_localCongestion, target, 0.4f);
+            }
+            else
+            {
+                _localCongestion = 0f;
+            }
         }
 
         // ---- カラー適用 ----
