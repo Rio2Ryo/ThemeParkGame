@@ -54,6 +54,7 @@ namespace ThemeParkGame.Visitor
         private NavMeshAgent navAgent;
         private EmotionBubble emotionBubble;
         private VisitorVisualController visualController;
+        private VisitorStateMachine stateMachine;
 
         // ---- 内部データ ----
 
@@ -137,6 +138,9 @@ namespace ThemeParkGame.Visitor
         public EmotionBubbleType CurrentEmotionType =>
             emotionBubble != null ? emotionBubble.CurrentType : EmotionBubbleType.Resting;
 
+        /// <summary>ライフサイクルFSMへの読み取り専用アクセス</summary>
+        public VisitorStateMachine StateMachine => stateMachine;
+
         // ---- Unity ライフサイクル ----
 
         private void Awake()
@@ -144,6 +148,7 @@ namespace ThemeParkGame.Visitor
             navAgent = GetComponent<NavMeshAgent>();
             emotionBubble = GetComponentInChildren<EmotionBubble>();
             visualController = GetComponent<VisitorVisualController>();
+            stateMachine = GetComponent<VisitorStateMachine>();
 
             parameters = new VisitorParameters();
             profile = new VisitorProfile();
@@ -256,6 +261,10 @@ namespace ThemeParkGame.Visitor
 
             isInitialized = true;
 
+            // ライフサイクルFSM初期化
+            if (stateMachine != null)
+                stateMachine.Initialize(visitorId);
+
             GameEvents.FireVisitorEnterPark(visitorId);
             GameEvents.FireVisitorHappinessChanged(visitorId, parameters.Happiness);
 
@@ -286,6 +295,11 @@ namespace ThemeParkGame.Visitor
             if (visualController != null)
             {
                 visualController.ResetVisual();
+            }
+
+            if (stateMachine != null)
+            {
+                stateMachine.ResetStateMachine();
             }
         }
 
@@ -1451,6 +1465,10 @@ namespace ThemeParkGame.Visitor
             // ビジュアルコントローラーに状態変更を通知
             if (visualController != null)
                 visualController.OnStateChanged(newState);
+
+            // ライフサイクルFSMに状態変更を通知
+            if (stateMachine != null)
+                stateMachine.OnBehaviorStateChanged(newState);
 
             Debug.Log($"[VisitorAI] Visitor {visitorId}: {previousState} -> {newState}");
         }

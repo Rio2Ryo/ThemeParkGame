@@ -213,6 +213,14 @@ namespace ThemeParkGame.Core
         FirstPerson   // 一人称視点（アトラクション搭乗）
     }
 
+    /// <summary>来場者ライフサイクルフェーズ（マクロ状態）</summary>
+    public enum VisitorLifecyclePhase
+    {
+        Waiting,   // 入園後～体験開始前（移動・行列待ち・散策）
+        Enjoying,  // 体験中（搭乗・食事・ショー鑑賞・休憩など）
+        Leaving    // 退園中
+    }
+
     /// <summary>研究開発状態</summary>
     public enum ResearchState
     {

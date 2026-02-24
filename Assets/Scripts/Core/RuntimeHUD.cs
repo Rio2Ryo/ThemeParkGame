@@ -66,6 +66,8 @@ namespace ThemeParkGame.Core
         private Text _viSatisfaction;
         private Image _viSatBarFill;
         private GameObject _viSatBar;
+        private Text _viLifecycle;
+        private Text _viLifecycleStats;
         private VisitorAI _selectedVisitor;
 
         // ---- 満足度フローティングポップアップ ----
@@ -105,6 +107,14 @@ namespace ThemeParkGame.Core
         private Text _eventText;
         private GameObject _eventPanel;
         private float _eventBlinkTimer;
+
+        // ---- ライフサイクルフェーズ表示 ----
+        private Text _lcWaitingText;
+        private Text _lcEnjoyingText;
+        private Text _lcLeavingText;
+        private Image _lcWaitingBar;
+        private Image _lcEnjoyingBar;
+        private Image _lcLeavingBar;
 
         // ---- 通知バッジ ----
         private GameObject _notifBadge;
@@ -188,6 +198,7 @@ namespace ThemeParkGame.Core
             BuildScenarioPanel(_canvasRoot);
             BuildSaveLoadPanel(_canvasRoot);
             BuildEventPanel(_canvasRoot);
+            BuildLifecyclePanel(_canvasRoot);
         }
 
         // ================================================================
@@ -426,7 +437,7 @@ namespace ThemeParkGame.Core
         private void BuildVisitorInfoPanel(RectTransform root)
         {
             float panelW = 280f;
-            float panelH = 400f;
+            float panelH = 450f;
 
             var bg = MakePanel(root, "VisitorInfoPanel", panelW, panelH, BgDark);
             _visitorInfoPanel = bg;
@@ -489,6 +500,9 @@ namespace ThemeParkGame.Core
             _viToilet  = MakeInfoLine(rt, "Toilet",  ref y, lineH, lx, lw, Muted, FontStyle.Normal, 13);
             y -= 6f;
             _viRides   = MakeInfoLine(rt, "Rides",   ref y, lineH, lx, lw, Cyan, FontStyle.Normal, 13);
+            y -= 6f;
+            _viLifecycle     = MakeInfoLine(rt, "Lifecycle",     ref y, lineH, lx, lw, Cyan, FontStyle.Bold, 13);
+            _viLifecycleStats = MakeInfoLine(rt, "LifecycleStats", ref y, lineH, lx, lw, Muted, FontStyle.Normal, 12);
 
             _visitorInfoPanel.SetActive(false);
         }
@@ -1107,6 +1121,178 @@ namespace ThemeParkGame.Core
         }
 
         // ================================================================
+        // ライフサイクルフェーズ分布パネル（来場者パネルの上 220x90）
+        // ================================================================
+
+        private void BuildLifecyclePanel(RectTransform root)
+        {
+            float panelW = 220f;
+            float panelH = 90f;
+
+            var bg = MakePanel(root, "LifecyclePanel", panelW, panelH, BgDark);
+            var rt = bg.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0f, 0f);
+            rt.pivot = new Vector2(0f, 0f);
+            rt.anchoredPosition = new Vector2(10f, 216f);
+
+            var header = MakeLabel(rt, "LCHeader", "ライフサイクル", 14, Cyan, FontStyle.Bold, TextAnchor.MiddleCenter);
+            PlaceInParent(header.rectTransform, 0f, panelH - 2f, panelW, 20f, new Vector2(0f, 1f));
+
+            float lineH = 20f;
+            float barW = 80f;
+            float barH = 10f;
+            float y = panelH - 24f;
+
+            // Waiting
+            var waitDot = MakePanel(rt, "WaitDot", 10f, 10f, new Color(0.3f, 0.7f, 1.0f));
+            var waitDotRt = waitDot.GetComponent<RectTransform>();
+            waitDotRt.anchorMin = waitDotRt.anchorMax = new Vector2(0f, 0f);
+            waitDotRt.pivot = new Vector2(0f, 0.5f);
+            waitDotRt.anchoredPosition = new Vector2(8f, y - lineH * 0.5f);
+
+            _lcWaitingText = MakeLabel(rt, "LCWait", "待機: 0", 12, new Color(0.3f, 0.7f, 1.0f),
+                FontStyle.Normal, TextAnchor.MiddleLeft);
+            PlaceInParent(_lcWaitingText.rectTransform, 22f, y, 90f, lineH, new Vector2(0f, 1f));
+
+            var wBarBg = MakePanel(rt, "WBarBg", barW, barH, new Color(0.15f, 0.15f, 0.2f));
+            var wBarBgRt = wBarBg.GetComponent<RectTransform>();
+            wBarBgRt.anchorMin = wBarBgRt.anchorMax = new Vector2(0f, 0f);
+            wBarBgRt.pivot = new Vector2(0f, 0.5f);
+            wBarBgRt.anchoredPosition = new Vector2(panelW - barW - 10f, y - lineH * 0.5f);
+
+            var wFill = MakePanel(wBarBgRt, "WBarFill", 0f, barH, new Color(0.3f, 0.7f, 1.0f));
+            var wFillRt = wFill.GetComponent<RectTransform>();
+            wFillRt.anchorMin = new Vector2(0f, 0f);
+            wFillRt.anchorMax = new Vector2(0f, 1f);
+            wFillRt.pivot = new Vector2(0f, 0.5f);
+            wFillRt.anchoredPosition = Vector2.zero;
+            wFillRt.sizeDelta = new Vector2(0f, 0f);
+            _lcWaitingBar = wFill.GetComponent<Image>();
+
+            y -= lineH;
+
+            // Enjoying
+            var enjoyDot = MakePanel(rt, "EnjoyDot", 10f, 10f, new Color(1.0f, 0.6f, 0.1f));
+            var enjoyDotRt = enjoyDot.GetComponent<RectTransform>();
+            enjoyDotRt.anchorMin = enjoyDotRt.anchorMax = new Vector2(0f, 0f);
+            enjoyDotRt.pivot = new Vector2(0f, 0.5f);
+            enjoyDotRt.anchoredPosition = new Vector2(8f, y - lineH * 0.5f);
+
+            _lcEnjoyingText = MakeLabel(rt, "LCEnjoy", "体験: 0", 12, new Color(1.0f, 0.6f, 0.1f),
+                FontStyle.Normal, TextAnchor.MiddleLeft);
+            PlaceInParent(_lcEnjoyingText.rectTransform, 22f, y, 90f, lineH, new Vector2(0f, 1f));
+
+            var eBarBg = MakePanel(rt, "EBarBg", barW, barH, new Color(0.15f, 0.15f, 0.2f));
+            var eBarBgRt = eBarBg.GetComponent<RectTransform>();
+            eBarBgRt.anchorMin = eBarBgRt.anchorMax = new Vector2(0f, 0f);
+            eBarBgRt.pivot = new Vector2(0f, 0.5f);
+            eBarBgRt.anchoredPosition = new Vector2(panelW - barW - 10f, y - lineH * 0.5f);
+
+            var eFill = MakePanel(eBarBgRt, "EBarFill", 0f, barH, new Color(1.0f, 0.6f, 0.1f));
+            var eFillRt = eFill.GetComponent<RectTransform>();
+            eFillRt.anchorMin = new Vector2(0f, 0f);
+            eFillRt.anchorMax = new Vector2(0f, 1f);
+            eFillRt.pivot = new Vector2(0f, 0.5f);
+            eFillRt.anchoredPosition = Vector2.zero;
+            eFillRt.sizeDelta = new Vector2(0f, 0f);
+            _lcEnjoyingBar = eFill.GetComponent<Image>();
+
+            y -= lineH;
+
+            // Leaving
+            var leaveDot = MakePanel(rt, "LeaveDot", 10f, 10f, new Color(0.5f, 0.5f, 0.5f));
+            var leaveDotRt = leaveDot.GetComponent<RectTransform>();
+            leaveDotRt.anchorMin = leaveDotRt.anchorMax = new Vector2(0f, 0f);
+            leaveDotRt.pivot = new Vector2(0f, 0.5f);
+            leaveDotRt.anchoredPosition = new Vector2(8f, y - lineH * 0.5f);
+
+            _lcLeavingText = MakeLabel(rt, "LCLeave", "退園: 0", 12, new Color(0.5f, 0.5f, 0.5f),
+                FontStyle.Normal, TextAnchor.MiddleLeft);
+            PlaceInParent(_lcLeavingText.rectTransform, 22f, y, 90f, lineH, new Vector2(0f, 1f));
+
+            var lBarBg = MakePanel(rt, "LBarBg", barW, barH, new Color(0.15f, 0.15f, 0.2f));
+            var lBarBgRt = lBarBg.GetComponent<RectTransform>();
+            lBarBgRt.anchorMin = lBarBgRt.anchorMax = new Vector2(0f, 0f);
+            lBarBgRt.pivot = new Vector2(0f, 0.5f);
+            lBarBgRt.anchoredPosition = new Vector2(panelW - barW - 10f, y - lineH * 0.5f);
+
+            var lFill = MakePanel(lBarBgRt, "LBarFill", 0f, barH, new Color(0.5f, 0.5f, 0.5f));
+            var lFillRt = lFill.GetComponent<RectTransform>();
+            lFillRt.anchorMin = new Vector2(0f, 0f);
+            lFillRt.anchorMax = new Vector2(0f, 1f);
+            lFillRt.pivot = new Vector2(0f, 0.5f);
+            lFillRt.anchoredPosition = Vector2.zero;
+            lFillRt.sizeDelta = new Vector2(0f, 0f);
+            _lcLeavingBar = lFill.GetComponent<Image>();
+        }
+
+        private void UpdateLifecyclePanel()
+        {
+            var gm = GameManager.Instance;
+            if (gm == null || gm.VisitorManager == null) return;
+
+            var visitors = gm.VisitorManager.GetAllActiveVisitors();
+            int total = visitors.Count;
+            if (total == 0)
+            {
+                if (_lcWaitingText != null) _lcWaitingText.text = "待機: 0";
+                if (_lcEnjoyingText != null) _lcEnjoyingText.text = "体験: 0";
+                if (_lcLeavingText != null) _lcLeavingText.text = "退園: 0";
+                SetBarWidth(_lcWaitingBar, 0f, 80f);
+                SetBarWidth(_lcEnjoyingBar, 0f, 80f);
+                SetBarWidth(_lcLeavingBar, 0f, 80f);
+                return;
+            }
+
+            int waitCount = 0, enjoyCount = 0, leaveCount = 0;
+            for (int i = 0; i < visitors.Count; i++)
+            {
+                var sm = visitors[i].StateMachine;
+                if (sm == null)
+                {
+                    // StateMachine未設定の場合はBehaviorStateから推定
+                    var phase = VisitorStateMachine.MapBehaviorToPhase(visitors[i].CurrentState);
+                    switch (phase)
+                    {
+                        case VisitorLifecyclePhase.Waiting:  waitCount++; break;
+                        case VisitorLifecyclePhase.Enjoying: enjoyCount++; break;
+                        case VisitorLifecyclePhase.Leaving:  leaveCount++; break;
+                    }
+                }
+                else
+                {
+                    switch (sm.CurrentPhase)
+                    {
+                        case VisitorLifecyclePhase.Waiting:  waitCount++; break;
+                        case VisitorLifecyclePhase.Enjoying: enjoyCount++; break;
+                        case VisitorLifecyclePhase.Leaving:  leaveCount++; break;
+                    }
+                }
+            }
+
+            float barMaxW = 80f;
+
+            if (_lcWaitingText != null)
+                _lcWaitingText.text = $"待機: {waitCount}";
+            SetBarWidth(_lcWaitingBar, (float)waitCount / total, barMaxW);
+
+            if (_lcEnjoyingText != null)
+                _lcEnjoyingText.text = $"体験: {enjoyCount}";
+            SetBarWidth(_lcEnjoyingBar, (float)enjoyCount / total, barMaxW);
+
+            if (_lcLeavingText != null)
+                _lcLeavingText.text = $"退園: {leaveCount}";
+            SetBarWidth(_lcLeavingBar, (float)leaveCount / total, barMaxW);
+        }
+
+        private static void SetBarWidth(Image bar, float ratio, float maxW)
+        {
+            if (bar == null) return;
+            var rt = bar.rectTransform;
+            rt.sizeDelta = new Vector2(maxW * Mathf.Clamp01(ratio), 0f);
+        }
+
+        // ================================================================
         // Update
         // ================================================================
 
@@ -1261,6 +1447,22 @@ namespace ThemeParkGame.Core
             if (prof.FavoriteAttraction.HasValue)
             {
                 _viRides.text += $"  Best: {prof.FavoriteAttraction.Value.AttractionName}";
+            }
+
+            // ライフサイクルFSM情報
+            var sm = ai.StateMachine;
+            if (sm != null)
+            {
+                string phaseLabel = VisitorStateMachine.GetPhaseLabel(sm.CurrentPhase);
+                Color phaseColor = VisitorStateMachine.GetPhaseColor(sm.CurrentPhase);
+                _viLifecycle.text = $"フェーズ: {phaseLabel}  ({sm.CurrentPhaseElapsed:F0}s)";
+                _viLifecycle.color = phaseColor;
+                _viLifecycleStats.text = sm.GetStatsSummary();
+            }
+            else
+            {
+                _viLifecycle.text = "";
+                _viLifecycleStats.text = "";
             }
         }
 
@@ -1485,6 +1687,9 @@ namespace ThemeParkGame.Core
 
             // ---- イベント表示 ----
             UpdateEventPanel();
+
+            // ---- ライフサイクルフェーズ ----
+            UpdateLifecyclePanel();
 
             // ---- 速度 ----
             _currentSpeed = gm.SpeedLevel;

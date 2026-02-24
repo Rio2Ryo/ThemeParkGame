@@ -654,6 +654,25 @@ namespace ThemeParkGame.Core
             var visualCtrl = prefab.AddComponent<VisitorVisualController>();
             visualCtrl.Setup(bodyRenderer);
 
+            // VisitorStateMachine: ライフサイクルFSM + 頭上フェーズマーカー
+            var vsm = prefab.AddComponent<VisitorStateMachine>();
+            var phaseMarker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            phaseMarker.name = "PhaseMarker";
+            phaseMarker.transform.SetParent(prefab.transform);
+            phaseMarker.transform.localPosition = new Vector3(0f, 2.2f, 0f);
+            phaseMarker.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+            Object.Destroy(phaseMarker.GetComponent<Collider>());
+
+            var pmRenderer = phaseMarker.GetComponent<Renderer>();
+            if (pmRenderer != null)
+            {
+                var pmShader = Shader.Find("Standard");
+                if (pmShader == null) pmShader = Shader.Find("UI/Default");
+                if (pmShader != null)
+                    pmRenderer.material = new Material(pmShader) { color = new Color(0.3f, 0.7f, 1.0f) };
+            }
+            vsm.SetupHeadMarker(pmRenderer);
+
             // DontDestroyOnLoad対象にして破棄を防ぐ
             DontDestroyOnLoad(prefab);
 
