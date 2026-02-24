@@ -90,6 +90,7 @@ namespace ThemeParkGame.Core
             cam.clearFlags = CameraClearFlags.Skybox;
             cam.fieldOfView = 60f;
             go.AddComponent<AudioListener>();
+            go.AddComponent<FirstPersonCamera>();
             go.transform.position = new Vector3(0f, 30f, -20f);
             go.transform.rotation = Quaternion.Euler(60f, 0f, 0f);
             Debug.Log("[GameBootstrapper] MainCamera を生成");

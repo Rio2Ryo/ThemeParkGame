@@ -67,6 +67,11 @@ namespace ThemeParkGame.Core
         {
             if (GameManager.Instance != null && GameManager.Instance.IsPaused) return;
 
+            // ファーストパーソンモード中は通常カメラ操作を無効化
+            if (GameManager.Instance != null &&
+                GameManager.Instance.CurrentState == GameState.FirstPersonMode)
+                return;
+
 #if UNITY_EDITOR
             HandleMouseInput();
 #else

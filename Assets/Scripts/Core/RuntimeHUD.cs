@@ -116,6 +116,15 @@ namespace ThemeParkGame.Core
         private Image _lcEnjoyingBar;
         private Image _lcLeavingBar;
 
+        // ---- ファーストパーソンビュー ----
+        private GameObject _fpvOverlay;
+        private Text _fpvStatusText;
+        private Text _fpvHappinessText;
+        private Text _fpvPhaseText;
+        private Text _fpvHintText;
+        private Button _fpvExitButton;
+        private Button _viFirstPersonButton;
+
         // ---- 通知バッジ ----
         private GameObject _notifBadge;
         private Text _notifBadgeText;
@@ -199,6 +208,7 @@ namespace ThemeParkGame.Core
             BuildSaveLoadPanel(_canvasRoot);
             BuildEventPanel(_canvasRoot);
             BuildLifecyclePanel(_canvasRoot);
+            BuildFirstPersonOverlay(_canvasRoot);
         }
 
         // ================================================================
@@ -503,6 +513,30 @@ namespace ThemeParkGame.Core
             y -= 6f;
             _viLifecycle     = MakeInfoLine(rt, "Lifecycle",     ref y, lineH, lx, lw, Cyan, FontStyle.Bold, 13);
             _viLifecycleStats = MakeInfoLine(rt, "LifecycleStats", ref y, lineH, lx, lw, Muted, FontStyle.Normal, 12);
+
+            // ファーストパーソンビュー「搭乗」ボタン
+            y -= 8f;
+            var fpBtnGo = MakePanel(rt, "FirstPersonBtn", 120f, 30f, new Color(0.2f, 0.5f, 0.7f));
+            var fpBtnRt = fpBtnGo.GetComponent<RectTransform>();
+            fpBtnRt.anchorMin = fpBtnRt.anchorMax = new Vector2(0.5f, 0f);
+            fpBtnRt.pivot = new Vector2(0.5f, 1f);
+            fpBtnRt.anchoredPosition = new Vector2(0f, y);
+
+            _viFirstPersonButton = fpBtnGo.AddComponent<Button>();
+            _viFirstPersonButton.targetGraphic = fpBtnGo.GetComponent<Image>();
+            var fpBtnColors = _viFirstPersonButton.colors;
+            fpBtnColors.highlightedColor = new Color(0.25f, 0.6f, 0.82f);
+            fpBtnColors.pressedColor = new Color(0.15f, 0.38f, 0.55f);
+            _viFirstPersonButton.colors = fpBtnColors;
+
+            var fpLabel = MakeLabel(fpBtnRt, "FPLabel", "搭乗", 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            var fpLabelRt = fpLabel.rectTransform;
+            fpLabelRt.anchorMin = Vector2.zero;
+            fpLabelRt.anchorMax = Vector2.one;
+            fpLabelRt.offsetMin = Vector2.zero;
+            fpLabelRt.offsetMax = Vector2.zero;
+
+            _viFirstPersonButton.onClick.AddListener(OnFirstPersonButtonClicked);
 
             _visitorInfoPanel.SetActive(false);
         }
@@ -1304,6 +1338,138 @@ namespace ThemeParkGame.Core
         }
 
         // ================================================================
+        // ファーストパーソンビューオーバーレイ
+        // ================================================================
+
+        private void BuildFirstPersonOverlay(RectTransform root)
+        {
+            _fpvOverlay = new GameObject("FPVOverlay");
+            _fpvOverlay.transform.SetParent(root, false);
+            var overlayRt = _fpvOverlay.AddComponent<RectTransform>();
+            overlayRt.anchorMin = Vector2.zero;
+            overlayRt.anchorMax = Vector2.one;
+            overlayRt.offsetMin = Vector2.zero;
+            overlayRt.offsetMax = Vector2.zero;
+
+            // 上部ステータスバー
+            var topBar = MakePanel(overlayRt, "FPVTopBar", 600f, 50f, new Color(0f, 0f, 0f, 0.6f));
+            var topBarRt = topBar.GetComponent<RectTransform>();
+            topBarRt.anchorMin = topBarRt.anchorMax = new Vector2(0.5f, 1f);
+            topBarRt.pivot = new Vector2(0.5f, 1f);
+            topBarRt.anchoredPosition = new Vector2(0f, -6f);
+
+            _fpvStatusText = MakeLabel(topBarRt, "FPVStatus", "", 20, Color.white,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            PlaceInParent(_fpvStatusText.rectTransform, 0f, 50f, 580f, 28f, new Vector2(0f, 1f));
+
+            _fpvHappinessText = MakeLabel(topBarRt, "FPVHappy", "", 14, new Color(0.5f, 1f, 0.5f),
+                FontStyle.Normal, TextAnchor.MiddleLeft);
+            PlaceInParent(_fpvHappinessText.rectTransform, 10f, 22f, 200f, 18f, new Vector2(0f, 1f));
+
+            _fpvPhaseText = MakeLabel(topBarRt, "FPVPhase", "", 14, new Color(0.3f, 0.7f, 1f),
+                FontStyle.Normal, TextAnchor.MiddleRight);
+            PlaceInParent(_fpvPhaseText.rectTransform, 590f, 22f, 200f, 18f, new Vector2(1f, 1f));
+
+            // 下部ヒント
+            _fpvHintText = MakeLabel(overlayRt, "FPVHint",
+                "ドラッグで見回し | ESCで終了", 16,
+                new Color(1f, 1f, 1f, 0.5f), FontStyle.Normal, TextAnchor.MiddleCenter);
+            var hintRt = _fpvHintText.rectTransform;
+            hintRt.anchorMin = new Vector2(0.5f, 0f);
+            hintRt.anchorMax = new Vector2(0.5f, 0f);
+            hintRt.pivot = new Vector2(0.5f, 0f);
+            hintRt.anchoredPosition = new Vector2(0f, 20f);
+            hintRt.sizeDelta = new Vector2(500f, 30f);
+
+            // 「終了」ボタン（右上）
+            var exitBtnGo = MakePanel(overlayRt, "FPVExitBtn", 100f, 36f, new Color(0.7f, 0.2f, 0.2f, 0.85f));
+            var exitBtnRt = exitBtnGo.GetComponent<RectTransform>();
+            exitBtnRt.anchorMin = exitBtnRt.anchorMax = new Vector2(1f, 1f);
+            exitBtnRt.pivot = new Vector2(1f, 1f);
+            exitBtnRt.anchoredPosition = new Vector2(-10f, -10f);
+
+            _fpvExitButton = exitBtnGo.AddComponent<Button>();
+            _fpvExitButton.targetGraphic = exitBtnGo.GetComponent<Image>();
+            var exitColors = _fpvExitButton.colors;
+            exitColors.highlightedColor = new Color(0.85f, 0.3f, 0.3f);
+            exitColors.pressedColor = new Color(0.55f, 0.15f, 0.15f);
+            _fpvExitButton.colors = exitColors;
+
+            var exitLabel = MakeLabel(exitBtnRt, "ExitLabel", "終了", 18,
+                Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            var exitLabelRt = exitLabel.rectTransform;
+            exitLabelRt.anchorMin = Vector2.zero;
+            exitLabelRt.anchorMax = Vector2.one;
+            exitLabelRt.offsetMin = Vector2.zero;
+            exitLabelRt.offsetMax = Vector2.zero;
+
+            _fpvExitButton.onClick.AddListener(OnFPVExitClicked);
+
+            // 初期状態は非表示
+            _fpvOverlay.SetActive(false);
+        }
+
+        private void OnFirstPersonButtonClicked()
+        {
+            if (_selectedVisitor == null) return;
+
+            var fpCam = Camera.main != null ? Camera.main.GetComponent<FirstPersonCamera>() : null;
+            if (fpCam == null) return;
+
+            fpCam.EnterFirstPerson(_selectedVisitor);
+
+            // 来場者パネルを閉じる
+            if (_visitorInfoPanel != null)
+                _visitorInfoPanel.SetActive(false);
+        }
+
+        private void OnFPVExitClicked()
+        {
+            var fpCam = Camera.main != null ? Camera.main.GetComponent<FirstPersonCamera>() : null;
+            if (fpCam != null)
+                fpCam.ExitFirstPerson();
+        }
+
+        private void UpdateFirstPersonOverlay()
+        {
+            var fpCam = Camera.main != null ? Camera.main.GetComponent<FirstPersonCamera>() : null;
+            bool fpvActive = fpCam != null && fpCam.IsActive;
+
+            if (_fpvOverlay != null && _fpvOverlay.activeSelf != fpvActive)
+                _fpvOverlay.SetActive(fpvActive);
+
+            if (!fpvActive) return;
+
+            // ステータス更新
+            if (_fpvStatusText != null)
+                _fpvStatusText.text = fpCam.GetStatusLabel();
+
+            var visitor = fpCam.TargetVisitor;
+            if (visitor != null)
+            {
+                if (_fpvHappinessText != null)
+                {
+                    float hp = visitor.Happiness;
+                    _fpvHappinessText.text = $"幸福度: {hp:F0}%";
+                    _fpvHappinessText.color = hp >= 70f ? new Color(0.5f, 1f, 0.5f)
+                        : hp >= 40f ? new Color(1f, 0.8f, 0.3f) : new Color(1f, 0.4f, 0.3f);
+                }
+
+                if (_fpvPhaseText != null)
+                {
+                    var sm = visitor.StateMachine;
+                    if (sm != null)
+                    {
+                        string phase = VisitorStateMachine.GetPhaseLabel(sm.CurrentPhase);
+                        Color phaseCol = VisitorStateMachine.GetPhaseColor(sm.CurrentPhase);
+                        _fpvPhaseText.text = $"[{phase}]";
+                        _fpvPhaseText.color = phaseCol;
+                    }
+                }
+            }
+        }
+
+        // ================================================================
         // Update
         // ================================================================
 
@@ -1701,6 +1867,16 @@ namespace ThemeParkGame.Core
 
             // ---- ライフサイクルフェーズ ----
             UpdateLifecyclePanel();
+
+            // ---- ファーストパーソンビュー ----
+            UpdateFirstPersonOverlay();
+
+            // FPV中はメインHUD要素を非表示
+            bool fpvActive = false;
+            {
+                var fpCam = Camera.main != null ? Camera.main.GetComponent<FirstPersonCamera>() : null;
+                fpvActive = fpCam != null && fpCam.IsActive;
+            }
 
             // ---- 速度 ----
             _currentSpeed = gm.SpeedLevel;
