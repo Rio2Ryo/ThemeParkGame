@@ -71,6 +71,11 @@ namespace ThemeParkGame.Core
         private Text _resultsFinalScore;
         private Text _resultsBody;
 
+        // ---- シナリオ目標パネル ----
+        private GameObject _scenarioPanel;
+        private Text _scenarioTitle;
+        private Text _scenarioObjectives;
+
         // ---- データキャッシュ ----
         private float _updateTimer;
         private const float UpdateInterval = 0.3f;
@@ -140,6 +145,7 @@ namespace ThemeParkGame.Core
             BuildMenuButton(_canvasRoot);
             BuildPauseOverlay(_canvasRoot);
             BuildResultsOverlay(_canvasRoot);
+            BuildScenarioPanel(_canvasRoot);
         }
 
         // ================================================================
@@ -559,6 +565,37 @@ namespace ThemeParkGame.Core
             _resultsOverlay.SetActive(false);
         }
 
+        // ================================================================
+        // シナリオ目標パネル（右上、シナリオモード時のみ表示）
+        // ================================================================
+
+        private void BuildScenarioPanel(RectTransform root)
+        {
+            float panelW = 300f;
+            float panelH = 180f;
+
+            var bg = MakePanel(root, "ScenarioPanel", panelW, panelH, BgDark);
+            _scenarioPanel = bg;
+            var rt = bg.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(1f, 1f);
+            rt.anchoredPosition = new Vector2(-10f, -10f);
+
+            _scenarioTitle = MakeLabel(rt, "ScTitle", "SCENARIO", 16, Gold,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            PlaceInParent(_scenarioTitle.rectTransform, 0f, panelH - 4f, panelW, 24f, new Vector2(0f, 1f));
+
+            _scenarioObjectives = MakeLabel(rt, "ScObjectives", "", 13, Color.white,
+                FontStyle.Normal, TextAnchor.UpperLeft);
+            _scenarioObjectives.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _scenarioObjectives.verticalOverflow = VerticalWrapMode.Overflow;
+            _scenarioObjectives.lineSpacing = 1.3f;
+            PlaceInParent(_scenarioObjectives.rectTransform, 10f, panelH - 32f,
+                panelW - 20f, panelH - 40f, new Vector2(0f, 1f));
+
+            _scenarioPanel.SetActive(false);
+        }
+
         /// <summary>中央配置のボタンを作成するヘルパー</summary>
         private void MakeCenterButton(RectTransform parent, string name, string label,
             Color normal, Color highlight, Color pressed, Vector2 pos,
@@ -637,10 +674,20 @@ namespace ThemeParkGame.Core
             var gm = GameManager.Instance;
             if (gm == null) return;
 
+            // シナリオモードの場合はクリア/失敗表示を切替
+            bool isScenario = ScenarioManager.Instance != null && ScenarioManager.Instance.IsScenarioActive;
+
             // 最終スコア
             int score = CalculateFinalScore();
             if (_resultsFinalScore != null)
-                _resultsFinalScore.text = score.ToString("N0");
+            {
+                if (isScenario && ScenarioManager.Instance.IsScenarioCleared)
+                    _resultsFinalScore.text = "CLEAR!";
+                else if (isScenario && ScenarioManager.Instance.IsScenarioFailed)
+                    _resultsFinalScore.text = "FAILED";
+                else
+                    _resultsFinalScore.text = score.ToString("N0");
+            }
 
             if (_resultsBody == null) return;
 
@@ -877,6 +924,9 @@ namespace ThemeParkGame.Core
 
             // ---- アトラクション ----
             RefreshAttractions();
+
+            // ---- シナリオ目標 ----
+            RefreshScenarioPanel();
         }
 
         private void RefreshVisitorStates(VisitorManager vm)
@@ -976,6 +1026,39 @@ namespace ThemeParkGame.Core
                     _attrLines[revenueIdx].color = attr.TotalRevenue > 0 ? Gold : Muted;
                 }
             }
+        }
+
+        // ================================================================
+        // シナリオ目標の更新
+        // ================================================================
+
+        private void RefreshScenarioPanel()
+        {
+            if (_scenarioPanel == null) return;
+
+            bool active = ScenarioManager.Instance != null && ScenarioManager.Instance.IsScenarioActive;
+            _scenarioPanel.SetActive(active);
+
+            if (!active) return;
+
+            var sm = ScenarioManager.Instance;
+            var scenario = sm.ActiveScenario;
+
+            _scenarioTitle.text = $"SCENARIO: {ScenarioManager.GetCountryName(scenario.Country)}";
+
+            string objectives = sm.GetObjectiveProgressText();
+            if (sm.IsScenarioCleared)
+                objectives += "\n*** SCENARIO CLEARED! ***";
+            else if (sm.IsScenarioFailed)
+                objectives += "\n*** TIME OVER ***";
+
+            if (scenario.TimeLimitYears > 0 && GameManager.Instance.TimeManager != null)
+            {
+                int yr = GameManager.Instance.TimeManager.CurrentYear;
+                objectives += $"\n制限: Year {yr}/{scenario.TimeLimitYears}";
+            }
+
+            _scenarioObjectives.text = objectives;
         }
 
         // ================================================================

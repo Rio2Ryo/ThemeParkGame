@@ -8,6 +8,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using ThemeParkGame.UI;
 
 namespace ThemeParkGame.Core
 {
@@ -280,6 +281,30 @@ namespace ThemeParkGame.Core
                 new Color(0.65f, 0.25f, 0.2f), new Color(0.75f, 0.35f, 0.3f), new Color(0.5f, 0.18f, 0.15f),
                 startX + (btnW + gap) * 2, -90f, btnW, btnH, GameDifficulty.Hard);
 
+            // ---- シナリオモードボタン ----
+            var scenGo = CreateUIElement("ScenarioBtn", canvasGo.transform);
+            var scenImg = scenGo.AddComponent<Image>();
+            scenImg.color = new Color(0.5f, 0.3f, 0.6f);
+            var scenBtn = scenGo.AddComponent<Button>();
+            var scenColors = scenBtn.colors;
+            scenColors.highlightedColor = new Color(0.6f, 0.38f, 0.72f);
+            scenColors.pressedColor = new Color(0.38f, 0.2f, 0.48f);
+            scenBtn.colors = scenColors;
+            scenBtn.targetGraphic = scenImg;
+            SetAnchored(scenGo.GetComponent<RectTransform>(), 0, -185f, 300f, 50f);
+
+            var scenLabel = CreateUIElement("ScenLabel", scenGo.transform);
+            var scenLabelText = scenLabel.AddComponent<Text>();
+            scenLabelText.text = "SCENARIO MODE";
+            scenLabelText.font = GetBuiltinFont();
+            scenLabelText.fontSize = 24;
+            scenLabelText.fontStyle = FontStyle.Bold;
+            scenLabelText.alignment = TextAnchor.MiddleCenter;
+            scenLabelText.color = Color.white;
+            StretchFull(scenLabel.GetComponent<RectTransform>());
+
+            scenBtn.onClick.AddListener(() => ctrl.OnScenarioModeClicked());
+
             // ---- 操作ヒント ----
             var hint = CreateUIElement("Hint", canvasGo.transform);
             var hintText = hint.AddComponent<Text>();
@@ -288,7 +313,7 @@ namespace ThemeParkGame.Core
             hintText.fontSize = 16;
             hintText.alignment = TextAnchor.MiddleCenter;
             hintText.color = new Color(0.4f, 0.45f, 0.55f);
-            SetAnchored(hint.GetComponent<RectTransform>(), 0, -180, 900, 30);
+            SetAnchored(hint.GetComponent<RectTransform>(), 0, -250, 900, 30);
 
             // ---- バージョン表示 ----
             var ver = CreateUIElement("Version", canvasGo.transform);
@@ -438,6 +463,19 @@ namespace ThemeParkGame.Core
             GameManager.Instance.StartNewGame(ThemeZone.LostKingdom, difficulty);
             Debug.Log($"[GameBootstrapper] ゲーム開始! 難易度: {difficulty}");
             Destroy(gameObject);
+        }
+
+        public void OnScenarioModeClicked()
+        {
+            // タイトル画面のCanvasにステージ選択UIを表示
+            var canvasRt = GetComponent<RectTransform>();
+            StageSelectUI.Show(canvasRt);
+
+            // タイトル画面の子要素を非表示（StageSelectUI以外）
+            for (int i = 0; i < transform.childCount - 1; i++)
+            {
+                transform.GetChild(i).gameObject.SetActive(false);
+            }
         }
     }
 }
