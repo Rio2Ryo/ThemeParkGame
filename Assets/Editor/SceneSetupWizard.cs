@@ -2,6 +2,7 @@
 // ThemeParkGame - Scene Setup Wizard
 // Unityエディタ拡張: メニューからワンクリックでシーン階層を自動構築
 // メニュー: ThemeParkGame > Setup Scene
+//           ThemeParkGame > Full Setup (All)
 // ============================================================
 
 #if UNITY_EDITOR
@@ -19,9 +20,46 @@ namespace ThemeParkGame.Editor
 {
     public static class SceneSetupWizard
     {
-        private const string MenuPath = "ThemeParkGame/Setup Scene";
+        // ================================================================
+        // Full Setup (Tags + Scene + Prefabs in one click)
+        // ================================================================
 
-        [MenuItem(MenuPath)]
+        [MenuItem("ThemeParkGame/Full Setup (All)", false, 0)]
+        public static void FullSetup()
+        {
+            if (!EditorUtility.DisplayDialog(
+                "Full Setup",
+                "タグ・レイヤー登録、シーン構築、プレハブ生成を一括実行します。\n\n続行しますか？",
+                "実行する", "キャンセル"))
+            {
+                return;
+            }
+
+            // 1. Tags & Layers
+            TagLayerSetup.SetupTagsAndLayers();
+
+            // 2. Scene hierarchy
+            SetupSceneInternal();
+
+            // 3. Prefabs
+            PrefabGenerator.GenerateAllPrefabsInternal();
+
+            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+
+            Debug.Log("[FullSetup] === 全セットアップ完了 ===");
+            EditorUtility.DisplayDialog("Full Setup",
+                "全セットアップが完了しました。\n\n" +
+                "1. タグ・レイヤー登録\n" +
+                "2. シーン階層構築\n" +
+                "3. プレハブ生成\n\n" +
+                "シーンを保存してください。", "OK");
+        }
+
+        // ================================================================
+        // Scene Setup
+        // ================================================================
+
+        [MenuItem("ThemeParkGame/Setup Scene", false, 20)]
         public static void SetupScene()
         {
             if (!EditorUtility.DisplayDialog(
@@ -36,11 +74,7 @@ namespace ThemeParkGame.Editor
             // タグ・レイヤーが未設定なら先に実行
             TagLayerSetup.SetupTagsAndLayers();
 
-            CreateManagers();
-            CreateEnvironment();
-            CreateParkContentContainers();
-            CreateEntityContainers();
-            CreateUIHierarchy();
+            SetupSceneInternal();
 
             EditorSceneManager.MarkSceneDirty(
                 EditorSceneManager.GetActiveScene()
@@ -48,6 +82,18 @@ namespace ThemeParkGame.Editor
 
             Debug.Log("[SceneSetupWizard] シーン構築完了");
             EditorUtility.DisplayDialog("Scene Setup", "シーン構築が完了しました。", "OK");
+        }
+
+        /// <summary>ダイアログなしでシーン構築を実行する（Full Setupから呼び出し用）</summary>
+        internal static void SetupSceneInternal()
+        {
+            CreateManagers();
+            CreateEnvironment();
+            CreateNavMesh();
+            CreateParkContentContainers();
+            CreateEntityContainers();
+            CreateSpawnMarkers();
+            CreateUIHierarchy();
         }
 
         // ================================================================
@@ -62,6 +108,7 @@ namespace ThemeParkGame.Editor
             var gmObj = FindOrCreateChild(managersRoot, "GameManager");
             AddComponentIfMissing<GameManager>(gmObj);
             AddComponentIfMissing<SceneBootstrapper>(gmObj);
+            AddComponentIfMissing<RuntimeGameSetup>(gmObj);
 
             // AudioManager (separate for DontDestroyOnLoad)
             var audioObj = FindOrCreateChild(managersRoot, "AudioManager");
@@ -112,6 +159,7 @@ namespace ThemeParkGame.Editor
             // Ground plane
             var groundObj = FindOrCreateChild(envRoot, "Ground");
             SetLayerByName(groundObj, "Ground");
+            groundObj.isStatic = true;
             var meshFilter = AddComponentIfMissing<MeshFilter>(groundObj);
             meshFilter.sharedMesh = CreateGroundMesh();
             var meshRenderer = AddComponentIfMissing<MeshRenderer>(groundObj);
@@ -124,12 +172,39 @@ namespace ThemeParkGame.Editor
             // Park Entrance
             var entranceObj = FindOrCreateChild(envRoot, "ParkEntrance");
             entranceObj.tag = "ParkExit";
+            SetLayerByName(entranceObj, "Facility");
             var entranceCol = AddComponentIfMissing<BoxCollider>(entranceObj);
-            entranceCol.size = new Vector3(3f, 3f, 1f);
+            entranceCol.size = new Vector3(6f, 4f, 3f);
+            entranceCol.center = new Vector3(0f, 2f, 0f);
             entranceCol.isTrigger = true;
             entranceObj.transform.position = Vector3.zero;
 
             Debug.Log("[SceneSetupWizard] Environment 作成完了");
+        }
+
+        // ================================================================
+        // NavMesh
+        // ================================================================
+
+        private static void CreateNavMesh()
+        {
+            var envRoot = GameObject.Find("--- Environment ---");
+            if (envRoot == null) return;
+
+            var groundObj = envRoot.transform.Find("Ground");
+            if (groundObj == null) return;
+
+            // NavMeshSurface (com.unity.ai.navigation)
+            var surface = groundObj.GetComponent<Unity.AI.Navigation.NavMeshSurface>();
+            if (surface == null)
+            {
+                surface = Undo.AddComponent<Unity.AI.Navigation.NavMeshSurface>(groundObj.gameObject);
+            }
+
+            surface.collectObjects = Unity.AI.Navigation.CollectObjects.All;
+            surface.useGeometry = UnityEngine.AI.NavMeshCollectGeometry.PhysicsColliders;
+
+            Debug.Log("[SceneSetupWizard] NavMeshSurface 設定完了（Bakeはプレイモードで自動実行）");
         }
 
         // ================================================================
@@ -144,6 +219,8 @@ namespace ThemeParkGame.Editor
             FindOrCreateChild(parkRoot, "Facilities");
             FindOrCreateChild(parkRoot, "Pathways");
             FindOrCreateChild(parkRoot, "Decorations");
+            FindOrCreateChild(parkRoot, "Litter");
+            FindOrCreateChild(parkRoot, "Vomit");
 
             Debug.Log("[SceneSetupWizard] Park Content containers 作成完了");
         }
@@ -159,6 +236,26 @@ namespace ThemeParkGame.Editor
             FindOrCreateChild(entityRoot, "Staff");
 
             Debug.Log("[SceneSetupWizard] Entity containers 作成完了");
+        }
+
+        // ================================================================
+        // Spawn / Exit Markers
+        // ================================================================
+
+        private static void CreateSpawnMarkers()
+        {
+            var envRoot = FindOrCreateGameObject("--- Environment ---");
+
+            // SpawnPoint: where visitors appear
+            var spawnObj = FindOrCreateChild(envRoot, "SpawnPoint");
+            spawnObj.transform.position = new Vector3(0f, 0f, -5f);
+
+            // ExitPoint: where visitors leave
+            var exitObj = FindOrCreateChild(envRoot, "ExitPoint");
+            exitObj.transform.position = new Vector3(0f, 0f, -8f);
+            exitObj.tag = "ParkExit";
+
+            Debug.Log("[SceneSetupWizard] Spawn/Exit markers 作成完了");
         }
 
         // ================================================================
@@ -259,7 +356,7 @@ namespace ThemeParkGame.Editor
             {
                 var btnObj = FindOrCreateChild(speedBar, $"Speed{i}Button");
                 AddComponentIfMissing<Image>(btnObj);
-                var btn = AddComponentIfMissing<Button>(btnObj);
+                AddComponentIfMissing<Button>(btnObj);
                 CreateTMPText(btnObj, "Label", speedLabels[i], 14);
             }
 
@@ -286,15 +383,10 @@ namespace ThemeParkGame.Editor
             SetRectTransformAnchored(bottomBar, new Vector2(0, 0), new Vector2(1, 0),
                 new Vector2(0, 40), new Vector2(0, 80));
 
-            var buildBtn = FindOrCreateChild(bottomBar, "BuildModeButton");
-            AddComponentIfMissing<Image>(buildBtn);
-            AddComponentIfMissing<Button>(buildBtn);
-            CreateTMPText(buildBtn, "Label", "Build", 16);
-
-            var viewBtn = FindOrCreateChild(bottomBar, "ViewModeButton");
-            AddComponentIfMissing<Image>(viewBtn);
-            AddComponentIfMissing<Button>(viewBtn);
-            CreateTMPText(viewBtn, "Label", "View", 16);
+            CreateBottomButton(bottomBar, "BuildModeButton", "Build");
+            CreateBottomButton(bottomBar, "StaffButton", "Staff");
+            CreateBottomButton(bottomBar, "ViewModeButton", "View");
+            CreateBottomButton(bottomBar, "MenuButton", "Menu");
 
             var notifBtn = FindOrCreateChild(bottomBar, "NotificationBell");
             AddComponentIfMissing<Image>(notifBtn);
@@ -304,11 +396,20 @@ namespace ThemeParkGame.Editor
             CreateTMPText(badge, "UnreadCount", "0", 12);
         }
 
+        private static void CreateBottomButton(GameObject parent, string name, string label)
+        {
+            var btn = FindOrCreateChild(parent, name);
+            AddComponentIfMissing<Image>(btn);
+            AddComponentIfMissing<Button>(btn);
+            CreateTMPText(btn, "Label", label, 16);
+        }
+
         // ================================================================
         // Helper: Create TMP Text
         // ================================================================
 
-        private static GameObject CreateTMPText(GameObject parent, string name, string defaultText, int fontSize)
+        private static GameObject CreateTMPText(GameObject parent, string name,
+            string defaultText, int fontSize)
         {
             var obj = FindOrCreateChild(parent, name);
             var tmp = AddComponentIfMissing<TextMeshProUGUI>(obj);
@@ -325,7 +426,6 @@ namespace ThemeParkGame.Editor
 
         private static Mesh CreateGroundMesh()
         {
-            // Use a simple quad scaled up
             var mesh = new Mesh { name = "GroundPlane" };
             float half = 100f;
             mesh.vertices = new Vector3[]
@@ -355,12 +455,11 @@ namespace ThemeParkGame.Editor
             var existing = AssetDatabase.LoadAssetAtPath<Material>(matPath);
             if (existing != null) return existing;
 
-            // Ensure directory exists
             if (!AssetDatabase.IsValidFolder("Assets/Materials"))
                 AssetDatabase.CreateFolder("Assets", "Materials");
 
             var mat = new Material(Shader.Find("Standard"));
-            mat.color = new Color(0.35f, 0.65f, 0.25f, 1f); // Grass green
+            mat.color = new Color(0.35f, 0.65f, 0.25f, 1f);
             AssetDatabase.CreateAsset(mat, matPath);
             AssetDatabase.SaveAssets();
             return mat;

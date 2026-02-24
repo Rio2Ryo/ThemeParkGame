@@ -20,7 +20,7 @@ namespace ThemeParkGame.Editor
     {
         private const string PrefabRoot = "Assets/Prefabs";
 
-        [MenuItem("ThemeParkGame/Generate Prefabs")]
+        [MenuItem("ThemeParkGame/Generate Prefabs", false, 30)]
         public static void GenerateAllPrefabs()
         {
             if (!EditorUtility.DisplayDialog(
@@ -32,6 +32,19 @@ namespace ThemeParkGame.Editor
                 return;
             }
 
+            int count = GenerateAllPrefabsInternal();
+
+            Debug.Log($"[PrefabGenerator] 完了: {count} 件のプレハブを生成しました");
+            EditorUtility.DisplayDialog(
+                "Prefab Generator",
+                $"プレハブ生成完了\n\n生成数: {count} 件\n保存先: {PrefabRoot}/",
+                "OK"
+            );
+        }
+
+        /// <summary>ダイアログなしでプレハブ生成を実行する（Full Setupから呼び出し用）</summary>
+        internal static int GenerateAllPrefabsInternal()
+        {
             EnsureDirectories();
 
             int count = 0;
@@ -40,17 +53,13 @@ namespace ThemeParkGame.Editor
             count += GenerateAttractionPrefab();
             count += GenerateShopPrefabs();
             count += GenerateFacilityPrefabs();
+            count += GenerateEnvironmentPrefabs();
             count += GenerateUIPrefabs();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log($"[PrefabGenerator] 完了: {count} 件のプレハブを生成しました");
-            EditorUtility.DisplayDialog(
-                "Prefab Generator",
-                $"プレハブ生成完了\n\n生成数: {count} 件\n保存先: {PrefabRoot}/",
-                "OK"
-            );
+            return count;
         }
 
         // ================================================================
@@ -65,6 +74,7 @@ namespace ThemeParkGame.Editor
             EnsureFolder(PrefabRoot, "Attraction");
             EnsureFolder(PrefabRoot, "Shop");
             EnsureFolder(PrefabRoot, "Facility");
+            EnsureFolder(PrefabRoot, "Environment");
             EnsureFolder(PrefabRoot, "UI");
         }
 
@@ -171,6 +181,22 @@ namespace ThemeParkGame.Editor
                 renderer.sharedMaterial = mat;
             }
 
+            // Staff marker sphere above head
+            var marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            marker.name = "StaffMarker";
+            marker.transform.SetParent(go.transform, false);
+            marker.transform.localPosition = new Vector3(0f, 2.2f, 0f);
+            marker.transform.localScale = new Vector3(0.25f, 0.25f, 0.25f);
+            Object.DestroyImmediate(marker.GetComponent<SphereCollider>());
+
+            var markerRenderer = marker.GetComponent<MeshRenderer>();
+            if (markerRenderer != null)
+            {
+                var mat = new Material(Shader.Find("Standard"));
+                mat.color = Color.white;
+                markerRenderer.sharedMaterial = mat;
+            }
+
             // Components
             var col = go.AddComponent<CapsuleCollider>();
             col.center = new Vector3(0f, 1f, 0f);
@@ -219,6 +245,7 @@ namespace ThemeParkGame.Editor
 
             // Queue area marker
             var queueArea = new GameObject("QueueArea");
+            queueArea.tag = "QueueArea";
             queueArea.transform.SetParent(go.transform, false);
             queueArea.transform.localPosition = new Vector3(0f, 0f, -3f);
             var queueCol = queueArea.AddComponent<BoxCollider>();
@@ -459,6 +486,104 @@ namespace ThemeParkGame.Editor
         }
 
         // ================================================================
+        // Environment Prefabs (Litter, Vomit, Decoration)
+        // ================================================================
+
+        private static int GenerateEnvironmentPrefabs()
+        {
+            int count = 0;
+
+            // Litter prefab (dropped by visitors, cleaned by CleanerStaff)
+            {
+                var go = new GameObject("Litter");
+                go.tag = "Litter";
+
+                var visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                visual.name = "LitterModel";
+                visual.transform.SetParent(go.transform, false);
+                visual.transform.localPosition = new Vector3(0f, 0.05f, 0f);
+                visual.transform.localScale = new Vector3(0.3f, 0.1f, 0.2f);
+                Object.DestroyImmediate(visual.GetComponent<BoxCollider>());
+
+                var renderer = visual.GetComponent<MeshRenderer>();
+                if (renderer != null)
+                {
+                    var mat = new Material(Shader.Find("Standard"));
+                    mat.color = new Color(0.6f, 0.5f, 0.3f);
+                    renderer.sharedMaterial = mat;
+                }
+
+                var col = go.AddComponent<BoxCollider>();
+                col.size = new Vector3(0.4f, 0.2f, 0.3f);
+                col.center = new Vector3(0f, 0.1f, 0f);
+                col.isTrigger = true;
+
+                SavePrefab(go, $"{PrefabRoot}/Environment/Litter.prefab");
+                count++;
+            }
+
+            // Vomit prefab (created when visitors vomit, cleaned by CleanerStaff)
+            {
+                var go = new GameObject("Vomit");
+                go.tag = "Vomit";
+
+                var visual = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                visual.name = "VomitModel";
+                visual.transform.SetParent(go.transform, false);
+                visual.transform.localPosition = new Vector3(0f, 0.02f, 0f);
+                visual.transform.localScale = new Vector3(0.5f, 0.02f, 0.5f);
+                Object.DestroyImmediate(visual.GetComponent<CapsuleCollider>());
+
+                var renderer = visual.GetComponent<MeshRenderer>();
+                if (renderer != null)
+                {
+                    var mat = new Material(Shader.Find("Standard"));
+                    mat.color = new Color(0.7f, 0.65f, 0.2f, 0.9f);
+                    renderer.sharedMaterial = mat;
+                }
+
+                var col = go.AddComponent<BoxCollider>();
+                col.size = new Vector3(0.6f, 0.1f, 0.6f);
+                col.center = new Vector3(0f, 0.05f, 0f);
+                col.isTrigger = true;
+
+                SavePrefab(go, $"{PrefabRoot}/Environment/Vomit.prefab");
+                count++;
+            }
+
+            // Decoration prefab (generic placeable decoration)
+            {
+                var go = new GameObject("Decoration_Generic");
+                go.tag = "Decoration";
+                SetLayerByName(go, "Facility");
+
+                var visual = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                visual.name = "DecorationModel";
+                visual.transform.SetParent(go.transform, false);
+                visual.transform.localPosition = new Vector3(0f, 0.5f, 0f);
+                visual.transform.localScale = new Vector3(1f, 1f, 1f);
+                Object.DestroyImmediate(visual.GetComponent<SphereCollider>());
+
+                var renderer = visual.GetComponent<MeshRenderer>();
+                if (renderer != null)
+                {
+                    var mat = new Material(Shader.Find("Standard"));
+                    mat.color = new Color(0.4f, 0.8f, 0.4f);
+                    renderer.sharedMaterial = mat;
+                }
+
+                var col = go.AddComponent<BoxCollider>();
+                col.size = new Vector3(1.2f, 1.2f, 1.2f);
+                col.center = new Vector3(0f, 0.6f, 0f);
+
+                SavePrefab(go, $"{PrefabRoot}/Environment/Decoration_Generic.prefab");
+                count++;
+            }
+
+            return count;
+        }
+
+        // ================================================================
         // UI Prefabs
         // ================================================================
 
@@ -547,10 +672,8 @@ namespace ThemeParkGame.Editor
                 statusTMP.fontSize = 12;
                 statusTMP.alignment = TextAlignmentOptions.Left;
 
-                var fatigueSlider = CreateSliderChild(go, "FatigueSlider",
-                    new Vector2(100, 10), Color.red);
-                var skillSlider = CreateSliderChild(go, "SkillSlider",
-                    new Vector2(100, 10), Color.cyan);
+                CreateSliderChild(go, "FatigueSlider", new Vector2(100, 10), Color.red);
+                CreateSliderChild(go, "SkillSlider", new Vector2(100, 10), Color.cyan);
 
                 SavePrefab(go, $"{PrefabRoot}/UI/UI_StaffListItem.prefab");
                 count++;
@@ -570,6 +693,54 @@ namespace ThemeParkGame.Editor
                 tmp.alignment = TextAlignmentOptions.Center;
 
                 SavePrefab(go, $"{PrefabRoot}/UI/UI_QuickReplyButton.prefab");
+                count++;
+            }
+
+            // Notification Toast
+            {
+                var go = CreateUIGameObject("UI_NotificationToast", new Vector2(320, 50));
+                var img = go.AddComponent<Image>();
+                img.color = new Color(0.15f, 0.15f, 0.2f, 0.9f);
+                go.AddComponent<CanvasGroup>();
+
+                var icon = CreateUIChild(go, "Icon", new Vector2(30, 30));
+                var iconTMP = icon.AddComponent<TextMeshProUGUI>();
+                iconTMP.text = "[i]";
+                iconTMP.fontSize = 16;
+                iconTMP.alignment = TextAlignmentOptions.Center;
+
+                var message = CreateUIChild(go, "Message", new Vector2(270, 40));
+                var msgTMP = message.AddComponent<TextMeshProUGUI>();
+                msgTMP.text = "Notification";
+                msgTMP.fontSize = 13;
+                msgTMP.alignment = TextAlignmentOptions.Left;
+                msgTMP.enableWordWrapping = true;
+
+                SavePrefab(go, $"{PrefabRoot}/UI/UI_NotificationToast.prefab");
+                count++;
+            }
+
+            // Achievement Toast
+            {
+                var go = CreateUIGameObject("UI_AchievementToast", new Vector2(380, 80));
+                var img = go.AddComponent<Image>();
+                img.color = new Color(0.15f, 0.12f, 0.05f, 0.95f);
+                go.AddComponent<CanvasGroup>();
+
+                var title = CreateUIChild(go, "Title", new Vector2(340, 25));
+                var titleTMP = title.AddComponent<TextMeshProUGUI>();
+                titleTMP.text = "Achievement Unlocked!";
+                titleTMP.fontSize = 14;
+                titleTMP.color = new Color(1f, 0.85f, 0.3f);
+                titleTMP.alignment = TextAlignmentOptions.Center;
+
+                var desc = CreateUIChild(go, "Description", new Vector2(340, 20));
+                var descTMP = desc.AddComponent<TextMeshProUGUI>();
+                descTMP.text = "Description";
+                descTMP.fontSize = 12;
+                descTMP.alignment = TextAlignmentOptions.Center;
+
+                SavePrefab(go, $"{PrefabRoot}/UI/UI_AchievementToast.prefab");
                 count++;
             }
 

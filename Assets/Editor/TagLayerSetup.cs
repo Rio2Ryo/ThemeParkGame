@@ -28,7 +28,12 @@ namespace ThemeParkGame.Editor
             "Visitor",
             "StaffRoom",
             "ResearchLab",
-            "Pathway"
+            "Pathway",
+            "Litter",
+            "Vomit",
+            "Hooligan",
+            "QueueArea",
+            "Decoration"
         };
 
         // ---- 登録するカスタムレイヤー (Layer 8〜11) ----
@@ -40,7 +45,7 @@ namespace ThemeParkGame.Editor
             ("Staff",    11)
         };
 
-        [MenuItem("ThemeParkGame/Setup Tags && Layers")]
+        [MenuItem("ThemeParkGame/Setup Tags && Layers", false, 10)]
         public static void SetupTagsAndLayers()
         {
             SerializedObject tagManager = new SerializedObject(

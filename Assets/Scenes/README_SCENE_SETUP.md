@@ -10,23 +10,31 @@ This project includes Editor extension scripts that automatically construct the 
 - TextMeshPro (imported via Package Manager)
 - AI Navigation package (for NavMeshAgent/NavMeshSurface)
 
-## Setup Steps
+## Quick Start (Recommended)
 
-### 1. Open the Project in Unity
+**Menu: ThemeParkGame > Full Setup (All)**
 
-Open the `ThemeParkGame` folder as a Unity project. Wait for all scripts to compile.
+This runs all three setup steps in sequence:
+1. Tags & Layers registration
+2. Scene hierarchy construction
+3. Prefab generation
 
-### 2. Register Tags & Layers
+After Full Setup, save the scene and enter Play mode.
+
+## Individual Setup Steps
+
+### 1. Register Tags & Layers
 
 **Menu: ThemeParkGame > Setup Tags & Layers**
 
-This registers the following custom tags and layers used throughout the codebase:
+Registers the following custom tags and layers:
 
 **Tags:**
 - `Attraction`, `FoodShop`, `DrinkShop`, `SouvenirShop`
 - `Toilet`, `Bench`, `TrashCan`, `InfoBoard`
 - `ParkExit`, `Staff`, `Visitor`
 - `StaffRoom`, `ResearchLab`, `Pathway`
+- `Litter`, `Vomit`, `Hooligan`, `QueueArea`, `Decoration`
 
 **Layers:**
 - Layer 8: `Ground` (used by BuildPanelUI for placement raycasting)
@@ -34,23 +42,25 @@ This registers the following custom tags and layers used throughout the codebase
 - Layer 10: `Visitor` (visitor entities)
 - Layer 11: `Staff` (staff entities)
 
-### 3. Build the Scene Hierarchy
+### 2. Build the Scene Hierarchy
 
 **Menu: ThemeParkGame > Setup Scene**
 
-This creates the full scene structure:
+Creates the full scene structure:
 
 ```
 --- Managers ---
-  GameManager       (GameManager + all subsystems + SceneBootstrapper)
+  GameManager       (GameManager + subsystems + SceneBootstrapper + RuntimeGameSetup)
   AudioManager      (AudioManager singleton)
   InputManager      (InputManager singleton)
 
 --- Environment ---
-  MainCamera        (Camera + AudioListener, positioned at bird's eye view)
+  MainCamera        (Camera + AudioListener, bird's eye view)
   DirectionalLight  (Warm sunlight with soft shadows)
-  Ground            (200x200 ground plane on Ground layer)
+  Ground            (200x200 ground plane, Ground layer, NavMeshSurface)
   ParkEntrance      (Tagged ParkExit, trigger collider)
+  SpawnPoint        (Visitor spawn position)
+  ExitPoint         (Visitor exit position, tagged ParkExit)
 
 --- Park Content ---
   Attractions       (Parent for placed attractions)
@@ -58,6 +68,8 @@ This creates the full scene structure:
   Facilities        (Parent for toilets, benches, etc.)
   Pathways          (Parent for path segments)
   Decorations       (Parent for decorative items)
+  Litter            (Parent for litter instances)
+  Vomit             (Parent for vomit instances)
 
 --- Entities ---
   Visitors          (Parent for spawned visitor instances)
@@ -74,62 +86,49 @@ This creates the full scene structure:
   EventSystem       (EventSystem + StandaloneInputModule)
 ```
 
-### 4. Generate Prefabs
+### 3. Generate Prefabs
 
 **Menu: ThemeParkGame > Generate Prefabs**
 
-This generates all prefabs under `Assets/Prefabs/`:
+Generates all prefabs under `Assets/Prefabs/`:
 
-| Prefab | Path | Key Components |
-|--------|------|----------------|
-| Visitor | `Prefabs/Visitor/` | NavMeshAgent, CapsuleCollider, VisitorAI, EmotionBubble (child) |
-| Staff_Mechanic | `Prefabs/Staff/` | NavMeshAgent, MechanicStaff |
-| Staff_Cleaner | `Prefabs/Staff/` | NavMeshAgent, CleanerStaff |
-| Staff_Entertainer | `Prefabs/Staff/` | NavMeshAgent, EntertainerStaff |
-| Staff_Guard | `Prefabs/Staff/` | NavMeshAgent, GuardStaff |
-| Staff_Scientist | `Prefabs/Staff/` | NavMeshAgent, ScientistStaff |
-| Attraction_Generic | `Prefabs/Attraction/` | Attraction, BoxCollider, FacilityDirt, QueueArea |
-| Shop_Food | `Prefabs/Shop/` | Shop, BoxCollider, FacilityDirt |
-| Shop_Drink | `Prefabs/Shop/` | Shop, BoxCollider, FacilityDirt |
-| Shop_Souvenir | `Prefabs/Shop/` | Shop, BoxCollider, FacilityDirt |
-| Facility_Toilet | `Prefabs/Facility/` | ToiletFacility, FacilityDirt |
-| Facility_Bench | `Prefabs/Facility/` | BenchFacility |
-| Facility_TrashCan | `Prefabs/Facility/` | GenericFacility |
-| Facility_InfoBoard | `Prefabs/Facility/` | GenericFacility |
-| Facility_StaffRoom | `Prefabs/Facility/` | GenericFacility |
-| Facility_ResearchLab | `Prefabs/Facility/` | GenericFacility |
-| Facility_ParkEntrance | `Prefabs/Facility/` | BoxCollider (trigger) |
-| Facility_Pathway | `Prefabs/Facility/` | Quad mesh |
-| UI_ChatBubble_Player | `Prefabs/UI/` | Image, TextMeshProUGUI, LayoutElement |
-| UI_ChatBubble_NPC | `Prefabs/UI/` | Image, TextMeshProUGUI, LayoutElement |
-| UI_CategoryTab | `Prefabs/UI/` | Button, Image, TextMeshProUGUI |
-| UI_ItemCard | `Prefabs/UI/` | Button, CanvasGroup, Image, TextMeshProUGUI |
-| UI_StaffListItem | `Prefabs/UI/` | Button, Slider (Fatigue/Skill), TextMeshProUGUI |
-| UI_QuickReplyButton | `Prefabs/UI/` | Button, TextMeshProUGUI |
+| Category | Prefabs | Path |
+|----------|---------|------|
+| Visitor | Visitor (NavMeshAgent, VisitorAI, EmotionBubble) | `Prefabs/Visitor/` |
+| Staff | Mechanic, Cleaner, Entertainer, Guard, Scientist | `Prefabs/Staff/` |
+| Attraction | Attraction_Generic (QueueArea, Entrance/Exit points) | `Prefabs/Attraction/` |
+| Shop | Food, Drink, Souvenir (FacilityDirt) | `Prefabs/Shop/` |
+| Facility | Toilet, Bench, TrashCan, InfoBoard, StaffRoom, ResearchLab, ParkEntrance, Pathway | `Prefabs/Facility/` |
+| Environment | Litter, Vomit, Decoration_Generic | `Prefabs/Environment/` |
+| UI | ChatBubble (Player/NPC), CategoryTab, ItemCard, StaffListItem, QuickReplyButton, NotificationToast, AchievementToast | `Prefabs/UI/` |
 
-### 5. Bake NavMesh
+### 4. NavMesh
 
-After scene setup, bake the NavMesh for visitor/staff pathfinding:
+NavMeshSurface is automatically added to the Ground object by Scene Setup.
+NavMesh is baked at runtime by `RuntimeGameSetup` when the game starts.
 
+For manual baking in the editor:
 1. Select the `Ground` object
 2. Open Window > AI > Navigation
-3. In the Bake tab, click "Bake"
+3. Click "Bake"
 
-### 6. Wire SerializeField References
-
-After generating prefabs and the scene hierarchy, use the Unity Inspector to wire up SerializeField references (sprites, prefab slots, etc.) that cannot be auto-assigned by the editor scripts.
-
-### 7. Save and Play
+### 5. Save and Play
 
 Save the scene as `Assets/Scenes/MainScene.unity` and enter Play mode.
 
-## SceneBootstrapper
+## Runtime Bootstrapping
 
-The `SceneBootstrapper` component (on the GameManager object) provides a safety net: if you enter Play mode from any scene that lacks Manager objects, it automatically creates them. This is useful during development when testing individual scenes.
+The project supports two modes:
+
+1. **Editor workflow**: Use the editor menus above to set up the scene, then Play.
+2. **Code-only workflow**: `GameBootstrapper` (via `[RuntimeInitializeOnLoadMethod]`) creates all managers and UI at runtime. `RuntimeGameSetup` spawns sample attractions, shops, facilities, and staff. This is used for WebGL builds.
+
+Both modes coexist — `SceneBootstrapper` checks for existing managers before creating new ones.
 
 ## Troubleshooting
 
-- **"Tag not found" errors**: Run Setup Tags & Layers first
+- **"Tag not found" errors**: Run Setup Tags & Layers (or Full Setup)
 - **Missing components on prefabs**: Re-run Generate Prefabs
-- **NavMeshAgent errors**: Ensure NavMesh is baked on the Ground
-- **TMPro missing**: Import TextMeshPro via Package Manager (Window > Package Manager)
+- **NavMeshAgent errors**: Ensure NavMesh is baked (auto-baked at runtime)
+- **TMPro missing**: Import TextMeshPro via Package Manager
+- **Build errors in Editor scripts**: These are `#if UNITY_EDITOR` guarded and excluded from builds
