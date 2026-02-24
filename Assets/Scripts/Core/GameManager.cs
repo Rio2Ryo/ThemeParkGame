@@ -207,6 +207,20 @@ namespace ThemeParkGame.Core
             Debug.Log("[GameManager] ゲーム終了 → 結果画面");
         }
 
+        /// <summary>現在のゲームをリスタートする（結果画面から直接再開始）</summary>
+        public void RestartGame()
+        {
+            Time.timeScale = 1f;
+
+            // パーク閉園イベント（VisitorManagerのスポーン停止等）
+            GameEvents.FireParkClosed();
+
+            // 新しいゲームを開始
+            StartNewGame(ThemeZone.LostKingdom);
+
+            Debug.Log("[GameManager] ゲームをリスタートしました");
+        }
+
         /// <summary>メインメニューに戻る</summary>
         public void ReturnToMainMenu()
         {

@@ -2,9 +2,11 @@
 // ThemeParkGame - RuntimeHUD
 // uGUI (Canvas + Text) ベースのランタイムHUDオーバーレイ
 // プレハブ/シーン配置なしでコードからCanvasを構築し
-// 入場者数・収益・満足度・速度ボタンをリアルタイム表示する
-// 来場者クリックで個別情報パネルを表示
-// アトラクションごとの収益集計をUIに反映
+// ①スコアボード: 入場者数・総収益・満足度をリアルタイム表示
+// ②来場者クリック個別情報パネル
+// ③アトラクション収益パネル
+// ④メニューボタン・ポーズ画面
+// ⑤ゲームオーバー画面（最終スコア・リスタート）
 // ============================================================
 
 using System.Collections.Generic;
@@ -16,23 +18,21 @@ using ThemeParkGame.Visitor;
 
 namespace ThemeParkGame.Core
 {
-    /// <summary>
-    /// uGUI Canvas をコードで構築するランタイムHUD。
-    /// 画面上部に入場者数・収益・平均満足度を常時リアルタイム表示。
-    /// 速度制御ボタン、来場者状態パネル、アトラクション稼働状況パネルを含む。
-    /// 来場者をクリックすると個別情報パネルを表示する。
-    /// </summary>
     public class RuntimeHUD : MonoBehaviour
     {
         // ---- Canvas ----
         private Canvas _canvas;
         private RectTransform _canvasRoot;
 
-        // ---- トップバー ----
+        // ---- スコアボード（画面上部中央） ----
+        private Text _sbVisitorValue;
+        private Text _sbRevenueValue;
+        private Text _sbSatisfactionValue;
+        private GameObject _sbSatisfactionBar;
+        private Image _sbSatisfactionFill;
+
+        // ---- トップバー（スコアボード下） ----
         private Text _moneyText;
-        private Text _visitorText;
-        private Text _satisfactionText;
-        private Text _totalRevenueText;
         private Text _timeWeatherText;
         private Text _staffText;
 
@@ -68,9 +68,8 @@ namespace ThemeParkGame.Core
         private GameObject _menuBtn;
         private GameObject _pauseOverlay;
         private GameObject _resultsOverlay;
+        private Text _resultsFinalScore;
         private Text _resultsBody;
-        private bool _isPauseVisible;
-        private bool _isResultsVisible;
 
         // ---- データキャッシュ ----
         private float _updateTimer;
@@ -117,7 +116,6 @@ namespace ThemeParkGame.Core
 
         private void BuildCanvas()
         {
-            // Canvas
             var cGo = new GameObject("HUD_Canvas");
             cGo.transform.SetParent(transform);
             _canvas = cGo.AddComponent<Canvas>();
@@ -133,7 +131,8 @@ namespace ThemeParkGame.Core
 
             _canvasRoot = cGo.GetComponent<RectTransform>();
 
-            BuildTopBar(_canvasRoot);
+            BuildScoreboard(_canvasRoot);
+            BuildInfoBar(_canvasRoot);
             BuildSpeedPanel(_canvasRoot);
             BuildVisitorPanel(_canvasRoot);
             BuildAttractionPanel(_canvasRoot);
@@ -144,49 +143,111 @@ namespace ThemeParkGame.Core
         }
 
         // ================================================================
-        // トップバー（画面上部中央 720x90）
+        // スコアボード（画面上部中央 740x80）
+        // 入場者数・総収益・平均満足度を大きく目立つ表示
         // ================================================================
 
-        private void BuildTopBar(RectTransform root)
+        private void BuildScoreboard(RectTransform root)
         {
-            float barW = 720f;
-            float barH = 90f;
+            float boardW = 740f;
+            float boardH = 80f;
 
-            var bg = MakePanel(root, "TopBar", barW, barH, BgDark);
+            var bg = MakePanel(root, "Scoreboard", boardW, boardH, BgDark);
             var rt = bg.GetComponent<RectTransform>();
-            // 上端中央
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
             rt.pivot = new Vector2(0.5f, 1f);
             rt.anchoredPosition = new Vector2(0f, -4f);
 
-            // 行1: 時間+天候 (上から 4px, 中央)
-            _timeWeatherText = MakeLabel(rt, "TimeWeather", "", 18, Gold, FontStyle.Bold, TextAnchor.MiddleCenter);
-            PlaceInParent(_timeWeatherText.rectTransform, 0f, barH - 4f, barW, 24f, new Vector2(0f, 1f));
+            float colW = boardW / 3f;
 
-            // 行2: 資金 | 入場者 | 満足度 (3列)
-            float row2Y = barH - 32f;
-            float colW = barW / 3f;
+            // ---- 入場者数 ----
+            var visLabel = MakeLabel(rt, "VisLabel", "VISITORS", 13, new Color(0.5f, 0.6f, 0.7f),
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            PlaceInParent(visLabel.rectTransform, 0f, boardH - 4f, colW, 20f, new Vector2(0f, 1f));
 
-            _moneyText = MakeLabel(rt, "Money", "", 17, Color.white, FontStyle.Bold, TextAnchor.MiddleLeft);
-            PlaceInParent(_moneyText.rectTransform, 12f, row2Y, colW - 12f, 24f, new Vector2(0f, 1f));
+            _sbVisitorValue = MakeLabel(rt, "VisValue", "0", 34, Color.white,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            PlaceInParent(_sbVisitorValue.rectTransform, 0f, boardH - 24f, colW, 42f, new Vector2(0f, 1f));
 
-            _visitorText = MakeLabel(rt, "Visitor", "", 17, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
-            PlaceInParent(_visitorText.rectTransform, colW, row2Y, colW, 24f, new Vector2(0f, 1f));
+            var visSub = MakeLabel(rt, "VisSub", "人", 12, Muted, FontStyle.Normal, TextAnchor.MiddleCenter);
+            PlaceInParent(visSub.rectTransform, 0f, boardH - 66f, colW, 16f, new Vector2(0f, 1f));
 
-            _satisfactionText = MakeLabel(rt, "Satisfaction", "", 17, Color.white, FontStyle.Bold, TextAnchor.MiddleRight);
-            PlaceInParent(_satisfactionText.rectTransform, colW * 2f, row2Y, colW - 12f, 24f, new Vector2(0f, 1f));
+            // ---- 区切り線 1 ----
+            var sep1 = MakePanel(rt, "Sep1", 2f, boardH - 16f, new Color(0.3f, 0.35f, 0.45f, 0.5f));
+            var sep1Rt = sep1.GetComponent<RectTransform>();
+            sep1Rt.anchorMin = sep1Rt.anchorMax = new Vector2(0f, 0.5f);
+            sep1Rt.pivot = new Vector2(0.5f, 0.5f);
+            sep1Rt.anchoredPosition = new Vector2(colW, 0f);
 
-            // 行3: 総収益 | スタッフ
-            float row3Y = barH - 60f;
-            _totalRevenueText = MakeLabel(rt, "TotalRevenue", "", 14, Green, FontStyle.Normal, TextAnchor.MiddleLeft);
-            PlaceInParent(_totalRevenueText.rectTransform, 12f, row3Y, barW * 0.5f, 20f, new Vector2(0f, 1f));
+            // ---- 総収益 ----
+            var revLabel = MakeLabel(rt, "RevLabel", "TOTAL REVENUE", 13, new Color(0.5f, 0.6f, 0.7f),
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            PlaceInParent(revLabel.rectTransform, colW, boardH - 4f, colW, 20f, new Vector2(0f, 1f));
 
-            _staffText = MakeLabel(rt, "Staff", "", 14, Muted, FontStyle.Normal, TextAnchor.MiddleLeft);
-            PlaceInParent(_staffText.rectTransform, barW * 0.55f, row3Y, barW * 0.25f, 20f, new Vector2(0f, 1f));
+            _sbRevenueValue = MakeLabel(rt, "RevValue", "$0", 34, Green,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            PlaceInParent(_sbRevenueValue.rectTransform, colW, boardH - 24f, colW, 42f, new Vector2(0f, 1f));
+
+            var revSub = MakeLabel(rt, "RevSub", "", 12, Muted, FontStyle.Normal, TextAnchor.MiddleCenter);
+            PlaceInParent(revSub.rectTransform, colW, boardH - 66f, colW, 16f, new Vector2(0f, 1f));
+
+            // ---- 区切り線 2 ----
+            var sep2 = MakePanel(rt, "Sep2", 2f, boardH - 16f, new Color(0.3f, 0.35f, 0.45f, 0.5f));
+            var sep2Rt = sep2.GetComponent<RectTransform>();
+            sep2Rt.anchorMin = sep2Rt.anchorMax = new Vector2(0f, 0.5f);
+            sep2Rt.pivot = new Vector2(0.5f, 0.5f);
+            sep2Rt.anchoredPosition = new Vector2(colW * 2f, 0f);
+
+            // ---- 平均満足度 ----
+            var satLabel = MakeLabel(rt, "SatLabel", "SATISFACTION", 13, new Color(0.5f, 0.6f, 0.7f),
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            PlaceInParent(satLabel.rectTransform, colW * 2f, boardH - 4f, colW, 20f, new Vector2(0f, 1f));
+
+            _sbSatisfactionValue = MakeLabel(rt, "SatValue", "0%", 34, Green,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            PlaceInParent(_sbSatisfactionValue.rectTransform, colW * 2f, boardH - 24f, colW, 42f, new Vector2(0f, 1f));
+
+            // 満足度バー
+            float barW = colW - 40f;
+            float barH = 8f;
+            float barX = colW * 2f + 20f;
+            float barY = boardH - 70f;
+            var barBg = MakePanel(rt, "SatBarBg", barW, barH, new Color(0.15f, 0.18f, 0.25f));
+            PlaceInParent(barBg.GetComponent<RectTransform>(), barX, barY, barW, barH, new Vector2(0f, 1f));
+
+            var barFill = MakePanel(rt, "SatBarFill", barW, barH, Green);
+            PlaceInParent(barFill.GetComponent<RectTransform>(), barX, barY, barW, barH, new Vector2(0f, 1f));
+            _sbSatisfactionBar = barBg;
+            _sbSatisfactionFill = barFill.GetComponent<Image>();
         }
 
         // ================================================================
-        // 速度ボタンパネル（右上、トップバー下）
+        // 情報バー（スコアボード下、資金・時間・天候・スタッフ）
+        // ================================================================
+
+        private void BuildInfoBar(RectTransform root)
+        {
+            float barW = 740f;
+            float barH = 28f;
+
+            var bg = MakePanel(root, "InfoBar", barW, barH, new Color(0.05f, 0.07f, 0.13f, 0.85f));
+            var rt = bg.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.anchoredPosition = new Vector2(0f, -88f);
+
+            _moneyText = MakeLabel(rt, "Money", "", 14, Gold, FontStyle.Bold, TextAnchor.MiddleLeft);
+            PlaceInParent(_moneyText.rectTransform, 12f, barH, barW * 0.3f, barH, new Vector2(0f, 1f));
+
+            _timeWeatherText = MakeLabel(rt, "TimeWeather", "", 14, Color.white, FontStyle.Normal, TextAnchor.MiddleCenter);
+            PlaceInParent(_timeWeatherText.rectTransform, barW * 0.3f, barH, barW * 0.4f, barH, new Vector2(0f, 1f));
+
+            _staffText = MakeLabel(rt, "Staff", "", 14, Muted, FontStyle.Normal, TextAnchor.MiddleRight);
+            PlaceInParent(_staffText.rectTransform, barW * 0.7f, barH, barW * 0.28f, barH, new Vector2(0f, 1f));
+        }
+
+        // ================================================================
+        // 速度ボタンパネル（右上）
         // ================================================================
 
         private void BuildSpeedPanel(RectTransform root)
@@ -198,7 +259,7 @@ namespace ThemeParkGame.Core
             var rt = bg.GetComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = new Vector2(1f, 1f);
             rt.pivot = new Vector2(1f, 1f);
-            rt.anchoredPosition = new Vector2(-10f, -100f);
+            rt.anchoredPosition = new Vector2(-10f, -122f);
 
             _speedBtnBgs = new Image[4];
             float btnW = 50f;
@@ -209,14 +270,12 @@ namespace ThemeParkGame.Core
             {
                 float bx = startX + i * (btnW + gap);
 
-                // ボタン背景
                 var btnBg = MakePanel(rt, $"SpeedBtn{i}", btnW, 34f, BtnNormal);
                 var btnRt = btnBg.GetComponent<RectTransform>();
                 btnRt.anchorMin = btnRt.anchorMax = new Vector2(0f, 0.5f);
                 btnRt.pivot = new Vector2(0f, 0.5f);
                 btnRt.anchoredPosition = new Vector2(bx, 0f);
 
-                // ボタンコンポーネント（raycastTargetを有効にしてクリック受付）
                 var btnImg = btnBg.GetComponent<Image>();
                 btnImg.raycastTarget = true;
                 var btn = btnBg.AddComponent<Button>();
@@ -226,7 +285,6 @@ namespace ThemeParkGame.Core
                 btn.colors = colors;
                 btn.targetGraphic = btnImg;
 
-                // ラベル
                 var label = MakeLabel(btnRt, "Label", _speedLabels[i], 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
                 StretchFill(label.rectTransform);
 
@@ -252,7 +310,6 @@ namespace ThemeParkGame.Core
             rt.pivot = new Vector2(0f, 0f);
             rt.anchoredPosition = new Vector2(10f, 10f);
 
-            // ヘッダー
             var header = MakeLabel(rt, "Header", "来場者状況", 16, Gold, FontStyle.Bold, TextAnchor.MiddleCenter);
             PlaceInParent(header.rectTransform, 0f, panelH - 4f, panelW, 24f, new Vector2(0f, 1f));
 
@@ -264,14 +321,12 @@ namespace ThemeParkGame.Core
             {
                 float y = startY - i * lineH;
 
-                // カラードット
                 var dot = MakePanel(rt, $"Dot{i}", 12f, 12f, StatDotColors[i]);
                 var dotRt = dot.GetComponent<RectTransform>();
                 dotRt.anchorMin = dotRt.anchorMax = new Vector2(0f, 0f);
                 dotRt.pivot = new Vector2(0f, 0.5f);
                 dotRt.anchoredPosition = new Vector2(10f, y - lineH * 0.5f);
 
-                // テキスト
                 _visitorStatTexts[i] = MakeLabel(rt, $"Stat{i}", $"{StatLabels[i]}: 0", 14, Muted, FontStyle.Normal, TextAnchor.MiddleLeft);
                 PlaceInParent(_visitorStatTexts[i].rectTransform, 28f, y, panelW - 36f, lineH, new Vector2(0f, 1f));
             }
@@ -284,7 +339,7 @@ namespace ThemeParkGame.Core
         private void BuildAttractionPanel(RectTransform root)
         {
             float panelW = 320f;
-            float panelH = 40f; // 初期値、後で動的に調整
+            float panelH = 40f;
 
             var bg = MakePanel(root, "AttractionPanel", panelW, panelH, BgDark);
             _attrPanelRt = bg.GetComponent<RectTransform>();
@@ -297,7 +352,7 @@ namespace ThemeParkGame.Core
         }
 
         // ================================================================
-        // 来場者個別情報パネル（画面中央左 280x320）
+        // 来場者個別情報パネル（画面中央左 280x340）
         // ================================================================
 
         private void BuildVisitorInfoPanel(RectTransform root)
@@ -314,7 +369,6 @@ namespace ThemeParkGame.Core
 
             var rt = _visitorInfoRt;
 
-            // ヘッダー
             var header = MakeLabel(rt, "VIHeader", "来場者情報", 16, Gold, FontStyle.Bold, TextAnchor.MiddleCenter);
             PlaceInParent(header.rectTransform, 0f, panelH - 4f, panelW, 24f, new Vector2(0f, 1f));
 
@@ -332,7 +386,6 @@ namespace ThemeParkGame.Core
             var closeLabel = MakeLabel(closeRt, "X", "X", 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(closeLabel.rectTransform);
 
-            // 情報ラベル群
             float lineH = 22f;
             float y = panelH - 34f;
             float lx = 12f;
@@ -341,22 +394,16 @@ namespace ThemeParkGame.Core
             _viName    = MakeInfoLine(rt, "Name",    ref y, lineH, lx, lw, Color.white, FontStyle.Bold, 16);
             _viType    = MakeInfoLine(rt, "Type",    ref y, lineH, lx, lw, Cyan, FontStyle.Normal, 14);
             _viState   = MakeInfoLine(rt, "State",   ref y, lineH, lx, lw, Muted, FontStyle.Normal, 14);
-
-            y -= 6f; // セパレータ
-
+            y -= 6f;
             _viHappiness  = MakeInfoLine(rt, "Happy",   ref y, lineH, lx, lw, Green, FontStyle.Bold, 14);
             _viExcitement = MakeInfoLine(rt, "Excite",  ref y, lineH, lx, lw, Gold, FontStyle.Normal, 14);
             _viCash       = MakeInfoLine(rt, "Cash",    ref y, lineH, lx, lw, Gold, FontStyle.Normal, 14);
-
             y -= 6f;
-
             _viHunger  = MakeInfoLine(rt, "Hunger",  ref y, lineH, lx, lw, Muted, FontStyle.Normal, 13);
             _viThirst  = MakeInfoLine(rt, "Thirst",  ref y, lineH, lx, lw, Muted, FontStyle.Normal, 13);
             _viNausea  = MakeInfoLine(rt, "Nausea",  ref y, lineH, lx, lw, Muted, FontStyle.Normal, 13);
             _viToilet  = MakeInfoLine(rt, "Toilet",  ref y, lineH, lx, lw, Muted, FontStyle.Normal, 13);
-
             y -= 6f;
-
             _viRides   = MakeInfoLine(rt, "Rides",   ref y, lineH, lx, lw, Cyan, FontStyle.Normal, 13);
 
             _visitorInfoPanel.SetActive(false);
@@ -372,17 +419,17 @@ namespace ThemeParkGame.Core
         }
 
         // ================================================================
-        // メニューボタン（画面右上）
+        // メニューボタン（画面左上）
         // ================================================================
 
         private void BuildMenuButton(RectTransform root)
         {
-            var btnGo = MakePanel(root, "MenuBtn", 80f, 36f, new Color(0.3f, 0.35f, 0.5f, 0.9f));
+            var btnGo = MakePanel(root, "MenuBtn", 90f, 36f, new Color(0.3f, 0.35f, 0.5f, 0.9f));
             _menuBtn = btnGo;
             var rt = btnGo.GetComponent<RectTransform>();
-            rt.anchorMin = rt.anchorMax = new Vector2(1f, 1f);
-            rt.pivot = new Vector2(1f, 1f);
-            rt.anchoredPosition = new Vector2(-10f, -10f);
+            rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
+            rt.pivot = new Vector2(0f, 1f);
+            rt.anchoredPosition = new Vector2(10f, -10f);
 
             var img = btnGo.GetComponent<Image>();
             img.raycastTarget = true;
@@ -399,7 +446,7 @@ namespace ThemeParkGame.Core
         }
 
         // ================================================================
-        // ポーズオーバーレイ（全画面、半透明背景）
+        // ポーズオーバーレイ
         // ================================================================
 
         private void BuildPauseOverlay(RectTransform root)
@@ -412,7 +459,6 @@ namespace ThemeParkGame.Core
             rt.offsetMin = Vector2.zero;
             rt.offsetMax = Vector2.zero;
 
-            // 半透明背景
             var bgImg = _pauseOverlay.AddComponent<Image>();
             bgImg.color = new Color(0f, 0f, 0f, 0.7f);
             bgImg.raycastTarget = true;
@@ -425,44 +471,20 @@ namespace ThemeParkGame.Core
             titleRt.sizeDelta = new Vector2(400f, 70f);
 
             // 「続ける」ボタン
-            var resumeGo = MakePanel(rt, "ResumeBtn", 280f, 60f, new Color(0.18f, 0.55f, 0.34f));
-            var resumeRt = resumeGo.GetComponent<RectTransform>();
-            resumeRt.anchorMin = resumeRt.anchorMax = new Vector2(0.5f, 0.5f);
-            resumeRt.anchoredPosition = new Vector2(0f, 20f);
-            var resumeImg = resumeGo.GetComponent<Image>();
-            resumeImg.raycastTarget = true;
-            var resumeBtn = resumeGo.AddComponent<Button>();
-            resumeBtn.targetGraphic = resumeImg;
-            var rc = resumeBtn.colors;
-            rc.highlightedColor = new Color(0.22f, 0.65f, 0.40f);
-            rc.pressedColor = new Color(0.14f, 0.45f, 0.28f);
-            resumeBtn.colors = rc;
-            resumeBtn.onClick.AddListener(OnResumeClicked);
-            var resumeLabel = MakeLabel(resumeRt, "Label", "続ける", 32, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
-            StretchFill(resumeLabel.rectTransform);
+            MakeCenterButton(rt, "ResumeBtn", "続ける",
+                new Color(0.18f, 0.55f, 0.34f), new Color(0.22f, 0.65f, 0.40f), new Color(0.14f, 0.45f, 0.28f),
+                new Vector2(0f, 20f), OnResumeClicked);
 
             // 「ゲーム終了」ボタン
-            var endGo = MakePanel(rt, "EndGameBtn", 280f, 60f, new Color(0.65f, 0.2f, 0.2f));
-            var endRt = endGo.GetComponent<RectTransform>();
-            endRt.anchorMin = endRt.anchorMax = new Vector2(0.5f, 0.5f);
-            endRt.anchoredPosition = new Vector2(0f, -60f);
-            var endImg = endGo.GetComponent<Image>();
-            endImg.raycastTarget = true;
-            var endBtn = endGo.AddComponent<Button>();
-            endBtn.targetGraphic = endImg;
-            var ec = endBtn.colors;
-            ec.highlightedColor = new Color(0.75f, 0.3f, 0.3f);
-            ec.pressedColor = new Color(0.5f, 0.15f, 0.15f);
-            endBtn.colors = ec;
-            endBtn.onClick.AddListener(OnEndGameClicked);
-            var endLabel = MakeLabel(endRt, "Label", "ゲーム終了", 32, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
-            StretchFill(endLabel.rectTransform);
+            MakeCenterButton(rt, "EndGameBtn", "ゲーム終了",
+                new Color(0.65f, 0.2f, 0.2f), new Color(0.75f, 0.3f, 0.3f), new Color(0.5f, 0.15f, 0.15f),
+                new Vector2(0f, -60f), OnEndGameClicked);
 
             _pauseOverlay.SetActive(false);
         }
 
         // ================================================================
-        // 結果画面オーバーレイ
+        // ゲームオーバー画面（結果・最終スコア・リスタート）
         // ================================================================
 
         private void BuildResultsOverlay(RectTransform root)
@@ -475,52 +497,88 @@ namespace ThemeParkGame.Core
             rt.offsetMin = Vector2.zero;
             rt.offsetMax = Vector2.zero;
 
-            // 背景
             var bgImg = _resultsOverlay.AddComponent<Image>();
-            bgImg.color = new Color(0.05f, 0.08f, 0.15f, 0.95f);
+            bgImg.color = new Color(0.03f, 0.05f, 0.12f, 0.96f);
             bgImg.raycastTarget = true;
 
             // タイトル
-            var title = MakeLabel(rt, "ResultsTitle", "GAME RESULTS", 48, Gold, FontStyle.Bold, TextAnchor.MiddleCenter);
+            var title = MakeLabel(rt, "ResultsTitle", "GAME OVER", 60, Gold, FontStyle.Bold, TextAnchor.MiddleCenter);
             var titleRt = title.rectTransform;
             titleRt.anchorMin = titleRt.anchorMax = new Vector2(0.5f, 0.5f);
-            titleRt.anchoredPosition = new Vector2(0f, 220f);
-            titleRt.sizeDelta = new Vector2(600f, 60f);
+            titleRt.anchoredPosition = new Vector2(0f, 280f);
+            titleRt.sizeDelta = new Vector2(600f, 70f);
 
             // サブタイトル
-            var sub = MakeLabel(rt, "ResultsSub", "- スコアレポート -", 24, Muted, FontStyle.Normal, TextAnchor.MiddleCenter);
+            var sub = MakeLabel(rt, "ResultsSub", "- Final Score Report -", 22, Muted, FontStyle.Normal, TextAnchor.MiddleCenter);
             var subRt = sub.rectTransform;
             subRt.anchorMin = subRt.anchorMax = new Vector2(0.5f, 0.5f);
-            subRt.anchoredPosition = new Vector2(0f, 175f);
+            subRt.anchoredPosition = new Vector2(0f, 230f);
             subRt.sizeDelta = new Vector2(400f, 30f);
 
-            // スコアボディ
-            _resultsBody = MakeLabel(rt, "ResultsBody", "", 22, Color.white, FontStyle.Normal, TextAnchor.UpperCenter);
+            // ---- 最終スコア（巨大表示） ----
+            var scoreLbl = MakeLabel(rt, "ScoreLabel", "TOTAL SCORE", 18, new Color(0.5f, 0.6f, 0.7f),
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            var scoreLblRt = scoreLbl.rectTransform;
+            scoreLblRt.anchorMin = scoreLblRt.anchorMax = new Vector2(0.5f, 0.5f);
+            scoreLblRt.anchoredPosition = new Vector2(0f, 185f);
+            scoreLblRt.sizeDelta = new Vector2(400f, 26f);
+
+            _resultsFinalScore = MakeLabel(rt, "FinalScore", "0", 72, new Color(1f, 0.95f, 0.5f),
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            var fsRt = _resultsFinalScore.rectTransform;
+            fsRt.anchorMin = fsRt.anchorMax = new Vector2(0.5f, 0.5f);
+            fsRt.anchoredPosition = new Vector2(0f, 135f);
+            fsRt.sizeDelta = new Vector2(500f, 80f);
+
+            // ---- 区切り線 ----
+            var sepGo = MakePanel(rt, "Separator", 400f, 2f, new Color(0.3f, 0.35f, 0.45f, 0.5f));
+            var sepRt = sepGo.GetComponent<RectTransform>();
+            sepRt.anchorMin = sepRt.anchorMax = new Vector2(0.5f, 0.5f);
+            sepRt.anchoredPosition = new Vector2(0f, 88f);
+
+            // ---- 詳細スコアボディ ----
+            _resultsBody = MakeLabel(rt, "ResultsBody", "", 20, Color.white, FontStyle.Normal, TextAnchor.UpperCenter);
             _resultsBody.horizontalOverflow = HorizontalWrapMode.Wrap;
             _resultsBody.verticalOverflow = VerticalWrapMode.Overflow;
+            _resultsBody.lineSpacing = 1.3f;
             var bodyRt = _resultsBody.rectTransform;
             bodyRt.anchorMin = bodyRt.anchorMax = new Vector2(0.5f, 0.5f);
-            bodyRt.anchoredPosition = new Vector2(0f, 20f);
-            bodyRt.sizeDelta = new Vector2(500f, 280f);
+            bodyRt.anchoredPosition = new Vector2(0f, -20f);
+            bodyRt.sizeDelta = new Vector2(520f, 200f);
 
-            // 「メインメニューに戻る」ボタン
-            var btnGo = MakePanel(rt, "ReturnMenuBtn", 320f, 60f, new Color(0.18f, 0.55f, 0.34f));
-            var btnRt = btnGo.GetComponent<RectTransform>();
-            btnRt.anchorMin = btnRt.anchorMax = new Vector2(0.5f, 0.5f);
-            btnRt.anchoredPosition = new Vector2(0f, -190f);
-            var btnImg = btnGo.GetComponent<Image>();
-            btnImg.raycastTarget = true;
-            var btn = btnGo.AddComponent<Button>();
-            btn.targetGraphic = btnImg;
-            var bc = btn.colors;
-            bc.highlightedColor = new Color(0.22f, 0.65f, 0.40f);
-            bc.pressedColor = new Color(0.14f, 0.45f, 0.28f);
-            btn.colors = bc;
-            btn.onClick.AddListener(OnReturnToMenuClicked);
-            var btnLabel = MakeLabel(btnRt, "Label", "メインメニューに戻る", 28, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
-            StretchFill(btnLabel.rectTransform);
+            // ---- リスタートボタン ----
+            MakeCenterButton(rt, "RestartBtn", "RESTART",
+                new Color(0.18f, 0.55f, 0.34f), new Color(0.22f, 0.65f, 0.40f), new Color(0.14f, 0.45f, 0.28f),
+                new Vector2(0f, -175f), OnRestartClicked);
+
+            // ---- メインメニューに戻るボタン ----
+            MakeCenterButton(rt, "ReturnMenuBtn", "TITLE MENU",
+                new Color(0.3f, 0.35f, 0.45f), new Color(0.4f, 0.45f, 0.55f), new Color(0.2f, 0.25f, 0.35f),
+                new Vector2(0f, -250f), OnReturnToMenuClicked);
 
             _resultsOverlay.SetActive(false);
+        }
+
+        /// <summary>中央配置のボタンを作成するヘルパー</summary>
+        private void MakeCenterButton(RectTransform parent, string name, string label,
+            Color normal, Color highlight, Color pressed, Vector2 pos,
+            UnityEngine.Events.UnityAction onClick)
+        {
+            var go = MakePanel(parent, name, 320f, 60f, normal);
+            var goRt = go.GetComponent<RectTransform>();
+            goRt.anchorMin = goRt.anchorMax = new Vector2(0.5f, 0.5f);
+            goRt.anchoredPosition = pos;
+            var img = go.GetComponent<Image>();
+            img.raycastTarget = true;
+            var btn = go.AddComponent<Button>();
+            btn.targetGraphic = img;
+            var c = btn.colors;
+            c.highlightedColor = highlight;
+            c.pressedColor = pressed;
+            btn.colors = c;
+            btn.onClick.AddListener(onClick);
+            var txt = MakeLabel(goRt, "Label", label, 30, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(txt.rectTransform);
         }
 
         // ================================================================
@@ -545,26 +603,54 @@ namespace ThemeParkGame.Core
             GameManager.Instance.EndGame();
         }
 
+        private void OnRestartClicked()
+        {
+            if (GameManager.Instance == null) return;
+            GameManager.Instance.RestartGame();
+        }
+
         private void OnReturnToMenuClicked()
         {
             if (GameManager.Instance == null) return;
             GameManager.Instance.ReturnToMainMenu();
         }
 
+        /// <summary>
+        /// スコアを計算する。
+        /// = (来場者数 × 10) + (総収益 / 100) + (平均満足度 × 50) + (ゴールデンチケット × 500)
+        /// </summary>
+        private int CalculateFinalScore()
+        {
+            var gm = GameManager.Instance;
+            if (gm == null) return 0;
+
+            int visitorScore = (gm.VisitorManager != null) ? gm.VisitorManager.TotalVisitorsToday * 10 : 0;
+            int revenueScore = (gm.EconomyManager != null) ? (int)(gm.EconomyManager.TotalRevenueEarned / 100f) : 0;
+            int satisfactionScore = (gm.VisitorManager != null) ? (int)(gm.VisitorManager.AverageHappiness * 50f) : 0;
+            int ticketScore = gm.GoldenTickets * 500;
+
+            return visitorScore + revenueScore + satisfactionScore + ticketScore;
+        }
+
         private void RefreshResults()
         {
-            if (_resultsBody == null) return;
-
             var gm = GameManager.Instance;
             if (gm == null) return;
+
+            // 最終スコア
+            int score = CalculateFinalScore();
+            if (_resultsFinalScore != null)
+                _resultsFinalScore.text = score.ToString("N0");
+
+            if (_resultsBody == null) return;
 
             string money = gm.EconomyManager != null ? $"${gm.EconomyManager.CurrentMoney:N0}" : "---";
             string revenue = gm.EconomyManager != null ? $"${gm.EconomyManager.TotalRevenueEarned:N0}" : "---";
             string expenses = gm.EconomyManager != null ? $"${gm.EconomyManager.TotalExpensesPaid:N0}" : "---";
-            string visitors = gm.VisitorManager != null ? $"{gm.VisitorManager.TotalVisitorsToday}人" : "---";
-            string peak = gm.VisitorManager != null ? $"{gm.VisitorManager.PeakVisitorCount:F0}人" : "---";
-            string happiness = gm.VisitorManager != null ? $"{gm.VisitorManager.AverageHappiness:F0}%" : "---";
-            string tickets = $"{gm.GoldenTickets}枚";
+            string visitors = gm.VisitorManager != null ? $"{gm.VisitorManager.TotalVisitorsToday}" : "---";
+            string peak = gm.VisitorManager != null ? $"{gm.VisitorManager.PeakVisitorCount:F0}" : "---";
+            float avgHappy = gm.VisitorManager != null ? gm.VisitorManager.AverageHappiness : 0f;
+            string tickets = $"{gm.GoldenTickets}";
 
             string time = "---";
             if (gm.TimeManager != null)
@@ -573,21 +659,20 @@ namespace ThemeParkGame.Core
                 time = $"Y{tm.CurrentYear} M{tm.CurrentMonth} D{tm.CurrentDay}";
             }
 
-            int attrCount = 0;
-            if (_attractions != null) attrCount = _attractions.Length;
+            int attrCount = (_attractions != null) ? _attractions.Length : 0;
 
             _resultsBody.text =
-                $"最終資金: {money}\n" +
-                $"総収益: {revenue}\n" +
-                $"総支出: {expenses}\n" +
+                $"  Visitors: {visitors}  (Peak: {peak})         Satisfaction: {avgHappy:F0}%\n" +
+                $"  Revenue: {revenue}         Expenses: {expenses}\n" +
+                $"  Final Balance: {money}\n" +
+                $"  Attractions: {attrCount}         Golden Tickets: {tickets}\n" +
+                $"  Date: {time}\n" +
                 $"\n" +
-                $"来場者数（今日）: {visitors}\n" +
-                $"ピーク入場者数: {peak}\n" +
-                $"平均満足度: {happiness}\n" +
-                $"\n" +
-                $"アトラクション数: {attrCount}基\n" +
-                $"ゴールデンチケット: {tickets}\n" +
-                $"経過日数: {time}";
+                $"  Score Breakdown:\n" +
+                $"    Visitors x10 = {(gm.VisitorManager != null ? gm.VisitorManager.TotalVisitorsToday * 10 : 0):N0}\n" +
+                $"    Revenue / 100 = {(gm.EconomyManager != null ? (int)(gm.EconomyManager.TotalRevenueEarned / 100f) : 0):N0}\n" +
+                $"    Satisfaction x50 = {(int)(avgHappy * 50f):N0}\n" +
+                $"    Golden Tickets x500 = {gm.GoldenTickets * 500:N0}";
         }
 
         // ================================================================
@@ -609,17 +694,17 @@ namespace ThemeParkGame.Core
             if (_canvas != null && !_canvas.gameObject.activeSelf)
                 _canvas.gameObject.SetActive(true);
 
-            // ポーズ/結果画面の表示制御
+            // オーバーレイ表示制御
             if (_pauseOverlay != null)
                 _pauseOverlay.SetActive(state == GameState.Paused);
             if (_resultsOverlay != null)
                 _resultsOverlay.SetActive(state == GameState.GameOver);
 
-            // メニューボタンはPlaying中のみ表示
+            // メニューボタンはPlaying中のみ
             if (_menuBtn != null)
                 _menuBtn.SetActive(state == GameState.Playing);
 
-            // GameOver表示時は結果テキストを更新
+            // GameOver表示
             if (state == GameState.GameOver)
             {
                 RefreshResults();
@@ -628,17 +713,14 @@ namespace ThemeParkGame.Core
 
             if (state != GameState.Playing) return;
 
-            // クリック検出（来場者選択）
             HandleVisitorClick();
 
-            // 定期UI更新
             _updateTimer -= Time.unscaledDeltaTime;
             if (_updateTimer > 0f) return;
             _updateTimer = UpdateInterval;
 
             RefreshAll();
 
-            // 選択中の来場者パネル更新
             if (_selectedVisitor != null && _visitorInfoPanel.activeSelf)
             {
                 RefreshVisitorInfo();
@@ -653,7 +735,6 @@ namespace ThemeParkGame.Core
         {
             if (!Input.GetMouseButtonDown(0)) return;
 
-            // UI上のクリックは無視
             if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
                 return;
 
@@ -671,7 +752,6 @@ namespace ThemeParkGame.Core
                 }
             }
 
-            // 何もヒットしなかった場合はパネルを閉じる
             HideVisitorInfo();
         }
 
@@ -707,7 +787,6 @@ namespace ThemeParkGame.Core
             _viType.text = $"タイプ: {VisitorTypeLabel(ai.Type)}  年齢: {prof.Age}";
             _viState.text = $"状態: {BehaviorStateLabel(ai.CurrentState)}";
 
-            // 幸福度（色分け）
             _viHappiness.text = $"満足度: {p.Happiness:F0}%";
             _viHappiness.color = p.Happiness >= 70f ? Green :
                                  p.Happiness >= 40f ? Yellow : Red;
@@ -743,27 +822,37 @@ namespace ThemeParkGame.Core
             var gm = GameManager.Instance;
             if (gm == null) return;
 
-            // ---- 資金 ----
-            if (gm.EconomyManager != null)
-            {
-                _moneyText.text = $"資金: ${gm.EconomyManager.CurrentMoney:N0}";
-                _totalRevenueText.text = $"総収益: ${gm.EconomyManager.TotalRevenueEarned:N0}";
-            }
-
-            // ---- 来場者 ----
+            // ---- スコアボード ----
             if (gm.VisitorManager != null)
             {
                 int active = gm.VisitorManager.ActiveVisitorCount;
                 int today = gm.VisitorManager.TotalVisitorsToday;
                 float avgHappy = gm.VisitorManager.AverageHappiness;
 
-                _visitorText.text = $"入場者: {active}人 (今日{today})";
+                _sbVisitorValue.text = $"{active}";
 
-                _satisfactionText.text = $"満足度: {avgHappy:F0}%";
-                _satisfactionText.color = avgHappy >= 70f ? Green :
-                                          avgHappy >= 40f ? Yellow : Red;
+                _sbSatisfactionValue.text = $"{avgHappy:F0}%";
+                Color satColor = avgHappy >= 70f ? Green : avgHappy >= 40f ? Yellow : Red;
+                _sbSatisfactionValue.color = satColor;
+
+                // 満足度バー
+                if (_sbSatisfactionFill != null)
+                {
+                    float ratio = Mathf.Clamp01(avgHappy / 100f);
+                    var barRt = _sbSatisfactionFill.rectTransform;
+                    // バーの幅をratioで調整（親の幅 × ratio）
+                    var parentRt = _sbSatisfactionBar.GetComponent<RectTransform>();
+                    barRt.sizeDelta = new Vector2(parentRt.sizeDelta.x * ratio, parentRt.sizeDelta.y);
+                    _sbSatisfactionFill.color = satColor;
+                }
 
                 RefreshVisitorStates(gm.VisitorManager);
+            }
+
+            if (gm.EconomyManager != null)
+            {
+                _sbRevenueValue.text = $"${gm.EconomyManager.TotalRevenueEarned:N0}";
+                _moneyText.text = $"資金: ${gm.EconomyManager.CurrentMoney:N0}";
             }
 
             // ---- 時間 + 天候 ----
@@ -841,7 +930,6 @@ namespace ThemeParkGame.Core
             }
             _attrPanelRt.gameObject.SetActive(true);
 
-            // 各アトラクション: 名前行 + 状態行 + 収益行 = 3行
             int linesPerAttr = 3;
             int needed = _attractions.Length * linesPerAttr;
             while (_attrLines.Count < needed)
@@ -858,13 +946,11 @@ namespace ThemeParkGame.Core
                 _attrLines.Add(t);
             }
 
-            // パネルサイズ更新（3行 × 各lineH + ヘッダー + マージン）
             float lineH = 18f;
-            float blockH = lineH * linesPerAttr + 6f; // 3行 + 余白
+            float blockH = lineH * linesPerAttr + 6f;
             float panelH = 34f + _attractions.Length * blockH;
             _attrPanelRt.sizeDelta = new Vector2(320f, panelH);
 
-            // ライン位置更新 + テキスト
             for (int i = 0; i < _attractions.Length; i++)
             {
                 var attr = _attractions[i];
@@ -886,7 +972,6 @@ namespace ThemeParkGame.Core
                     _attrLines[detailIdx].text = $"  {st}  Q:{attr.QueueLength}/{attr.MaxQueueLength}  乗車:{attr.TotalRiderCount}";
                     _attrLines[detailIdx].color = CycleColor(attr.CurrentCycleState);
 
-                    // 収益行: チケット価格 × 乗車回数 → 総収益
                     _attrLines[revenueIdx].text = $"  Ticket:${attr.TicketPrice}  今日:${attr.TodayRevenue:N0}  累計:${attr.TotalRevenue:N0}";
                     _attrLines[revenueIdx].color = attr.TotalRevenue > 0 ? Gold : Muted;
                 }
@@ -929,7 +1014,6 @@ namespace ThemeParkGame.Core
             return _font;
         }
 
-        /// <summary>背景Imageつきパネルを作成する</summary>
         private static GameObject MakePanel(RectTransform parent, string name, float w, float h, Color bg)
         {
             var go = new GameObject(name);
@@ -942,7 +1026,6 @@ namespace ThemeParkGame.Core
             return go;
         }
 
-        /// <summary>Textコンポーネントを作成する</summary>
         private static Text MakeLabel(RectTransform parent, string name, string content,
             int fontSize, Color color, FontStyle style, TextAnchor align)
         {
@@ -962,19 +1045,14 @@ namespace ThemeParkGame.Core
             return t;
         }
 
-        /// <summary>
-        /// 親パネル内でのローカル位置（左下原点）とサイズを設定する。
-        /// pivot指定で配置の基準を制御。
-        /// </summary>
         private static void PlaceInParent(RectTransform rt, float x, float y, float w, float h, Vector2 pivot)
         {
-            rt.anchorMin = rt.anchorMax = Vector2.zero; // 左下基準
+            rt.anchorMin = rt.anchorMax = Vector2.zero;
             rt.pivot = pivot;
             rt.anchoredPosition = new Vector2(x, y);
             rt.sizeDelta = new Vector2(w, h);
         }
 
-        /// <summary>親いっぱいに広げる</summary>
         private static void StretchFill(RectTransform rt)
         {
             rt.anchorMin = Vector2.zero;

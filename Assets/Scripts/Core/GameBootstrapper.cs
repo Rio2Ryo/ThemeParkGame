@@ -160,13 +160,12 @@ namespace ThemeParkGame.Core
         }
 
         // ================================================================
-        // スタート画面
+        // スタート画面（タイトル画面）
         // ================================================================
 
         /// <summary>メインメニュー復帰時にスタート画面を再生成する</summary>
         public static void RecreateStartScreen()
         {
-            // 既存のスタート画面があれば削除
             var existing = Object.FindObjectOfType<StartScreenController>();
             if (existing != null) Object.Destroy(existing.gameObject);
             CreateStartScreen();
@@ -183,52 +182,85 @@ namespace ThemeParkGame.Core
             scaler.referenceResolution = new Vector2(1920, 1080);
             canvasGo.AddComponent<GraphicRaycaster>();
 
-            // コントローラー（状態監視 + ボタンハンドラ）
             var ctrl = canvasGo.AddComponent<StartScreenController>();
 
-            // 背景
+            // ---- 背景（グラデーション風 2レイヤー） ----
             var bg = CreateUIElement("Background", canvasGo.transform);
             var bgImg = bg.AddComponent<Image>();
-            bgImg.color = new Color(0.08f, 0.12f, 0.22f, 0.97f);
+            bgImg.color = new Color(0.04f, 0.06f, 0.14f, 1f);
             StretchFull(bg.GetComponent<RectTransform>());
 
-            // タイトル
+            // 上部グラデーション帯
+            var topBand = CreateUIElement("TopBand", canvasGo.transform);
+            var topBandImg = topBand.AddComponent<Image>();
+            topBandImg.color = new Color(0.08f, 0.18f, 0.35f, 0.6f);
+            var topBandRt = topBand.GetComponent<RectTransform>();
+            topBandRt.anchorMin = new Vector2(0f, 0.5f);
+            topBandRt.anchorMax = new Vector2(1f, 1f);
+            topBandRt.offsetMin = Vector2.zero;
+            topBandRt.offsetMax = Vector2.zero;
+
+            // ---- 装飾アイコン行 ----
+            var icons = CreateUIElement("Icons", canvasGo.transform);
+            var iconsText = icons.AddComponent<Text>();
+            iconsText.text = "[ Roller Coaster ]   [ Ferris Wheel ]   [ Food Court ]   [ Haunted House ]";
+            iconsText.font = GetBuiltinFont();
+            iconsText.fontSize = 18;
+            iconsText.alignment = TextAnchor.MiddleCenter;
+            iconsText.color = new Color(0.4f, 0.55f, 0.7f, 0.7f);
+            SetAnchored(icons.GetComponent<RectTransform>(), 0, 230, 900, 30);
+
+            // ---- メインタイトル ----
             var title = CreateUIElement("TitleText", canvasGo.transform);
             var titleText = title.AddComponent<Text>();
-            titleText.text = "Theme Park Game";
+            titleText.text = "THEME PARK GAME";
             titleText.font = GetBuiltinFont();
-            titleText.fontSize = 72;
+            titleText.fontSize = 80;
             titleText.fontStyle = FontStyle.Bold;
             titleText.alignment = TextAnchor.MiddleCenter;
-            titleText.color = Color.white;
-            SetAnchored(title.GetComponent<RectTransform>(), 0, 120, 900, 100);
+            titleText.color = new Color(1f, 0.95f, 0.7f);
+            SetAnchored(title.GetComponent<RectTransform>(), 0, 160, 1000, 100);
 
-            // サブタイトル
+            // ---- サブタイトル ----
             var sub = CreateUIElement("SubTitle", canvasGo.transform);
             var subText = sub.AddComponent<Text>();
-            subText.text = "- テーマパークゲーム -";
+            subText.text = "- Build Your Dream Theme Park -";
             subText.font = GetBuiltinFont();
-            subText.fontSize = 36;
+            subText.fontSize = 28;
             subText.alignment = TextAnchor.MiddleCenter;
-            subText.color = new Color(0.8f, 0.85f, 0.9f);
-            SetAnchored(sub.GetComponent<RectTransform>(), 0, 40, 600, 50);
+            subText.color = new Color(0.7f, 0.8f, 0.9f);
+            SetAnchored(sub.GetComponent<RectTransform>(), 0, 90, 700, 40);
 
-            // スタートボタン
+            // ---- 説明テキスト ----
+            var desc = CreateUIElement("Description", canvasGo.transform);
+            var descText = desc.AddComponent<Text>();
+            descText.text =
+                "Attractions / Shops / Staff Management\n" +
+                "Visitor AI / Dynamic Weather / Economy System";
+            descText.font = GetBuiltinFont();
+            descText.fontSize = 20;
+            descText.alignment = TextAnchor.MiddleCenter;
+            descText.color = new Color(0.5f, 0.6f, 0.7f);
+            descText.lineSpacing = 1.4f;
+            SetAnchored(desc.GetComponent<RectTransform>(), 0, 20, 700, 70);
+
+            // ---- スタートボタン ----
             var btnGo = CreateUIElement("StartButton", canvasGo.transform);
             var btnImg = btnGo.AddComponent<Image>();
-            btnImg.color = new Color(0.18f, 0.55f, 0.34f, 1f);
+            btnImg.color = new Color(0.15f, 0.55f, 0.3f, 1f);
             var btn = btnGo.AddComponent<Button>();
             var btnColors = btn.colors;
-            btnColors.highlightedColor = new Color(0.22f, 0.65f, 0.40f);
-            btnColors.pressedColor = new Color(0.14f, 0.45f, 0.28f);
+            btnColors.highlightedColor = new Color(0.2f, 0.65f, 0.38f);
+            btnColors.pressedColor = new Color(0.1f, 0.42f, 0.22f);
             btn.colors = btnColors;
-            SetAnchored(btnGo.GetComponent<RectTransform>(), 0, -60, 320, 80);
+            btn.targetGraphic = btnImg;
+            SetAnchored(btnGo.GetComponent<RectTransform>(), 0, -80, 360, 80);
 
             var btnLabel = CreateUIElement("Label", btnGo.transform);
             var btnText = btnLabel.AddComponent<Text>();
-            btnText.text = "スタート";
+            btnText.text = "GAME START";
             btnText.font = GetBuiltinFont();
-            btnText.fontSize = 44;
+            btnText.fontSize = 40;
             btnText.fontStyle = FontStyle.Bold;
             btnText.alignment = TextAnchor.MiddleCenter;
             btnText.color = Color.white;
@@ -236,14 +268,24 @@ namespace ThemeParkGame.Core
 
             btn.onClick.AddListener(ctrl.OnStartClicked);
 
-            // バージョン表示
+            // ---- 操作ヒント ----
+            var hint = CreateUIElement("Hint", canvasGo.transform);
+            var hintText = hint.AddComponent<Text>();
+            hintText.text = "Click visitors to inspect  |  MENU button to pause  |  Speed controls: ||  x1  x2  x5";
+            hintText.font = GetBuiltinFont();
+            hintText.fontSize = 16;
+            hintText.alignment = TextAnchor.MiddleCenter;
+            hintText.color = new Color(0.4f, 0.45f, 0.55f);
+            SetAnchored(hint.GetComponent<RectTransform>(), 0, -180, 900, 30);
+
+            // ---- バージョン表示 ----
             var ver = CreateUIElement("Version", canvasGo.transform);
             var verText = ver.AddComponent<Text>();
-            verText.text = "v0.1 - WebGL Build";
+            verText.text = "v0.2 - WebGL Build";
             verText.font = GetBuiltinFont();
-            verText.fontSize = 20;
+            verText.fontSize = 18;
             verText.alignment = TextAnchor.LowerRight;
-            verText.color = new Color(0.5f, 0.5f, 0.6f);
+            verText.color = new Color(0.35f, 0.4f, 0.5f);
             var verRect = ver.GetComponent<RectTransform>();
             verRect.anchorMin = new Vector2(1, 0);
             verRect.anchorMax = new Vector2(1, 0);
@@ -251,7 +293,22 @@ namespace ThemeParkGame.Core
             verRect.anchoredPosition = new Vector2(-20, 10);
             verRect.sizeDelta = new Vector2(300, 30);
 
-            Debug.Log("[GameBootstrapper] スタート画面を生成");
+            // ---- コピーライト ----
+            var cr = CreateUIElement("Copyright", canvasGo.transform);
+            var crText = cr.AddComponent<Text>();
+            crText.text = "Theme Park Game Project";
+            crText.font = GetBuiltinFont();
+            crText.fontSize = 16;
+            crText.alignment = TextAnchor.LowerLeft;
+            crText.color = new Color(0.35f, 0.4f, 0.5f);
+            var crRect = cr.GetComponent<RectTransform>();
+            crRect.anchorMin = new Vector2(0, 0);
+            crRect.anchorMax = new Vector2(0, 0);
+            crRect.pivot = new Vector2(0, 0);
+            crRect.anchoredPosition = new Vector2(20, 10);
+            crRect.sizeDelta = new Vector2(400, 30);
+
+            Debug.Log("[GameBootstrapper] タイトル画面を生成");
         }
 
         // ================================================================
@@ -293,7 +350,6 @@ namespace ThemeParkGame.Core
 
     /// <summary>
     /// スタート画面の状態監視とボタンハンドラ。
-    /// SceneBootstrapperが先にゲームを開始した場合は自動的に画面を閉じる。
     /// </summary>
     internal class StartScreenController : MonoBehaviour
     {
@@ -302,7 +358,6 @@ namespace ThemeParkGame.Core
             if (GameManager.Instance != null &&
                 GameManager.Instance.CurrentState != GameState.MainMenu)
             {
-                Debug.Log("[GameBootstrapper] ゲーム既に開始済み - スタート画面を閉じる");
                 Destroy(gameObject);
             }
         }
