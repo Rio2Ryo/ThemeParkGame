@@ -1037,9 +1037,20 @@ namespace ThemeParkGame.Core
                 ? $"{AchievementSystem.Instance.UnlockedCount}/{AchievementSystem.Instance.TotalCount}"
                 : "---";
 
+            // ライフサイクル統計
+            string lcText = "";
+            if (gm.VisitorManager != null)
+            {
+                float enjoyRatio = gm.VisitorManager.OverallEnjoymentRatio * 100f;
+                int expStarts = gm.VisitorManager.TotalExperienceStarts;
+                int expDone = gm.VisitorManager.TotalExperienceCompletions;
+                lcText = $"  Lifecycle: Enjoy {enjoyRatio:F0}%  Starts:{expStarts}  Done:{expDone}\n";
+            }
+
             _resultsBody.text =
                 $"  Visitors: {visitors}  (Peak: {peak})\n" +
                 $"  Satisfaction: {avgSatisfaction:F0}%  Happiness: {avgHappiness:F0}%\n" +
+                lcText +
                 $"  Revenue: {revenue}         Expenses: {expenses}\n" +
                 $"  Final Balance: {money}\n" +
                 $"  Attractions: {attrCount}         Golden Tickets: {tickets}\n" +

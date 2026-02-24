@@ -69,6 +69,13 @@ namespace ThemeParkGame.Visitor
         private float happinessSum;
         private float peakVisitorCount;
 
+        // ライフサイクル累積統計（退園済み来場者から蓄積）
+        private float cumulativeWaitingTime;
+        private float cumulativeEnjoyingTime;
+        private float cumulativeLeavingTime;
+        private int cumulativeExperienceStarts;
+        private int cumulativeExperienceCompletions;
+
         // ---- プロパティ ----
 
         /// <summary>現在パーク内にいる来場者数</summary>
@@ -117,6 +124,30 @@ namespace ThemeParkGame.Visitor
 
         /// <summary>出口位置（来場者の退園先）</summary>
         public Vector3 ExitPosition => exitPoint != null ? exitPoint.position : Vector3.zero;
+
+        // ---- ライフサイクル統計プロパティ ----
+
+        /// <summary>累積Waiting時間（退園済み+現在の全来場者合算）</summary>
+        public float TotalWaitingTime => cumulativeWaitingTime + GetActiveWaitingTime();
+        /// <summary>累積Enjoying時間（退園済み+現在の全来場者合算）</summary>
+        public float TotalEnjoyingTime => cumulativeEnjoyingTime + GetActiveEnjoyingTime();
+        /// <summary>累積Leaving時間</summary>
+        public float TotalLeavingTime => cumulativeLeavingTime + GetActiveLeavingTime();
+        /// <summary>体験開始回数（累積）</summary>
+        public int TotalExperienceStarts => cumulativeExperienceStarts + GetActiveExperienceStarts();
+        /// <summary>体験完了回数（累積）</summary>
+        public int TotalExperienceCompletions => cumulativeExperienceCompletions + GetActiveExperienceCompletions();
+        /// <summary>全体の体験効率（Enjoying / (Waiting + Enjoying)、0-1）</summary>
+        public float OverallEnjoymentRatio
+        {
+            get
+            {
+                float w = TotalWaitingTime;
+                float e = TotalEnjoyingTime;
+                float total = w + e;
+                return total > 0f ? e / total : 0f;
+            }
+        }
 
         // ---- Unity ライフサイクル ----
 
@@ -200,6 +231,13 @@ namespace ThemeParkGame.Visitor
             happinessSum = 0f;
             peakVisitorCount = 0;
             nextVisitorId = 1;
+
+            // ライフサイクル累積統計リセット
+            cumulativeWaitingTime = 0f;
+            cumulativeEnjoyingTime = 0f;
+            cumulativeLeavingTime = 0f;
+            cumulativeExperienceStarts = 0;
+            cumulativeExperienceCompletions = 0;
 
             isSpawningEnabled = true;
             spawnTimer = baseSpawnInterval;
@@ -467,6 +505,17 @@ namespace ThemeParkGame.Visitor
                     happinessSum += visitor.Happiness;
                     totalVisitorsEverLeft++;
 
+                    // ライフサイクル統計を蓄積
+                    var sm = visitor.StateMachine;
+                    if (sm != null)
+                    {
+                        cumulativeWaitingTime += sm.WaitingTime;
+                        cumulativeEnjoyingTime += sm.EnjoyingTime;
+                        cumulativeLeavingTime += sm.LeavingTime;
+                        cumulativeExperienceStarts += sm.ExperienceStartCount;
+                        cumulativeExperienceCompletions += sm.ExperienceCompleteCount;
+                    }
+
                     activeVisitors.RemoveAt(i);
                     ReturnToPool(visitor);
                 }
@@ -721,6 +770,77 @@ namespace ThemeParkGame.Visitor
                 return GameManager.Instance.WeatherSystem.CurrentWeather;
             }
             return Weather.Sunny;
+        }
+
+        // ---- ライフサイクル統計ヘルパー ----
+
+        private float GetActiveWaitingTime()
+        {
+            float sum = 0f;
+            for (int i = 0; i < activeVisitors.Count; i++)
+            {
+                var sm = activeVisitors[i].StateMachine;
+                if (sm != null) sum += sm.WaitingTime;
+            }
+            return sum;
+        }
+
+        private float GetActiveEnjoyingTime()
+        {
+            float sum = 0f;
+            for (int i = 0; i < activeVisitors.Count; i++)
+            {
+                var sm = activeVisitors[i].StateMachine;
+                if (sm != null) sum += sm.EnjoyingTime;
+            }
+            return sum;
+        }
+
+        private float GetActiveLeavingTime()
+        {
+            float sum = 0f;
+            for (int i = 0; i < activeVisitors.Count; i++)
+            {
+                var sm = activeVisitors[i].StateMachine;
+                if (sm != null) sum += sm.LeavingTime;
+            }
+            return sum;
+        }
+
+        private int GetActiveExperienceStarts()
+        {
+            int sum = 0;
+            for (int i = 0; i < activeVisitors.Count; i++)
+            {
+                var sm = activeVisitors[i].StateMachine;
+                if (sm != null) sum += sm.ExperienceStartCount;
+            }
+            return sum;
+        }
+
+        private int GetActiveExperienceCompletions()
+        {
+            int sum = 0;
+            for (int i = 0; i < activeVisitors.Count; i++)
+            {
+                var sm = activeVisitors[i].StateMachine;
+                if (sm != null) sum += sm.ExperienceCompleteCount;
+            }
+            return sum;
+        }
+
+        /// <summary>
+        /// セーブデータからライフサイクル累積統計を復元する。
+        /// SaveSystem.ApplySaveDataから呼ばれる。
+        /// </summary>
+        public void RestoreLifecycleStats(float waitTime, float enjoyTime, float leaveTime,
+            int expStarts, int expCompletions)
+        {
+            cumulativeWaitingTime = waitTime;
+            cumulativeEnjoyingTime = enjoyTime;
+            cumulativeLeavingTime = leaveTime;
+            cumulativeExperienceStarts = expStarts;
+            cumulativeExperienceCompletions = expCompletions;
         }
 
         // ---- デバッグ ----

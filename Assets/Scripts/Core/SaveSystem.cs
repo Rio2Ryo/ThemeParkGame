@@ -15,7 +15,7 @@ namespace ThemeParkGame.Core
     [Serializable]
     public class SaveData
     {
-        public string SaveVersion = "2.0";
+        public string SaveVersion = "2.1";
         public string SaveDate;
 
         // ゲーム時間
@@ -58,6 +58,14 @@ namespace ThemeParkGame.Core
         // シナリオ
         public bool IsScenarioMode;
         public string ScenarioCountry;
+
+        // ライフサイクル統計（累積）
+        public float LifecycleWaitingTime;
+        public float LifecycleEnjoyingTime;
+        public float LifecycleLeavingTime;
+        public int LifecycleExperienceStarts;
+        public int LifecycleExperienceCompletions;
+        public float LifecycleEnjoymentRatio;
     }
 
     /// <summary>
@@ -220,6 +228,14 @@ namespace ThemeParkGame.Core
             {
                 data.TotalVisitorsToday = gm.VisitorManager.TotalVisitorsToday;
                 data.AverageHappiness = gm.VisitorManager.AverageHappiness;
+
+                // ライフサイクル統計
+                data.LifecycleWaitingTime = gm.VisitorManager.TotalWaitingTime;
+                data.LifecycleEnjoyingTime = gm.VisitorManager.TotalEnjoyingTime;
+                data.LifecycleLeavingTime = gm.VisitorManager.TotalLeavingTime;
+                data.LifecycleExperienceStarts = gm.VisitorManager.TotalExperienceStarts;
+                data.LifecycleExperienceCompletions = gm.VisitorManager.TotalExperienceCompletions;
+                data.LifecycleEnjoymentRatio = gm.VisitorManager.OverallEnjoymentRatio;
             }
 
             // パーク
@@ -310,7 +326,17 @@ namespace ThemeParkGame.Core
 
             // 来場者・スタッフ初期化
             if (gm.VisitorManager != null)
+            {
                 gm.VisitorManager.Initialize();
+
+                // ライフサイクル統計を復元
+                gm.VisitorManager.RestoreLifecycleStats(
+                    data.LifecycleWaitingTime,
+                    data.LifecycleEnjoyingTime,
+                    data.LifecycleLeavingTime,
+                    data.LifecycleExperienceStarts,
+                    data.LifecycleExperienceCompletions);
+            }
             if (gm.StaffManager != null)
                 gm.StaffManager.Initialize();
 
@@ -358,9 +384,12 @@ namespace ThemeParkGame.Core
             var info = GetSaveInfo(slot);
             if (info == null) return "--- EMPTY ---";
 
+            string enjoyPct = info.LifecycleEnjoymentRatio > 0f
+                ? $"  Enjoy:{info.LifecycleEnjoymentRatio * 100f:F0}%"
+                : "";
             return $"Y{info.CurrentYear} M{info.CurrentMonth} D{info.CurrentDay}  " +
                    $"${info.CurrentBalance:N0}  " +
-                   $"Ticket:{info.GoldenTickets}  " +
+                   $"Ticket:{info.GoldenTickets}{enjoyPct}  " +
                    $"{info.SaveDate}";
         }
     }
