@@ -281,6 +281,53 @@ namespace ThemeParkGame.Core
                 new Color(0.65f, 0.25f, 0.2f), new Color(0.75f, 0.35f, 0.3f), new Color(0.5f, 0.18f, 0.15f),
                 startX + (btnW + gap) * 2, -90f, btnW, btnH, GameDifficulty.Hard);
 
+            // ---- CONTINUEボタン（セーブデータがある場合のみ表示） ----
+            if (SaveSystem.HasAnySaveData())
+            {
+                var contGo = CreateUIElement("ContinueBtn", canvasGo.transform);
+                var contImg = contGo.AddComponent<Image>();
+                contImg.color = new Color(0.2f, 0.5f, 0.65f);
+                var contBtn = contGo.AddComponent<Button>();
+                var contColors = contBtn.colors;
+                contColors.highlightedColor = new Color(0.25f, 0.6f, 0.78f);
+                contColors.pressedColor = new Color(0.15f, 0.38f, 0.52f);
+                contBtn.colors = contColors;
+                contBtn.targetGraphic = contImg;
+                SetAnchored(contGo.GetComponent<RectTransform>(), 0, -180f, 300f, 50f);
+
+                var contLabel = CreateUIElement("ContLabel", contGo.transform);
+                var contLabelText = contLabel.AddComponent<Text>();
+                contLabelText.text = "CONTINUE";
+                contLabelText.font = GetBuiltinFont();
+                contLabelText.fontSize = 24;
+                contLabelText.fontStyle = FontStyle.Bold;
+                contLabelText.alignment = TextAnchor.MiddleCenter;
+                contLabelText.color = Color.white;
+                StretchFull(contLabel.GetComponent<RectTransform>());
+
+                // 最新スロット情報
+                string slotInfo = "";
+                for (int s = 0; s < SaveSystem.MaxSlots; s++)
+                {
+                    if (SaveSystem.HasSaveData(s))
+                    {
+                        slotInfo = SaveSystem.GetSlotSummary(s);
+                        break;
+                    }
+                }
+
+                var contDesc = CreateUIElement("ContDesc", canvasGo.transform);
+                var contDescText = contDesc.AddComponent<Text>();
+                contDescText.text = slotInfo;
+                contDescText.font = GetBuiltinFont();
+                contDescText.fontSize = 14;
+                contDescText.alignment = TextAnchor.MiddleCenter;
+                contDescText.color = new Color(0.5f, 0.6f, 0.7f);
+                SetAnchored(contDesc.GetComponent<RectTransform>(), 0, -215f, 500f, 20f);
+
+                contBtn.onClick.AddListener(() => ctrl.OnContinueClicked());
+            }
+
             // ---- シナリオモードボタン ----
             var scenGo = CreateUIElement("ScenarioBtn", canvasGo.transform);
             var scenImg = scenGo.AddComponent<Image>();
@@ -291,7 +338,7 @@ namespace ThemeParkGame.Core
             scenColors.pressedColor = new Color(0.38f, 0.2f, 0.48f);
             scenBtn.colors = scenColors;
             scenBtn.targetGraphic = scenImg;
-            SetAnchored(scenGo.GetComponent<RectTransform>(), 0, -185f, 300f, 50f);
+            SetAnchored(scenGo.GetComponent<RectTransform>(), 0, -245f, 300f, 50f);
 
             var scenLabel = CreateUIElement("ScenLabel", scenGo.transform);
             var scenLabelText = scenLabel.AddComponent<Text>();
@@ -313,7 +360,7 @@ namespace ThemeParkGame.Core
             hintText.fontSize = 16;
             hintText.alignment = TextAnchor.MiddleCenter;
             hintText.color = new Color(0.4f, 0.45f, 0.55f);
-            SetAnchored(hint.GetComponent<RectTransform>(), 0, -250, 900, 30);
+            SetAnchored(hint.GetComponent<RectTransform>(), 0, -310, 900, 30);
 
             // ---- バージョン表示 ----
             var ver = CreateUIElement("Version", canvasGo.transform);
@@ -463,6 +510,28 @@ namespace ThemeParkGame.Core
             GameManager.Instance.StartNewGame(ThemeZone.LostKingdom, difficulty);
             Debug.Log($"[GameBootstrapper] ゲーム開始! 難易度: {difficulty}");
             Destroy(gameObject);
+        }
+
+        public void OnContinueClicked()
+        {
+            // 最初に見つかったセーブスロットをロード
+            for (int i = 0; i < SaveSystem.MaxSlots; i++)
+            {
+                if (SaveSystem.HasSaveData(i))
+                {
+                    if (SaveSystem.Load(i))
+                    {
+                        Debug.Log($"[StartScreen] Loaded save slot {i}");
+                        Destroy(gameObject);
+                    }
+                    else
+                    {
+                        Debug.LogError($"[StartScreen] Failed to load slot {i}");
+                    }
+                    return;
+                }
+            }
+            Debug.LogWarning("[StartScreen] No save data found for continue");
         }
 
         public void OnScenarioModeClicked()

@@ -43,6 +43,17 @@ namespace ThemeParkGame.Core
             _hourAccumulator = 0f;
         }
 
+        /// <summary>セーブデータから時間を復元する</summary>
+        public void RestoreTime(int year, int month, int day, float hour)
+        {
+            CurrentYear = Mathf.Max(1, year);
+            CurrentMonth = Mathf.Clamp(month, 1, 12);
+            CurrentDay = Mathf.Clamp(day, 1, 30);
+            CurrentHour = Mathf.Clamp(hour, 0f, 23.99f);
+            IsParkOpen = CurrentHour >= OpenHour && CurrentHour < CloseHour;
+            _hourAccumulator = 0f;
+        }
+
         private void Update()
         {
             if (GameManager.Instance == null || GameManager.Instance.IsPaused) return;

@@ -6,8 +6,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using ThemeParkGame.Economy;
-using ThemeParkGame.Park;
 
 namespace ThemeParkGame.Core
 {
@@ -17,7 +15,7 @@ namespace ThemeParkGame.Core
     [Serializable]
     public class SaveData
     {
-        public string SaveVersion = "1.0";
+        public string SaveVersion = "2.0";
         public string SaveDate;
 
         // ゲーム時間
@@ -37,6 +35,13 @@ namespace ThemeParkGame.Core
         public int TotalAttractions;
         public int TotalShops;
         public int TotalVisitorsEver;
+
+        // 難易度
+        public string Difficulty;
+
+        // 来場者統計
+        public int TotalVisitorsToday;
+        public float AverageHappiness;
 
         // 研究
         public List<string> CompletedResearchIds = new List<string>();
@@ -72,6 +77,16 @@ namespace ThemeParkGame.Core
             return PlayerPrefs.HasKey(SAVE_KEY_PREFIX + slot);
         }
 
+        /// <summary>いずれかのスロットにセーブが存在するか</summary>
+        public static bool HasAnySaveData()
+        {
+            for (int i = 0; i < MAX_SAVE_SLOTS; i++)
+            {
+                if (HasSaveData(i)) return true;
+            }
+            return false;
+        }
+
         /// <summary>
         /// 現在のゲーム状態をセーブする。
         /// </summary>
@@ -81,13 +96,13 @@ namespace ThemeParkGame.Core
         {
             if (slot < 0 || slot >= MAX_SAVE_SLOTS)
             {
-                Debug.LogError($"[SaveSystem] 無効なスロット番号: {slot}");
+                Debug.LogError($"[SaveSystem] Invalid slot: {slot}");
                 return false;
             }
 
             if (GameManager.Instance == null)
             {
-                Debug.LogError("[SaveSystem] GameManagerが見つかりません");
+                Debug.LogError("[SaveSystem] GameManager not found");
                 return false;
             }
 
@@ -99,18 +114,18 @@ namespace ThemeParkGame.Core
                 PlayerPrefs.Save();
 
                 GameEvents.FireGameSaved();
-                Debug.Log($"[SaveSystem] スロット{slot}にセーブ完了");
+                Debug.Log($"[SaveSystem] Saved to slot {slot} ({json.Length} bytes)");
                 return true;
             }
             catch (Exception e)
             {
-                Debug.LogError($"[SaveSystem] セーブ失敗: {e.Message}");
+                Debug.LogError($"[SaveSystem] Save failed: {e.Message}");
                 return false;
             }
         }
 
         /// <summary>
-        /// セーブデータをロードする。
+        /// セーブデータをロードしてゲーム状態を復元する。
         /// </summary>
         /// <param name="slot">セーブスロット番号（0～2）</param>
         /// <returns>ロード成功ならtrue</returns>
@@ -118,7 +133,7 @@ namespace ThemeParkGame.Core
         {
             if (!HasSaveData(slot))
             {
-                Debug.LogWarning($"[SaveSystem] スロット{slot}にセーブデータがありません");
+                Debug.LogWarning($"[SaveSystem] No save data in slot {slot}");
                 return false;
             }
 
@@ -130,12 +145,13 @@ namespace ThemeParkGame.Core
                 ApplySaveData(data);
 
                 GameEvents.FireGameLoaded();
-                Debug.Log($"[SaveSystem] スロット{slot}からロード完了");
+                Debug.Log($"[SaveSystem] Loaded from slot {slot} " +
+                          $"(Year {data.CurrentYear}, Balance: {data.CurrentBalance:F0})");
                 return true;
             }
             catch (Exception e)
             {
-                Debug.LogError($"[SaveSystem] ロード失敗: {e.Message}");
+                Debug.LogError($"[SaveSystem] Load failed: {e.Message}");
                 return false;
             }
         }
@@ -146,10 +162,10 @@ namespace ThemeParkGame.Core
             if (slot < 0 || slot >= MAX_SAVE_SLOTS) return;
             PlayerPrefs.DeleteKey(SAVE_KEY_PREFIX + slot);
             PlayerPrefs.Save();
-            Debug.Log($"[SaveSystem] スロット{slot}のセーブデータを削除");
+            Debug.Log($"[SaveSystem] Deleted slot {slot}");
         }
 
-        /// <summary>セーブスロットのメタ情報を取得する（セーブ日時等）</summary>
+        /// <summary>セーブスロットのメタ情報を取得する</summary>
         public static SaveData GetSaveInfo(int slot)
         {
             if (!HasSaveData(slot)) return null;
@@ -165,14 +181,21 @@ namespace ThemeParkGame.Core
             }
         }
 
-        /// <summary>現在のゲーム状態からセーブデータを収集する</summary>
+        /// <summary>最大スロット数</summary>
+        public static int MaxSlots => MAX_SAVE_SLOTS;
+
+        // ================================================================
+        // データ収集
+        // ================================================================
+
         private static SaveData CollectSaveData()
         {
             var gm = GameManager.Instance;
             var data = new SaveData
             {
-                SaveDate = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"),
-                GoldenTickets = gm.GoldenTickets
+                SaveDate = DateTime.Now.ToString("yyyy/MM/dd HH:mm"),
+                GoldenTickets = gm.GoldenTickets,
+                Difficulty = gm.CurrentDifficulty.ToString()
             };
 
             // 時間
@@ -192,6 +215,13 @@ namespace ThemeParkGame.Core
                 data.TotalExpensesPaid = gm.EconomyManager.TotalExpensesPaid;
             }
 
+            // 来場者統計
+            if (gm.VisitorManager != null)
+            {
+                data.TotalVisitorsToday = gm.VisitorManager.TotalVisitorsToday;
+                data.AverageHappiness = gm.VisitorManager.AverageHappiness;
+            }
+
             // パーク
             if (gm.ParkManager != null)
             {
@@ -199,6 +229,9 @@ namespace ThemeParkGame.Core
                 data.TotalShops = gm.ParkManager.Stats.TotalShops;
                 data.TotalVisitorsEver = gm.ParkManager.Stats.TotalVisitorsEver;
                 data.IsScenarioMode = gm.ParkManager.IsScenarioMode;
+
+                if (gm.ParkManager.CurrentScenario != null)
+                    data.ScenarioCountry = gm.ParkManager.CurrentScenario.Country.ToString();
 
                 foreach (var zone in gm.ParkManager.GetUnlockedZones())
                 {
@@ -220,6 +253,12 @@ namespace ThemeParkGame.Core
                 }
             }
 
+            // スタッフ
+            if (gm.StaffManager != null)
+            {
+                data.TotalStaff = gm.StaffManager.TotalStaffCount;
+            }
+
             // 天候
             if (gm.WeatherSystem != null)
             {
@@ -230,17 +269,50 @@ namespace ThemeParkGame.Core
             return data;
         }
 
-        /// <summary>セーブデータからゲーム状態を復元する</summary>
+        // ================================================================
+        // データ復元
+        // ================================================================
+
         private static void ApplySaveData(SaveData data)
         {
             var gm = GameManager.Instance;
             if (gm == null) return;
+
+            // 難易度の復元
+            if (!string.IsNullOrEmpty(data.Difficulty) &&
+                Enum.TryParse<GameDifficulty>(data.Difficulty, out var difficulty))
+            {
+                gm.RestoreDifficulty(difficulty);
+            }
+
+            // ゴールデンチケット
+            gm.RestoreGoldenTickets(data.GoldenTickets);
 
             // 経済データの復元
             if (gm.EconomyManager != null)
             {
                 gm.EconomyManager.Initialize((int)data.CurrentBalance);
             }
+
+            // 時間の復元
+            if (gm.TimeManager != null)
+            {
+                gm.TimeManager.RestoreTime(
+                    data.CurrentYear, data.CurrentMonth,
+                    data.CurrentDay, data.CurrentHour);
+            }
+
+            // パーク初期化（デフォルトゾーンで）
+            if (gm.ParkManager != null)
+            {
+                gm.ParkManager.Initialize(ThemeZone.LostKingdom);
+            }
+
+            // 来場者・スタッフ初期化
+            if (gm.VisitorManager != null)
+                gm.VisitorManager.Initialize();
+            if (gm.StaffManager != null)
+                gm.StaffManager.Initialize();
 
             // 研究データの復元
             if (gm.ResearchManager != null)
@@ -257,15 +329,39 @@ namespace ThemeParkGame.Core
             }
 
             // 天候の復元
-            if (gm.WeatherSystem != null && !string.IsNullOrEmpty(data.CurrentWeather))
+            if (gm.WeatherSystem != null)
             {
-                if (Enum.TryParse<Weather>(data.CurrentWeather, out Weather weather))
+                gm.WeatherSystem.Initialize();
+                if (!string.IsNullOrEmpty(data.CurrentWeather) &&
+                    Enum.TryParse<Weather>(data.CurrentWeather, out Weather weather))
                 {
                     gm.WeatherSystem.ForceWeather(weather);
                 }
             }
 
-            Debug.Log($"[SaveSystem] ゲーム状態を復元しました (Year {data.CurrentYear}, 残高: {data.CurrentBalance:F0})");
+            // ゲーム状態をPlayingに遷移
+            gm.RestorePlayingState();
+
+            Debug.Log($"[SaveSystem] Game state restored " +
+                      $"(Year {data.CurrentYear} M{data.CurrentMonth} D{data.CurrentDay}, " +
+                      $"Balance: ${data.CurrentBalance:N0}, " +
+                      $"Difficulty: {data.Difficulty})");
+        }
+
+        // ================================================================
+        // セーブスロット概要テキスト
+        // ================================================================
+
+        /// <summary>スロットの概要テキストを返す</summary>
+        public static string GetSlotSummary(int slot)
+        {
+            var info = GetSaveInfo(slot);
+            if (info == null) return "--- EMPTY ---";
+
+            return $"Y{info.CurrentYear} M{info.CurrentMonth} D{info.CurrentDay}  " +
+                   $"${info.CurrentBalance:N0}  " +
+                   $"Ticket:{info.GoldenTickets}  " +
+                   $"{info.SaveDate}";
         }
     }
 }

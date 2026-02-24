@@ -76,6 +76,11 @@ namespace ThemeParkGame.Core
         private Text _scenarioTitle;
         private Text _scenarioObjectives;
 
+        // ---- セーブ/ロードUI ----
+        private GameObject _saveLoadPanel;
+        private Text[] _slotTexts;
+        private Text _saveLoadMessage;
+
         // ---- データキャッシュ ----
         private float _updateTimer;
         private const float UpdateInterval = 0.3f;
@@ -146,6 +151,7 @@ namespace ThemeParkGame.Core
             BuildPauseOverlay(_canvasRoot);
             BuildResultsOverlay(_canvasRoot);
             BuildScenarioPanel(_canvasRoot);
+            BuildSaveLoadPanel(_canvasRoot);
         }
 
         // ================================================================
@@ -479,12 +485,17 @@ namespace ThemeParkGame.Core
             // 「続ける」ボタン
             MakeCenterButton(rt, "ResumeBtn", "続ける",
                 new Color(0.18f, 0.55f, 0.34f), new Color(0.22f, 0.65f, 0.40f), new Color(0.14f, 0.45f, 0.28f),
-                new Vector2(0f, 20f), OnResumeClicked);
+                new Vector2(0f, 50f), OnResumeClicked);
+
+            // 「セーブ/ロード」ボタン
+            MakeCenterButton(rt, "SaveLoadBtn", "SAVE / LOAD",
+                new Color(0.3f, 0.4f, 0.6f), new Color(0.38f, 0.5f, 0.72f), new Color(0.22f, 0.3f, 0.48f),
+                new Vector2(0f, -30f), OnSaveLoadClicked);
 
             // 「ゲーム終了」ボタン
             MakeCenterButton(rt, "EndGameBtn", "ゲーム終了",
                 new Color(0.65f, 0.2f, 0.2f), new Color(0.75f, 0.3f, 0.3f), new Color(0.5f, 0.15f, 0.15f),
-                new Vector2(0f, -60f), OnEndGameClicked);
+                new Vector2(0f, -110f), OnEndGameClicked);
 
             _pauseOverlay.SetActive(false);
         }
@@ -594,6 +605,200 @@ namespace ThemeParkGame.Core
                 panelW - 20f, panelH - 40f, new Vector2(0f, 1f));
 
             _scenarioPanel.SetActive(false);
+        }
+
+        // ================================================================
+        // セーブ/ロードパネル（ポーズ時に表示）
+        // ================================================================
+
+        private void BuildSaveLoadPanel(RectTransform root)
+        {
+            float panelW = 500f;
+            float panelH = 340f;
+
+            _saveLoadPanel = new GameObject("SaveLoadPanel");
+            _saveLoadPanel.transform.SetParent(root, false);
+            var rt = _saveLoadPanel.AddComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(panelW, panelH);
+
+            var bgImg = _saveLoadPanel.AddComponent<Image>();
+            bgImg.color = new Color(0.06f, 0.08f, 0.16f, 0.98f);
+            bgImg.raycastTarget = true;
+
+            // タイトル
+            var title = MakeLabel(rt, "SLTitle", "SAVE / LOAD", 28, Gold,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            var titleRt = title.rectTransform;
+            titleRt.anchorMin = titleRt.anchorMax = new Vector2(0.5f, 1f);
+            titleRt.pivot = new Vector2(0.5f, 1f);
+            titleRt.anchoredPosition = new Vector2(0f, -10f);
+            titleRt.sizeDelta = new Vector2(panelW, 36f);
+
+            // 3スロット
+            _slotTexts = new Text[SaveSystem.MaxSlots];
+            float slotH = 60f;
+            float slotY = panelH - 55f;
+
+            for (int s = 0; s < SaveSystem.MaxSlots; s++)
+            {
+                float y = slotY - s * (slotH + 8f);
+                CreateSaveSlotRow(rt, s, y, panelW, slotH);
+            }
+
+            // メッセージ表示
+            _saveLoadMessage = MakeLabel(rt, "SLMsg", "", 16, Green,
+                FontStyle.Normal, TextAnchor.MiddleCenter);
+            var msgRt = _saveLoadMessage.rectTransform;
+            msgRt.anchorMin = msgRt.anchorMax = new Vector2(0.5f, 0f);
+            msgRt.pivot = new Vector2(0.5f, 0f);
+            msgRt.anchoredPosition = new Vector2(0f, 42f);
+            msgRt.sizeDelta = new Vector2(panelW - 20f, 24f);
+
+            // 閉じるボタン
+            var closeGo = MakePanel(rt, "SLClose", 140f, 36f, new Color(0.4f, 0.42f, 0.5f));
+            var closeRt = closeGo.GetComponent<RectTransform>();
+            closeRt.anchorMin = closeRt.anchorMax = new Vector2(0.5f, 0f);
+            closeRt.pivot = new Vector2(0.5f, 0f);
+            closeRt.anchoredPosition = new Vector2(0f, 8f);
+            var closeImg = closeGo.GetComponent<Image>();
+            closeImg.raycastTarget = true;
+            var closeBtn = closeGo.AddComponent<Button>();
+            closeBtn.targetGraphic = closeImg;
+            closeBtn.onClick.AddListener(() => _saveLoadPanel.SetActive(false));
+            var closeLabel = MakeLabel(closeRt, "Label", "CLOSE", 18, Color.white,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(closeLabel.rectTransform);
+
+            _saveLoadPanel.SetActive(false);
+        }
+
+        private void CreateSaveSlotRow(RectTransform parent, int slot, float y, float panelW, float h)
+        {
+            // スロット情報
+            var infoBg = MakePanel(parent, $"Slot{slot}Bg", panelW - 20f, h,
+                new Color(0.1f, 0.12f, 0.2f, 0.9f));
+            var infoRt = infoBg.GetComponent<RectTransform>();
+            infoRt.anchorMin = infoRt.anchorMax = new Vector2(0.5f, 1f);
+            infoRt.pivot = new Vector2(0.5f, 1f);
+            infoRt.anchoredPosition = new Vector2(0f, -y + h);
+
+            // スロット番号
+            var slotLabel = MakeLabel(infoRt, "SlotNum", $"Slot {slot + 1}", 14, Muted,
+                FontStyle.Bold, TextAnchor.MiddleLeft);
+            PlaceInParent(slotLabel.rectTransform, 10f, h - 2f, 80f, 20f, new Vector2(0f, 1f));
+
+            // スロット概要
+            _slotTexts[slot] = MakeLabel(infoRt, "SlotInfo", SaveSystem.GetSlotSummary(slot),
+                13, Color.white, FontStyle.Normal, TextAnchor.MiddleLeft);
+            PlaceInParent(_slotTexts[slot].rectTransform, 10f, h - 22f,
+                panelW - 180f, 20f, new Vector2(0f, 1f));
+
+            float btnW = 65f;
+            float btnH = 32f;
+            float btnY = (h - btnH) / 2f;
+
+            // SAVEボタン
+            var saveGo = MakePanel(infoRt, $"SaveBtn{slot}", btnW, btnH,
+                new Color(0.2f, 0.5f, 0.35f));
+            var saveRt = saveGo.GetComponent<RectTransform>();
+            saveRt.anchorMin = saveRt.anchorMax = new Vector2(1f, 0.5f);
+            saveRt.pivot = new Vector2(1f, 0.5f);
+            saveRt.anchoredPosition = new Vector2(-btnW - 12f, 0f);
+            var saveImg = saveGo.GetComponent<Image>();
+            saveImg.raycastTarget = true;
+            var saveBtn = saveGo.AddComponent<Button>();
+            saveBtn.targetGraphic = saveImg;
+            var sc = saveBtn.colors;
+            sc.highlightedColor = new Color(0.25f, 0.6f, 0.42f);
+            sc.pressedColor = new Color(0.15f, 0.38f, 0.25f);
+            saveBtn.colors = sc;
+            var saveTxt = MakeLabel(saveRt, "L", "SAVE", 14, Color.white,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(saveTxt.rectTransform);
+
+            int s = slot;
+            saveBtn.onClick.AddListener(() => OnSaveSlot(s));
+
+            // LOADボタン
+            var loadGo = MakePanel(infoRt, $"LoadBtn{slot}", btnW, btnH,
+                new Color(0.3f, 0.4f, 0.6f));
+            var loadRt = loadGo.GetComponent<RectTransform>();
+            loadRt.anchorMin = loadRt.anchorMax = new Vector2(1f, 0.5f);
+            loadRt.pivot = new Vector2(1f, 0.5f);
+            loadRt.anchoredPosition = new Vector2(-6f, 0f);
+            var loadImg = loadGo.GetComponent<Image>();
+            loadImg.raycastTarget = true;
+            var loadBtn = loadGo.AddComponent<Button>();
+            loadBtn.targetGraphic = loadImg;
+            var lc = loadBtn.colors;
+            lc.highlightedColor = new Color(0.38f, 0.5f, 0.72f);
+            lc.pressedColor = new Color(0.22f, 0.3f, 0.48f);
+            loadBtn.colors = lc;
+            var loadTxt = MakeLabel(loadRt, "L", "LOAD", 14, Color.white,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(loadTxt.rectTransform);
+
+            loadBtn.onClick.AddListener(() => OnLoadSlot(s));
+        }
+
+        private void OnSaveLoadClicked()
+        {
+            if (_saveLoadPanel == null) return;
+            RefreshSaveSlots();
+            _saveLoadMessage.text = "";
+            _saveLoadPanel.SetActive(true);
+        }
+
+        private void OnSaveSlot(int slot)
+        {
+            bool success = SaveSystem.Save(slot);
+            if (_saveLoadMessage != null)
+            {
+                _saveLoadMessage.text = success
+                    ? $"Slot {slot + 1} にセーブしました"
+                    : "セーブに失敗しました";
+                _saveLoadMessage.color = success ? Green : Red;
+            }
+            RefreshSaveSlots();
+        }
+
+        private void OnLoadSlot(int slot)
+        {
+            if (!SaveSystem.HasSaveData(slot))
+            {
+                if (_saveLoadMessage != null)
+                {
+                    _saveLoadMessage.text = $"Slot {slot + 1} にデータがありません";
+                    _saveLoadMessage.color = Yellow;
+                }
+                return;
+            }
+
+            bool success = SaveSystem.Load(slot);
+            if (success)
+            {
+                // ロード成功 → ポーズ解除してセーブロードパネルを閉じる
+                _saveLoadPanel.SetActive(false);
+                if (_pauseOverlay != null) _pauseOverlay.SetActive(false);
+            }
+            else if (_saveLoadMessage != null)
+            {
+                _saveLoadMessage.text = "ロードに失敗しました";
+                _saveLoadMessage.color = Red;
+            }
+        }
+
+        private void RefreshSaveSlots()
+        {
+            if (_slotTexts == null) return;
+            for (int i = 0; i < _slotTexts.Length; i++)
+            {
+                if (_slotTexts[i] != null)
+                    _slotTexts[i].text = SaveSystem.GetSlotSummary(i);
+            }
         }
 
         /// <summary>中央配置のボタンを作成するヘルパー</summary>

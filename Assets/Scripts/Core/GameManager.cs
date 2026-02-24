@@ -206,6 +206,26 @@ namespace ThemeParkGame.Core
             Debug.Log($"[GameManager] Golden Ticket earned! Total: {GoldenTickets}");
         }
 
+        /// <summary>セーブデータからゴールデンチケット数を復元する</summary>
+        public void RestoreGoldenTickets(int count)
+        {
+            GoldenTickets = Mathf.Max(0, count);
+        }
+
+        /// <summary>セーブデータから難易度を復元する</summary>
+        public void RestoreDifficulty(GameDifficulty difficulty)
+        {
+            CurrentDifficulty = difficulty;
+        }
+
+        /// <summary>セーブデータからPlaying状態に遷移する</summary>
+        public void RestorePlayingState()
+        {
+            CurrentState = GameState.Playing;
+            SpeedLevel = 1;
+            GameEvents.FireParkOpened();
+        }
+
         /// <summary>ゴールデンチケットを使用する</summary>
         public bool SpendGoldenTicket(int amount = 1)
         {
