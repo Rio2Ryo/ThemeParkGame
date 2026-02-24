@@ -1538,8 +1538,15 @@ namespace ThemeParkGame.Visitor
         public void FinishRiding(float excitementGain, float nauseaGain, float satisfactionGain,
                                   int attractionId, string attractionName)
         {
-            // 搭乗効果を適用
+            float oldSat = parameters.Satisfaction;
+
+            // 搭乗効果を適用（ApplyRideEffect内でSatisfactionも更新される）
             parameters.ApplyRideEffect(excitementGain, nauseaGain, satisfactionGain, visitorType);
+
+            // 来場者の好みカテゴリに応じた満足度ボーナス
+            ApplyPreferenceBonus(attractionId);
+
+            float satDelta = parameters.Satisfaction - oldSat;
 
             // 体験を記憶に記録
             var memory = new AttractionMemory
@@ -1553,13 +1560,34 @@ namespace ThemeParkGame.Visitor
             };
             profile.RecordAttractionVisit(memory);
 
-            // 注: チケット料金は行列参加時(OnReachedDestination)に支払い済み。
-            //     収益計上は Attraction.ProcessRideCompletion() → EconomyManager で実施。
-
             GameEvents.FireVisitorHappinessChanged(visitorId, parameters.Happiness);
-            Debug.Log($"[VisitorAI] Visitor {visitorId} finished riding '{attractionName}'. {parameters}");
+            GameEvents.FireVisitorSatisfactionChanged(visitorId, parameters.Satisfaction, satDelta);
+            Debug.Log($"[VisitorAI] Visitor {visitorId} finished riding '{attractionName}'. Sat:{parameters.Satisfaction:F0}(Δ{satDelta:+0.0;-0.0}) {parameters}");
 
             TransitionTo(VisitorBehaviorState.Idle);
+        }
+
+        /// <summary>来場者の好みに応じた満足度ボーナスを適用する</summary>
+        private void ApplyPreferenceBonus(int attractionId)
+        {
+            // AttractionManagerから該当アトラクションを探す
+            var gm = GameManager.Instance;
+            if (gm == null || gm.AttractionManager == null) return;
+
+            var attraction = gm.AttractionManager.GetAttractionById(attractionId);
+            if (attraction == null || attraction.Data == null) return;
+
+            var category = attraction.Data.Category;
+            if (profile.LikesCategory(category))
+            {
+                // 好みのカテゴリ → 追加ボーナス
+                parameters.ModifySatisfaction(3f);
+            }
+            else if (profile.DislikesCategory(category))
+            {
+                // 苦手なカテゴリ → ペナルティ
+                parameters.ModifySatisfaction(-2f);
+            }
         }
 
         /// <summary>

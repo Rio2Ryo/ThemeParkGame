@@ -62,7 +62,22 @@ namespace ThemeParkGame.Core
         private Text _viToilet;
         private Text _viExcitement;
         private Text _viRides;
+        private Text _viSatisfaction;
+        private Image _viSatBarFill;
+        private GameObject _viSatBar;
         private VisitorAI _selectedVisitor;
+
+        // ---- 満足度フローティングポップアップ ----
+        private readonly List<FloatingScore> _floatingScores = new List<FloatingScore>();
+        private struct FloatingScore
+        {
+            public GameObject Go;
+            public Text Label;
+            public int VisitorId;
+            public float Timer;
+            public Vector3 WorldPos;
+        }
+        private const float FloatingScoreDuration = 1.5f;
 
         // ---- メニュー/ポーズ/結果画面 ----
         private GameObject _menuBtn;
@@ -126,6 +141,12 @@ namespace ThemeParkGame.Core
         private void Awake()
         {
             BuildCanvas();
+            GameEvents.OnVisitorSatisfactionChanged += OnVisitorSatisfactionChanged;
+        }
+
+        private void OnDestroy()
+        {
+            GameEvents.OnVisitorSatisfactionChanged -= OnVisitorSatisfactionChanged;
         }
 
         private void BuildCanvas()
@@ -374,7 +395,7 @@ namespace ThemeParkGame.Core
         private void BuildVisitorInfoPanel(RectTransform root)
         {
             float panelW = 280f;
-            float panelH = 340f;
+            float panelH = 400f;
 
             var bg = MakePanel(root, "VisitorInfoPanel", panelW, panelH, BgDark);
             _visitorInfoPanel = bg;
@@ -411,7 +432,23 @@ namespace ThemeParkGame.Core
             _viType    = MakeInfoLine(rt, "Type",    ref y, lineH, lx, lw, Cyan, FontStyle.Normal, 14);
             _viState   = MakeInfoLine(rt, "State",   ref y, lineH, lx, lw, Muted, FontStyle.Normal, 14);
             y -= 6f;
-            _viHappiness  = MakeInfoLine(rt, "Happy",   ref y, lineH, lx, lw, Green, FontStyle.Bold, 14);
+
+            // ---- 満足度メーター ----
+            _viSatisfaction = MakeInfoLine(rt, "Satisfaction", ref y, lineH, lx, lw, Green, FontStyle.Bold, 14);
+            // 満足度バー
+            float barW = lw;
+            float barH = 10f;
+            float barX = lx;
+            var satBarBg = MakePanel(rt, "SatBarBg", barW, barH, new Color(0.15f, 0.18f, 0.25f));
+            PlaceInParent(satBarBg.GetComponent<RectTransform>(), barX, y, barW, barH, new Vector2(0f, 1f));
+            _viSatBar = satBarBg;
+
+            var satBarFill = MakePanel(rt, "SatBarFill", barW, barH, Green);
+            PlaceInParent(satBarFill.GetComponent<RectTransform>(), barX, y, barW, barH, new Vector2(0f, 1f));
+            _viSatBarFill = satBarFill.GetComponent<Image>();
+            y -= barH + 6f;
+
+            _viHappiness  = MakeInfoLine(rt, "Happy",   ref y, lineH, lx, lw, Green, FontStyle.Normal, 14);
             _viExcitement = MakeInfoLine(rt, "Excite",  ref y, lineH, lx, lw, Gold, FontStyle.Normal, 14);
             _viCash       = MakeInfoLine(rt, "Cash",    ref y, lineH, lx, lw, Gold, FontStyle.Normal, 14);
             y -= 6f;
@@ -938,7 +975,8 @@ namespace ThemeParkGame.Core
             string expenses = gm.EconomyManager != null ? $"${gm.EconomyManager.TotalExpensesPaid:N0}" : "---";
             string visitors = gm.VisitorManager != null ? $"{gm.VisitorManager.TotalVisitorsToday}" : "---";
             string peak = gm.VisitorManager != null ? $"{gm.VisitorManager.PeakVisitorCount:F0}" : "---";
-            float avgHappy = gm.VisitorManager != null ? gm.VisitorManager.AverageHappiness : 0f;
+            float avgSatisfaction = gm.VisitorManager != null ? gm.VisitorManager.AverageSatisfaction : 0f;
+            float avgHappiness = gm.VisitorManager != null ? gm.VisitorManager.AverageHappiness : 0f;
             string tickets = $"{gm.GoldenTickets}";
 
             string time = "---";
@@ -955,7 +993,8 @@ namespace ThemeParkGame.Core
                 : "---";
 
             _resultsBody.text =
-                $"  Visitors: {visitors}  (Peak: {peak})         Satisfaction: {avgHappy:F0}%\n" +
+                $"  Visitors: {visitors}  (Peak: {peak})\n" +
+                $"  Satisfaction: {avgSatisfaction:F0}%  Happiness: {avgHappiness:F0}%\n" +
                 $"  Revenue: {revenue}         Expenses: {expenses}\n" +
                 $"  Final Balance: {money}\n" +
                 $"  Attractions: {attrCount}         Golden Tickets: {tickets}\n" +
@@ -964,7 +1003,7 @@ namespace ThemeParkGame.Core
                 $"  Score Breakdown:\n" +
                 $"    Visitors x10 = {(gm.VisitorManager != null ? gm.VisitorManager.TotalVisitorsToday * 10 : 0):N0}\n" +
                 $"    Revenue / 100 = {(gm.EconomyManager != null ? (int)(gm.EconomyManager.TotalRevenueEarned / 100f) : 0):N0}\n" +
-                $"    Satisfaction x50 = {(int)(avgHappy * 50f):N0}\n" +
+                $"    Satisfaction x50 = {(int)(avgSatisfaction * 50f):N0}\n" +
                 $"    Golden Tickets x500 = {gm.GoldenTickets * 500:N0}";
         }
 
@@ -1018,6 +1057,8 @@ namespace ThemeParkGame.Core
             {
                 RefreshVisitorInfo();
             }
+
+            UpdateFloatingScores();
         }
 
         // ================================================================
@@ -1083,7 +1124,22 @@ namespace ThemeParkGame.Core
             _viType.text = $"タイプ: {VisitorTypeLabel(ai.Type)}  年齢: {prof.Age}";
             _viState.text = $"状態: {BehaviorStateLabel(ai.CurrentState)}";
 
-            _viHappiness.text = $"満足度: {p.Happiness:F0}%";
+            // 満足度メーター
+            float sat = p.Satisfaction;
+            _viSatisfaction.text = $"満足度: {sat:F0}%  (総合: {p.OverallSatisfaction:F0}%)";
+            Color satColor = sat >= 70f ? Green : sat >= 40f ? Yellow : Red;
+            _viSatisfaction.color = satColor;
+
+            if (_viSatBarFill != null && _viSatBar != null)
+            {
+                float ratio = Mathf.Clamp01(sat / 100f);
+                var fillRt = _viSatBarFill.rectTransform;
+                var parentRt = _viSatBar.GetComponent<RectTransform>();
+                fillRt.sizeDelta = new Vector2(parentRt.sizeDelta.x * ratio, parentRt.sizeDelta.y);
+                _viSatBarFill.color = satColor;
+            }
+
+            _viHappiness.text = $"幸福度: {p.Happiness:F0}%";
             _viHappiness.color = p.Happiness >= 70f ? Green :
                                  p.Happiness >= 40f ? Yellow : Red;
 
@@ -1110,6 +1166,122 @@ namespace ThemeParkGame.Core
         }
 
         // ================================================================
+        // 満足度フローティングスコア（搭乗後に頭上に表示）
+        // ================================================================
+
+        private void OnVisitorSatisfactionChanged(int visitorId, float newScore, float delta)
+        {
+            if (Mathf.Abs(delta) < 0.5f) return;
+            if (_canvas == null || Camera.main == null) return;
+
+            // 来場者のワールド位置を取得
+            var gm = GameManager.Instance;
+            if (gm == null || gm.VisitorManager == null) return;
+
+            var visitors = gm.VisitorManager.GetAllActiveVisitors();
+            if (visitors == null) return;
+
+            Vector3 worldPos = Vector3.zero;
+            bool found = false;
+            for (int i = 0; i < visitors.Count; i++)
+            {
+                if (visitors[i].VisitorId == visitorId)
+                {
+                    worldPos = visitors[i].transform.position + Vector3.up * 2.8f;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) return;
+
+            // フローティングテキスト生成
+            var go = new GameObject("FloatScore");
+            go.transform.SetParent(_canvasRoot, false);
+            var rt = go.AddComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(120f, 30f);
+
+            var label = go.AddComponent<Text>();
+            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            label.fontSize = 18;
+            label.fontStyle = FontStyle.Bold;
+            label.alignment = TextAnchor.MiddleCenter;
+            label.raycastTarget = false;
+
+            if (delta > 0f)
+            {
+                label.text = $"+{delta:F0}";
+                label.color = Green;
+            }
+            else
+            {
+                label.text = $"{delta:F0}";
+                label.color = Red;
+            }
+
+            // 画面位置に変換
+            Vector3 screenPos = Camera.main.WorldToScreenPoint(worldPos);
+            rt.position = screenPos;
+
+            var outline = go.AddComponent<Outline>();
+            outline.effectColor = new Color(0f, 0f, 0f, 0.8f);
+            outline.effectDistance = new Vector2(1f, -1f);
+
+            _floatingScores.Add(new FloatingScore
+            {
+                Go = go,
+                Label = label,
+                VisitorId = visitorId,
+                Timer = FloatingScoreDuration,
+                WorldPos = worldPos
+            });
+        }
+
+        private void UpdateFloatingScores()
+        {
+            Camera cam = Camera.main;
+
+            for (int i = _floatingScores.Count - 1; i >= 0; i--)
+            {
+                var fs = _floatingScores[i];
+                fs.Timer -= Time.unscaledDeltaTime;
+                fs.WorldPos += Vector3.up * Time.unscaledDeltaTime * 1.5f;
+
+                _floatingScores[i] = fs;
+
+                if (fs.Timer <= 0f || fs.Go == null)
+                {
+                    if (fs.Go != null) Destroy(fs.Go);
+                    _floatingScores.RemoveAt(i);
+                    continue;
+                }
+
+                // 画面位置更新
+                if (cam != null)
+                {
+                    Vector3 sp = cam.WorldToScreenPoint(fs.WorldPos);
+                    if (sp.z > 0f)
+                    {
+                        fs.Go.SetActive(true);
+                        fs.Go.GetComponent<RectTransform>().position = sp;
+                    }
+                    else
+                    {
+                        fs.Go.SetActive(false);
+                    }
+                }
+
+                // フェードアウト
+                float alpha = Mathf.Clamp01(fs.Timer / (FloatingScoreDuration * 0.4f));
+                if (fs.Label != null)
+                {
+                    var c = fs.Label.color;
+                    c.a = alpha;
+                    fs.Label.color = c;
+                }
+            }
+        }
+
+        // ================================================================
         // HUD定期更新
         // ================================================================
 
@@ -1127,14 +1299,15 @@ namespace ThemeParkGame.Core
 
                 _sbVisitorValue.text = $"{active}";
 
-                _sbSatisfactionValue.text = $"{avgHappy:F0}%";
-                Color satColor = avgHappy >= 70f ? Green : avgHappy >= 40f ? Yellow : Red;
+                float avgSat = gm.VisitorManager.AverageSatisfaction;
+                _sbSatisfactionValue.text = $"{avgSat:F0}%";
+                Color satColor = avgSat >= 70f ? Green : avgSat >= 40f ? Yellow : Red;
                 _sbSatisfactionValue.color = satColor;
 
                 // 満足度バー
                 if (_sbSatisfactionFill != null)
                 {
-                    float ratio = Mathf.Clamp01(avgHappy / 100f);
+                    float ratio = Mathf.Clamp01(avgSat / 100f);
                     var barRt = _sbSatisfactionFill.rectTransform;
                     // バーの幅をratioで調整（親の幅 × ratio）
                     var parentRt = _sbSatisfactionBar.GetComponent<RectTransform>();

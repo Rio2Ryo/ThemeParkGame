@@ -96,6 +96,22 @@ namespace ThemeParkGame.Visitor
             }
         }
 
+        /// <summary>来場者の平均満足度スコア（0-100）</summary>
+        public float AverageSatisfaction
+        {
+            get
+            {
+                if (activeVisitors.Count == 0) return 0f;
+
+                float sum = 0f;
+                for (int i = 0; i < activeVisitors.Count; i++)
+                {
+                    sum += activeVisitors[i].Parameters.Satisfaction;
+                }
+                return sum / activeVisitors.Count;
+            }
+        }
+
         /// <summary>ピーク来場者数</summary>
         public float PeakVisitorCount => peakVisitorCount;
 

@@ -21,6 +21,7 @@ namespace ThemeParkGame.Core
         public static event Action<int> OnVisitorVomited;
         public static event Action<int> OnVisitorHadAccident; // トイレ漏れ
         public static event Action<int, string> OnVisitorSaidSomething; // AI会話
+        public static event Action<int, float, float> OnVisitorSatisfactionChanged; // visitorId, newScore, delta
 
         // ---- スタッフ関連イベント ----
         public static event Action<int, StaffType> OnStaffHired;
@@ -79,6 +80,7 @@ namespace ThemeParkGame.Core
         public static void FireVisitorVomited(int visitorId) => OnVisitorVomited?.Invoke(visitorId);
         public static void FireVisitorHadAccident(int visitorId) => OnVisitorHadAccident?.Invoke(visitorId);
         public static void FireVisitorSaidSomething(int visitorId, string message) => OnVisitorSaidSomething?.Invoke(visitorId, message);
+        public static void FireVisitorSatisfactionChanged(int visitorId, float newScore, float delta) => OnVisitorSatisfactionChanged?.Invoke(visitorId, newScore, delta);
 
         // スタッフ
         public static void FireStaffHired(int staffId, StaffType type) => OnStaffHired?.Invoke(staffId, type);
@@ -155,6 +157,7 @@ namespace ThemeParkGame.Core
             OnVisitorVomited = null;
             OnVisitorHadAccident = null;
             OnVisitorSaidSomething = null;
+            OnVisitorSatisfactionChanged = null;
 
             // スタッフ
             OnStaffHired = null;

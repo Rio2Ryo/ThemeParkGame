@@ -559,6 +559,14 @@ namespace ThemeParkGame.Attraction
             }
         }
 
+        /// <summary>IDでアトラクションを取得する（見つからない場合null）</summary>
+        public Attraction GetAttractionById(int facilityId)
+        {
+            if (_contexts.TryGetValue(facilityId, out var ctx))
+                return ctx.Attraction;
+            return null;
+        }
+
         // ================================================================
         // 内部ヘルパー
         // ================================================================

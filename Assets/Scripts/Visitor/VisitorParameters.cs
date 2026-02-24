@@ -98,6 +98,10 @@ namespace ThemeParkGame.Visitor
         [SerializeField, Range(0f, 100f)]
         private float toiletNeed = 5f;
 
+        [Header("満足度スコア")]
+        [SerializeField, Range(0f, 100f)]
+        private float satisfaction = 50f;
+
         [Header("所持金")]
         [SerializeField]
         private float cash = 100f;
@@ -172,6 +176,17 @@ namespace ThemeParkGame.Visitor
         }
 
         /// <summary>
+        /// 累積満足度スコア（0-100）。アトラクション体験・食事・サービスで加算される。
+        /// 【ゲームデザイン】Happinessは瞬間的な気分、Satisfactionは累積的な体験評価。
+        /// 高い満足度の来場者はSNS投稿でパークの知名度を上げ、リピーターになる。
+        /// </summary>
+        public float Satisfaction
+        {
+            get => satisfaction;
+            private set => satisfaction = Mathf.Clamp(value, MinValue, MaxValue);
+        }
+
+        /// <summary>
         /// 所持金。VisitorTypeにより初期値が異なる。
         /// 【ゲームデザイン】0になると何も買えず不満が溜まり退園する。
         /// VIPは高額、Kidsは少額。価格設定のバランスが経営の鍵。
@@ -208,15 +223,18 @@ namespace ThemeParkGame.Visitor
         /// <summary>お金が残っているか</summary>
         public bool HasMoney => Cash > 0f;
 
-        /// <summary>全体的な満足度スコア（0-100）。各パラメータの加重平均。</summary>
+        /// <summary>
+        /// 全体的な満足度スコア（0-100）。
+        /// 累積満足度(60%)と瞬間的な幸福度(40%)の加重平均に不快ペナルティを適用。
+        /// </summary>
         public float OverallSatisfaction
         {
             get
             {
-                // 幸福度を最重視し、不快要素をペナルティとして計算
-                float discomfortPenalty = (Hunger + Thirst + Nausea + ToiletNeed) * 0.05f;
-                float excitementBonus = Excitement * 0.1f;
-                return Mathf.Clamp(Happiness - discomfortPenalty + excitementBonus, MinValue, MaxValue);
+                float discomfortPenalty = (Hunger + Thirst + Nausea + ToiletNeed) * 0.04f;
+                float excitementBonus = Excitement * 0.08f;
+                float combined = Satisfaction * 0.6f + Happiness * 0.4f;
+                return Mathf.Clamp(combined - discomfortPenalty + excitementBonus, MinValue, MaxValue);
             }
         }
 
@@ -275,6 +293,7 @@ namespace ThemeParkGame.Visitor
             }
 
             // 共通初期値
+            Satisfaction = 50f;
             Nausea = 0f;
             Hunger = UnityEngine.Random.Range(5f, 20f);
             Thirst = UnityEngine.Random.Range(5f, 20f);
@@ -375,6 +394,14 @@ namespace ThemeParkGame.Visitor
             ToiletNeed += amount;
         }
 
+        /// <summary>満足度スコアを加算する（負値で減算）。変化量を返す。</summary>
+        public float ModifySatisfaction(float amount)
+        {
+            float old = Satisfaction;
+            Satisfaction += amount;
+            return Satisfaction - old;
+        }
+
         /// <summary>所持金を使う。残高不足の場合falseを返す。</summary>
         public bool SpendCash(float amount)
         {
@@ -412,6 +439,9 @@ namespace ThemeParkGame.Visitor
             ModifyHappiness(qualityBonus);
             // 食事後はトイレ欲求が少し上がる
             ModifyToiletNeed(hungerReduction * 0.15f);
+            // 食事の満足度加算（空腹時ほど高い）
+            float satBonus = qualityBonus * 0.1f + (Hunger < 20f ? 2f : 0f);
+            ModifySatisfaction(satBonus);
         }
 
         /// <summary>
@@ -426,6 +456,8 @@ namespace ThemeParkGame.Visitor
             ModifyHappiness(qualityBonus);
             // 飲料後はトイレ欲求が上がる
             ModifyToiletNeed(thirstReduction * 0.2f);
+            // 飲料の満足度加算
+            ModifySatisfaction(qualityBonus * 0.08f);
         }
 
         /// <summary>
@@ -453,6 +485,12 @@ namespace ThemeParkGame.Visitor
             ModifyExcitement(excitementGain);
             ModifyNausea(nauseaGain, visitorType);
             ModifyHappiness(satisfactionGain);
+
+            // 満足度スコアに搭乗結果を反映（satisfactionGainは0-100なので正規化）
+            float satDelta = satisfactionGain * 0.15f;
+            // 嘔吐寸前ならペナルティ
+            if (IsAboutToVomit) satDelta -= 5f;
+            ModifySatisfaction(satDelta);
         }
 
         /// <summary>
@@ -478,7 +516,7 @@ namespace ThemeParkGame.Visitor
         /// <summary>パラメータのスナップショットを文字列で返す（デバッグ用）</summary>
         public override string ToString()
         {
-            return $"[HP:{Happiness:F0} EX:{Excitement:F0} NA:{Nausea:F0} " +
+            return $"[HP:{Happiness:F0} SAT:{Satisfaction:F0} EX:{Excitement:F0} NA:{Nausea:F0} " +
                    $"HU:{Hunger:F0} TH:{Thirst:F0} TL:{ToiletNeed:F0} $:{Cash:F0}]";
         }
 
