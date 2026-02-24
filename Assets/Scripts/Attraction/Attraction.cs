@@ -86,7 +86,7 @@ namespace ThemeParkGame.Attraction
 
         /// <summary>待ち行列の最大長（これを超えると来場者は並ばない）</summary>
         [Header("Queue Settings")]
-        [SerializeField] private int maxQueueLength = 30;
+        [SerializeField] private int maxQueueLength = 20;
         public int MaxQueueLength
         {
             get => maxQueueLength;

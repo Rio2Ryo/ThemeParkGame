@@ -40,7 +40,7 @@ namespace ThemeParkGame.Visitor
         public const float ToiletAccidentThreshold = 95f;
 
         /// <summary>退園を検討し始める幸福度の閾値</summary>
-        public const float HappinessLeaveThreshold = 20f;
+        public const float HappinessLeaveThreshold = 30f;
 
         /// <summary>空腹でショップを探し始める閾値</summary>
         public const float HungerSeekThreshold = 60f;

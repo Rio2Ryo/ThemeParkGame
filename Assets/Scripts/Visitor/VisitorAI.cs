@@ -40,7 +40,7 @@ namespace ThemeParkGame.Visitor
 
         [Header("行動パラメータ")]
         [SerializeField] private float decisionInterval = 2f;
-        [SerializeField] private float maxQueueWaitTime = 120f;
+        [SerializeField] private float maxQueueWaitTime = 90f;
         [SerializeField] private float wanderRadius = 15f;
         [SerializeField] private float facilitySearchRadius = 50f;
         [SerializeField] private float idleWanderInterval = 8f;
