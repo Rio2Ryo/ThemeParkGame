@@ -1012,6 +1012,9 @@ namespace ThemeParkGame.Core
             _selectedVisitor = visitor;
             _visitorInfoPanel.SetActive(true);
             RefreshVisitorInfo();
+
+            // チュートリアル連動: 来場者クリックイベント発火
+            GameEvents.FireVisitorSelected(visitor.VisitorId);
         }
 
         private void HideVisitorInfo()
