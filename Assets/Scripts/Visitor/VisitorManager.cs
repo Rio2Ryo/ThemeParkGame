@@ -417,6 +417,16 @@ namespace ThemeParkGame.Visitor
                 interval *= Mathf.Lerp(1.0f, 0.7f, happinessBonus);
             }
 
+            // パークイベントボーナス（イベント開催中はスポーン加速）
+            if (GameManager.Instance != null && GameManager.Instance.ParkEventSystem != null)
+            {
+                float eventMul = GameManager.Instance.ParkEventSystem.CurrentSpawnMultiplier;
+                if (eventMul > 0f)
+                {
+                    interval /= eventMul; // 倍率1.5 → 間隔を2/3に短縮
+                }
+            }
+
             // 混雑抑制（上限に近いほどスポーン間隔が延びる）
             float capacityRatio = (float)activeVisitors.Count / maxVisitors;
             if (capacityRatio > 0.8f)

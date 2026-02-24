@@ -345,6 +345,20 @@ namespace ThemeParkGame.Visitor
             {
                 Happiness -= HappinessDecayFromDiscomfort * discomfortLevel * deltaTime;
             }
+
+            // パークイベントボーナス: 開催中イベントの幸福度/満足度パッシブ加算
+            if (GameManager.Instance != null && GameManager.Instance.ParkEventSystem != null)
+            {
+                var eventSys = GameManager.Instance.ParkEventSystem;
+                float happyBonus = eventSys.CurrentHappinessBonus;
+                float satBonus = eventSys.CurrentSatisfactionBonus;
+
+                // 1秒あたり微量加算（ボーナス値/60で1分あたりに正規化）
+                if (happyBonus > 0f)
+                    Happiness += (happyBonus / 60f) * deltaTime;
+                if (satBonus > 0f)
+                    Satisfaction += (satBonus / 60f) * deltaTime;
+            }
         }
 
         // ---- パラメータ変更メソッド ----

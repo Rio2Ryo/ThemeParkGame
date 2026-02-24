@@ -133,6 +133,12 @@ namespace ThemeParkGame.Core
         public static event Action<int> OnCameraFollowRequested;
         public static void FireCameraFollowRequested(int targetId) => OnCameraFollowRequested?.Invoke(targetId);
 
+        // ---- パークイベント関連 ----
+        public static event Action<string, string> OnParkEventStarted; // eventId, displayName
+        public static event Action<string, string> OnParkEventEnded;   // eventId, displayName
+        public static void FireParkEventStarted(string eventId, string displayName) => OnParkEventStarted?.Invoke(eventId, displayName);
+        public static void FireParkEventEnded(string eventId, string displayName) => OnParkEventEnded?.Invoke(eventId, displayName);
+
         // ---- 通路関連イベント ----
         public static event Action<float> OnPathwayCongestionChanged; // averageCongestion
         public static void FirePathwayCongestionChanged(float avg) => OnPathwayCongestionChanged?.Invoke(avg);
@@ -212,6 +218,10 @@ namespace ThemeParkGame.Core
 
             // カメラ
             OnCameraFollowRequested = null;
+
+            // パークイベント
+            OnParkEventStarted = null;
+            OnParkEventEnded = null;
 
             // 通路
             OnPathwayCongestionChanged = null;

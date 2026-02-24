@@ -101,6 +101,11 @@ namespace ThemeParkGame.Core
         private Text _congestionText;
         private Image _congestionBarFill;
 
+        // ---- イベント表示 ----
+        private Text _eventText;
+        private GameObject _eventPanel;
+        private float _eventBlinkTimer;
+
         // ---- 通知バッジ ----
         private GameObject _notifBadge;
         private Text _notifBadgeText;
@@ -182,6 +187,7 @@ namespace ThemeParkGame.Core
             BuildResultsOverlay(_canvasRoot);
             BuildScenarioPanel(_canvasRoot);
             BuildSaveLoadPanel(_canvasRoot);
+            BuildEventPanel(_canvasRoot);
         }
 
         // ================================================================
@@ -1033,6 +1039,74 @@ namespace ThemeParkGame.Core
         }
 
         // ================================================================
+        // イベントパネル（InfoBar下 左寄せ）
+        // ================================================================
+
+        private void BuildEventPanel(RectTransform root)
+        {
+            float panelW = 400f;
+            float panelH = 24f;
+
+            _eventPanel = MakePanel(root, "EventPanel", panelW, panelH,
+                new Color(0.12f, 0.08f, 0.22f, 0.88f));
+            var rt = _eventPanel.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
+            rt.pivot = new Vector2(0f, 1f);
+            rt.anchoredPosition = new Vector2(10f, -122f);
+
+            _eventText = MakeLabel(rt, "EventText", "", 12,
+                new Color(1f, 0.85f, 0.4f), FontStyle.Bold, TextAnchor.MiddleLeft);
+            PlaceInParent(_eventText.rectTransform, 8f, panelH, panelW - 16f, panelH, new Vector2(0f, 1f));
+
+            _eventPanel.SetActive(false);
+        }
+
+        private void UpdateEventPanel()
+        {
+            var gm = GameManager.Instance;
+            if (gm == null || gm.ParkEventSystem == null)
+            {
+                if (_eventPanel != null) _eventPanel.SetActive(false);
+                return;
+            }
+
+            var eventSys = gm.ParkEventSystem;
+            if (eventSys.ActiveEventCount == 0)
+            {
+                if (_eventPanel != null) _eventPanel.SetActive(false);
+                return;
+            }
+
+            _eventPanel.SetActive(true);
+            _eventText.text = eventSys.GetActiveEventsSummary();
+
+            // ショー開催中は点滅エフェクト
+            _eventBlinkTimer += Time.deltaTime;
+            bool hasShow = false;
+            foreach (var ae in eventSys.CurrentEvents)
+            {
+                if (ae.Data.Type == ParkEventType.SpecialShow)
+                {
+                    hasShow = true;
+                    break;
+                }
+            }
+
+            if (hasShow)
+            {
+                float blink = (Mathf.Sin(_eventBlinkTimer * 4f) + 1f) * 0.5f;
+                _eventText.color = Color.Lerp(
+                    new Color(1f, 0.85f, 0.4f),
+                    new Color(1f, 0.5f, 0.2f),
+                    blink);
+            }
+            else
+            {
+                _eventText.color = new Color(1f, 0.85f, 0.4f);
+            }
+        }
+
+        // ================================================================
         // Update
         // ================================================================
 
@@ -1408,6 +1482,9 @@ namespace ThemeParkGame.Core
 
             // ---- 通路混雑度 ----
             UpdateCongestionDisplay();
+
+            // ---- イベント表示 ----
+            UpdateEventPanel();
 
             // ---- 速度 ----
             _currentSpeed = gm.SpeedLevel;
