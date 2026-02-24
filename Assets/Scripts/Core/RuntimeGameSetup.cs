@@ -204,7 +204,8 @@ namespace ThemeParkGame.Core
             var attraction = go.AddComponent<Attraction.Attraction>();
             attraction.SetAttractionData(data);
             attraction.TicketPrice = ticketPrice;
-            attraction.MaxQueueLength = capacity * 2;
+            // 待ち行列上限: 定員と同数、最大15人に制限
+            attraction.MaxQueueLength = Mathf.Min(capacity, 15);
 
             // 施設を配置済みとしてマーク（Placeで正のgrid座標を使いつつ、world座標を上書き）
             attraction.FacilityId = go.GetInstanceID();

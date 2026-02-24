@@ -171,6 +171,17 @@ namespace ThemeParkGame.Visitor
             // パラメータの自動増減
             parameters.Tick(dt, currentWeather, visitorType);
 
+            // 満足度0で即退場（意思決定サイクルを待たず即座に退園）
+            if (parameters.Happiness <= 0f && currentState != VisitorBehaviorState.LeavingPark)
+            {
+                if (emotionBubble != null)
+                    emotionBubble.ShowBubble(EmotionBubbleType.NotExcitingEnough, EmotionBubbleColor.Gray);
+                Debug.Log($"[VisitorAI] Visitor {visitorId} leaving immediately: satisfaction dropped to 0.");
+                InterruptCurrentAction();
+                TransitionTo(VisitorBehaviorState.LeavingPark);
+                return;
+            }
+
             // 緊急状態チェック（状態に関係なく割り込む）
             CheckEmergencyConditions();
 

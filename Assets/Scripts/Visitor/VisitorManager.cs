@@ -60,6 +60,9 @@ namespace ThemeParkGame.Visitor
         private float spawnTimer;
         private bool isSpawningEnabled;
 
+        // 時間経過によるスポーン加速
+        private float elapsedGameTime;
+
         // 統計
         private int totalVisitorsToday;
         private int totalVisitorsEverLeft;
@@ -124,6 +127,9 @@ namespace ThemeParkGame.Visitor
             if (!isSpawningEnabled) return;
             if (GameManager.Instance != null && GameManager.Instance.IsPaused) return;
 
+            // 経過時間を追跡（スポーン加速計算用）
+            elapsedGameTime += Time.deltaTime;
+
             // スポーンタイマー
             spawnTimer -= Time.deltaTime;
             if (spawnTimer <= 0f)
@@ -181,6 +187,7 @@ namespace ThemeParkGame.Visitor
 
             isSpawningEnabled = true;
             spawnTimer = baseSpawnInterval;
+            elapsedGameTime = 0f;
 
             Debug.Log($"[VisitorManager] Initialized. Pool size: {visitorPool.Count}, Max visitors: {maxVisitors}");
         }
@@ -370,6 +377,13 @@ namespace ThemeParkGame.Visitor
         {
             float interval = baseSpawnInterval;
 
+            // 時間経過による加速:
+            // 開始直後はスポーン間隔2倍（ゆっくり）、
+            // 5分（300秒）後に通常、10分（600秒）後に0.5倍（ピーク時）
+            float timeProgress = Mathf.Clamp01(elapsedGameTime / 600f);
+            float timeMultiplier = Mathf.Lerp(2.0f, 0.5f, timeProgress);
+            interval *= timeMultiplier;
+
             // 知名度倍率（高いほど短く）
             float fame = GetParkFame();
             float fameMultiplier = Mathf.Lerp(1.0f, 0.3f, fame / 100f);
@@ -395,7 +409,7 @@ namespace ThemeParkGame.Visitor
             }
 
             // 最小/最大間隔の制限
-            return Mathf.Clamp(interval, 5f, 60f);
+            return Mathf.Clamp(interval, 3f, 60f);
         }
 
         /// <summary>スポーン位置を取得する（少しランダムにずらす）</summary>
