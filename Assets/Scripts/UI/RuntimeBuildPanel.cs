@@ -131,7 +131,6 @@ namespace ThemeParkGame.UI
             public int gridWidth;
             public int gridHeight;
             public string requiredResearchId;
-            public string requiredResearchId;
         }
 
         [Serializable]
