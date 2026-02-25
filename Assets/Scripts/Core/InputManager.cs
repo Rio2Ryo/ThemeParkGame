@@ -1,6 +1,6 @@
 // ============================================================
 // ThemeParkGame - InputManager
-// タッチ入力管理システム（スマホ向け）
+// 入力管理システム（マウス＋タッチ対応、WebGL/モバイル両対応）
 // ============================================================
 
 using System;
@@ -10,9 +10,11 @@ using UnityEngine.EventSystems;
 namespace ThemeParkGame.Core
 {
     /// <summary>
-    /// スマートフォン向けタッチ入力を管理するマネージャー。
-    /// タップ・ドラッグ・ピンチ操作を検出し、カメラ制御や
-    /// 施設選択などのゲーム操作に変換する。
+    /// マウス＋タッチ入力を管理するマネージャー。
+    /// WebGLデスクトップブラウザではマウス入力、
+    /// モバイルブラウザではタッチ入力を使用する。
+    /// タップ/クリック・ドラッグ・ピンチ/ホイール操作を検出し、
+    /// カメラ制御や施設選択などのゲーム操作に変換する。
     /// </summary>
     public class InputManager : MonoBehaviour
     {
@@ -72,11 +74,16 @@ namespace ThemeParkGame.Core
                 GameManager.Instance.CurrentState == GameState.FirstPersonMode)
                 return;
 
-#if UNITY_EDITOR
-            HandleMouseInput();
-#else
-            HandleTouchInput();
-#endif
+            // WebGLデスクトップブラウザではマウス入力、モバイルではタッチ入力
+            // 両方を常にチェックすることでハイブリッドデバイスにも対応
+            if (Input.touchCount > 0)
+            {
+                HandleTouchInput();
+            }
+            else
+            {
+                HandleMouseInput();
+            }
         }
 
         /// <summary>タッチ入力を処理する（モバイル向け）</summary>

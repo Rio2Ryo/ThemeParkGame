@@ -21,6 +21,49 @@ namespace ThemeParkGame.Core
     {
         private bool _isSetUp;
 
+        private void OnEnable()
+        {
+            GameEvents.OnParkClosed += HandleParkClosed;
+        }
+
+        private void OnDisable()
+        {
+            GameEvents.OnParkClosed -= HandleParkClosed;
+        }
+
+        /// <summary>パーク閉園時にワールドをリセットして再構築可能にする</summary>
+        private void HandleParkClosed()
+        {
+            if (!_isSetUp) return;
+
+            Debug.Log("[RuntimeGameSetup] パーク閉園 → ワールドクリーンアップ");
+            CleanupGameWorld();
+            _isSetUp = false;
+        }
+
+        /// <summary>既存のゲームワールドオブジェクトを破棄する</summary>
+        private void CleanupGameWorld()
+        {
+            // 名前ベースで親オブジェクトを検索して破棄
+            string[] rootNames = {
+                "--- Attractions ---", "--- Shops ---", "--- Facilities ---",
+                "SpawnPoint", "ExitPoint", "PathwaySystem",
+                "WeatherEffectController"
+            };
+            foreach (var name in rootNames)
+            {
+                var go = GameObject.Find(name);
+                if (go != null) Destroy(go);
+            }
+
+            // RuntimeHUDは残す（StartScreenで再利用される可能性があるため）
+            // NavMeshSurfaceはGroundに付いているのでGroundは破棄しない
+
+            // AlertMonitorのアラートをクリア
+            if (AlertMonitor.Instance != null)
+                AlertMonitor.Instance.ClearAllAlerts();
+        }
+
         private void Update()
         {
             if (_isSetUp) return;
