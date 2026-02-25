@@ -71,6 +71,9 @@ namespace ThemeParkGame.Core
         public float RatingExcitement;
         public float RatingMood;
 
+        // 認定証
+        public List<string> AwardedCertificates = new List<string>();
+
         // ライフサイクル統計（累積）
         public float LifecycleWaitingTime;
         public float LifecycleEnjoyingTime;
@@ -392,6 +395,12 @@ namespace ThemeParkGame.Core
                 data.RatingComfort = gm.ParkManager.Rating.GetCategoryScore(CertificateCategory.Comfort);
                 data.RatingExcitement = gm.ParkManager.Rating.GetCategoryScore(CertificateCategory.Excitement);
                 data.RatingMood = gm.ParkManager.Rating.GetCategoryScore(CertificateCategory.Mood);
+
+                // 認定証
+                foreach (var cert in gm.ParkManager.Rating.AwardedCertificates)
+                {
+                    data.AwardedCertificates.Add(cert.ToString());
+                }
             }
 
             // 天候
@@ -588,6 +597,15 @@ namespace ThemeParkGame.Core
             if (gm.ParkManager != null)
             {
                 gm.ParkManager.Initialize(ThemeZone.LostKingdom);
+
+                // パーク評価と認定証を復元
+                if (gm.ParkManager.Rating != null)
+                {
+                    gm.ParkManager.Rating.RestoreFromSave(
+                        data.RatingFame, data.RatingSafety,
+                        data.RatingComfort, data.RatingExcitement, data.RatingMood,
+                        data.AwardedCertificates);
+                }
             }
 
             // 来場者・スタッフ初期化

@@ -326,6 +326,27 @@ namespace ThemeParkGame.Visitor
             visitorPool.Enqueue(visitor);
         }
 
+        /// <summary>
+        /// 来場者を強制退場させる（ガードマンによるフーリガン確保等）。
+        /// </summary>
+        public void EjectVisitor(GameObject visitorObj)
+        {
+            if (visitorObj == null) return;
+
+            var visitor = visitorObj.GetComponent<VisitorAI>();
+            if (visitor != null)
+            {
+                activeVisitors.Remove(visitor);
+                ReturnToPool(visitor);
+                WebGLOptimizer.LogVerbose($"[VisitorManager] 来場者を強制退場: ID={visitor.VisitorId}");
+            }
+            else
+            {
+                // VisitorAIがない場合はGameObject破棄
+                Destroy(visitorObj);
+            }
+        }
+
         // ---- スポーン制御 ----
 
         /// <summary>

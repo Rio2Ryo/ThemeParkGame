@@ -162,6 +162,15 @@ namespace ThemeParkGame.Park
                 bool improved = newStars > _lastStarRating;
                 WebGLOptimizer.LogVerbose($"[ParkRatingEvaluator] Star rating: {_lastStarRating} -> {newStars} " +
                           $"({(improved ? "UP" : "DOWN")})");
+
+                if (NotificationSystem.Instance != null)
+                {
+                    string msg = improved
+                        ? $"パーク評価が{StarsToText(newStars)}に上昇！"
+                        : $"パーク評価が{StarsToText(newStars)}に低下…";
+                    NotificationSystem.Instance.Notify(msg,
+                        improved ? NotifLevel.Info : NotifLevel.Warning);
+                }
             }
 
             _lastOverallRating = newRating;

@@ -439,10 +439,11 @@ namespace ThemeParkGame.Staff
             {
                 if (!hit.CompareTag("Visitor")) continue;
 
-                // 来場者の幸福度を上昇させる
-                // 実際にはVisitorコンポーネントのインターフェースを通じて適用する
-                int visitorId = hit.GetInstanceID();
-                GameEvents.FireVisitorHappinessChanged(visitorId, happinessBoost);
+                var visitor = hit.GetComponent<VisitorAI>();
+                if (visitor == null || !visitor.IsActive) continue;
+
+                visitor.Parameters.ModifyHappiness(happinessBoost);
+                GameEvents.FireVisitorHappinessChanged(visitor.VisitorId, happinessBoost);
                 TotalVisitorsEntertained++;
             }
         }

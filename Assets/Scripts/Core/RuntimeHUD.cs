@@ -18,6 +18,7 @@ using ThemeParkGame.Attraction;
 using ThemeParkGame.Economy;
 using ThemeParkGame.Park;
 using ThemeParkGame.UI;
+using ThemeParkGame.Staff;
 using ThemeParkGame.Visitor;
 
 namespace ThemeParkGame.Core
@@ -3850,7 +3851,17 @@ namespace ThemeParkGame.Core
 
             // ---- スタッフ ----
             if (gm.StaffManager != null)
-                _staffText.text = $"Staff: {gm.StaffManager.TotalStaffCount}名";
+            {
+                var sm = gm.StaffManager;
+                int mech = sm.GetStaffCount(StaffType.Mechanic);
+                int cln = sm.GetStaffCount(StaffType.Cleaner);
+                int ent = sm.GetStaffCount(StaffType.Entertainer);
+                int grd = sm.GetStaffCount(StaffType.Guard);
+                int sci = sm.GetStaffCount(StaffType.Scientist);
+                int striking = sm.StrikingStaffCount;
+                string strikeWarn = striking > 0 ? $" <color=#FF4444>ST:{striking}</color>" : "";
+                _staffText.text = $"M:{mech} C:{cln} E:{ent} G:{grd} S:{sci}{strikeWarn}";
+            }
 
             // ---- 通路混雑度 ----
             UpdateCongestionDisplay();

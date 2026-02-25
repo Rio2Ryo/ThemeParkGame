@@ -372,6 +372,20 @@ namespace ThemeParkGame.Park
                     newlyAwarded.Add(category);
                     GameEvents.FireCertificateAwarded(category);
 
+                    // 認定証取得を通知
+                    string certName = category switch
+                    {
+                        CertificateCategory.Fame => "知名度",
+                        CertificateCategory.Safety => "安全性",
+                        CertificateCategory.Comfort => "快適性",
+                        CertificateCategory.Excitement => "興奮度",
+                        CertificateCategory.Mood => "ムード",
+                        _ => category.ToString()
+                    };
+                    if (NotificationSystem.Instance != null)
+                        NotificationSystem.Instance.Notify(
+                            $"認定証を獲得！「{certName}」認定おめでとうございます！", NotifLevel.Info);
+
                     WebGLOptimizer.LogVerbose($"[ParkRating] 認定証授与: {category} (スコア: {rating.Score:F1})");
                 }
             }
@@ -440,6 +454,39 @@ namespace ThemeParkGame.Park
                 return rating.Score;
             }
             return 0f;
+        }
+
+        /// <summary>セーブデータからスコアと認定証を復元する</summary>
+        public void RestoreFromSave(
+            float fame, float safety, float comfort, float excitement, float mood,
+            List<string> awardedCerts)
+        {
+            if (_ratings.ContainsKey(CertificateCategory.Fame))
+                _ratings[CertificateCategory.Fame].Score = fame;
+            if (_ratings.ContainsKey(CertificateCategory.Safety))
+                _ratings[CertificateCategory.Safety].Score = safety;
+            if (_ratings.ContainsKey(CertificateCategory.Comfort))
+                _ratings[CertificateCategory.Comfort].Score = comfort;
+            if (_ratings.ContainsKey(CertificateCategory.Excitement))
+                _ratings[CertificateCategory.Excitement].Score = excitement;
+            if (_ratings.ContainsKey(CertificateCategory.Mood))
+                _ratings[CertificateCategory.Mood].Score = mood;
+
+            RecalculateOverallRating();
+
+            if (awardedCerts != null)
+            {
+                foreach (var certStr in awardedCerts)
+                {
+                    if (Enum.TryParse<CertificateCategory>(certStr, out var cat))
+                    {
+                        if (!AwardedCertificates.Contains(cat))
+                            AwardedCertificates.Add(cat);
+                        if (_ratings.ContainsKey(cat))
+                            _ratings[cat].CertificateAwarded = true;
+                    }
+                }
+            }
         }
 
         /// <summary>指定カテゴリの評価データを取得する</summary>

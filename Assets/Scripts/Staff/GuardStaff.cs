@@ -279,11 +279,17 @@ namespace ThemeParkGame.Staff
                       + $"（累計確保数: {TotalApprehensions}）");
 
             // フーリガンを退場させる
-            // 実際にはVisitorManagerを通じて退場処理を行う
             if (currentTarget != null)
             {
-                // フーリガンの退場フラグを設定する想定
-                // visitorManager.EjectVisitor(currentTarget);
+                var vm = GameManager.Instance?.VisitorManager;
+                if (vm != null)
+                {
+                    vm.EjectVisitor(currentTarget);
+                }
+                else
+                {
+                    Object.Destroy(currentTarget);
+                }
                 WebGLOptimizer.LogVerbose($"[Guard] フーリガンをパークから退場させました");
             }
 
