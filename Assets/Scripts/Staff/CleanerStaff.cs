@@ -259,7 +259,7 @@ namespace ThemeParkGame.Staff
                 _ => "不明"
             };
 
-            Debug.Log($"[Cleaner] {Name} が{targetName}の清掃を開始します");
+            WebGLOptimizer.LogVerbose($"[Cleaner] {Name} が{targetName}の清掃を開始します");
         }
 
         /// <summary>
@@ -296,7 +296,7 @@ namespace ThemeParkGame.Staff
                 _ => "不明"
             };
 
-            Debug.Log($"[Cleaner] {Name} が{targetName}の清掃を完了しました"
+            WebGLOptimizer.LogVerbose($"[Cleaner] {Name} が{targetName}の清掃を完了しました"
                       + $"（累計清掃数: {TotalCleanCount}）");
 
             // 清掃対象を除去（トイレの場合は汚れフラグをリセットするのみ）

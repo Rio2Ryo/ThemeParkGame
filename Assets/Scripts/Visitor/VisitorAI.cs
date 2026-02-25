@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using ThemeParkGame.Core;
 using ThemeParkGame.Park;
+using ThemeParkGame.Staff;
 
 namespace ThemeParkGame.Visitor
 {
@@ -182,7 +183,7 @@ namespace ThemeParkGame.Visitor
             {
                 if (emotionBubble != null)
                     emotionBubble.ShowBubble(EmotionBubbleType.NotExcitingEnough, EmotionBubbleColor.Gray);
-                Debug.Log($"[VisitorAI] Visitor {visitorId} leaving immediately: satisfaction dropped to 0.");
+                WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} leaving immediately: satisfaction dropped to 0.");
                 InterruptCurrentAction();
                 TransitionTo(VisitorBehaviorState.LeavingPark);
                 return;
@@ -201,6 +202,9 @@ namespace ThemeParkGame.Visitor
 
             // 現在の状態を実行
             ExecuteCurrentState(dt);
+
+            // エンターテイナー近接チェック
+            CheckEntertainerProximity(dt);
 
             // 感情バブル更新
             emotionBubbleTimer -= dt;
@@ -274,7 +278,7 @@ namespace ThemeParkGame.Visitor
                 GameManager.Instance.EconomyManager.ChargeEntranceFee();
             }
 
-            Debug.Log($"[VisitorAI] Visitor {visitorId} ({visitorType}) entered the park. {parameters}");
+            WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} ({visitorType}) entered the park. {parameters}");
         }
 
         /// <summary>来場者をリセットする（オブジェクトプール再利用時）</summary>
@@ -397,7 +401,7 @@ namespace ThemeParkGame.Visitor
                 return;
             }
 
-            // 優先度4: 興奮を求める → アトラクションに行く
+            // 優先度4: 興奮を求める → アトラクションに行く（所持金がある場合のみ）
             if (parameters.Excitement < 85f && parameters.HasMoney)
             {
                 if (currentState != VisitorBehaviorState.WalkingToAttraction &&
@@ -422,6 +426,18 @@ namespace ThemeParkGame.Visitor
                         TransitionTo(VisitorBehaviorState.Resting);
                         return;
                     }
+                }
+            }
+
+            // 優先度5.5: 悪天候時のシェルター探し
+            if (IsWeatherBad() && currentState == VisitorBehaviorState.Idle)
+            {
+                if (TryFindAndNavigateTo(FacilityType.Bench))
+                {
+                    TransitionTo(VisitorBehaviorState.Resting);
+                    if (emotionBubble != null)
+                        emotionBubble.ShowBubble(EmotionBubbleType.Resting, EmotionBubbleColor.Blue);
+                    return;
                 }
             }
 
@@ -708,7 +724,7 @@ namespace ThemeParkGame.Visitor
                 if (emotionBubble != null)
                     emotionBubble.ShowBubble(EmotionBubbleType.LongWait, EmotionBubbleColor.Gray);
 
-                Debug.Log($"[VisitorAI] Visitor {visitorId} left queue after {queueWaitTimer:F0}s (patience exceeded)");
+                WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} left queue after {queueWaitTimer:F0}s (patience exceeded)");
 
                 // アトラクションのキューから自分を除去する
                 LeaveAttractionQueue();
@@ -763,7 +779,7 @@ namespace ThemeParkGame.Visitor
                 qualityBonus: UnityEngine.Random.Range(3f, 8f)
             );
             parameters.ModifyHappiness(5f);
-            Debug.Log($"[VisitorAI] Visitor {visitorId} finished eating. {parameters}");
+            WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} finished eating. {parameters}");
             TransitionTo(VisitorBehaviorState.Idle);
         }
 
@@ -774,7 +790,7 @@ namespace ThemeParkGame.Visitor
                 thirstReduction: UnityEngine.Random.Range(50f, 70f),
                 qualityBonus: UnityEngine.Random.Range(2f, 5f)
             );
-            Debug.Log($"[VisitorAI] Visitor {visitorId} finished drinking. {parameters}");
+            WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} finished drinking. {parameters}");
             TransitionTo(VisitorBehaviorState.Idle);
         }
 
@@ -784,7 +800,7 @@ namespace ThemeParkGame.Visitor
             parameters.ApplyToiletEffect(
                 cleanlinessBonus: UnityEngine.Random.Range(1f, 5f)
             );
-            Debug.Log($"[VisitorAI] Visitor {visitorId} finished using toilet. {parameters}");
+            WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} finished using toilet. {parameters}");
             TransitionTo(VisitorBehaviorState.Idle);
         }
 
@@ -792,7 +808,7 @@ namespace ThemeParkGame.Visitor
         {
             // 休憩完了: 幸福度少し回復
             parameters.ModifyHappiness(3f);
-            Debug.Log($"[VisitorAI] Visitor {visitorId} finished resting. {parameters}");
+            WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} finished resting. {parameters}");
             TransitionTo(VisitorBehaviorState.Idle);
         }
 
@@ -801,7 +817,7 @@ namespace ThemeParkGame.Visitor
             // ショー鑑賞完了: 興奮度UP、幸福度UP
             parameters.ModifyExcitement(UnityEngine.Random.Range(10f, 25f));
             parameters.ModifyHappiness(UnityEngine.Random.Range(5f, 15f));
-            Debug.Log($"[VisitorAI] Visitor {visitorId} finished watching show. {parameters}");
+            WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} finished watching show. {parameters}");
             TransitionTo(VisitorBehaviorState.Idle);
         }
 
@@ -814,7 +830,7 @@ namespace ThemeParkGame.Visitor
         {
             parameters.ApplyVomitEffect();
             GameEvents.FireVisitorVomited(visitorId);
-            Debug.Log($"[VisitorAI] Visitor {visitorId} vomited! {parameters}");
+            WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} vomited! {parameters}");
             TransitionTo(VisitorBehaviorState.Idle);
         }
 
@@ -904,7 +920,7 @@ namespace ThemeParkGame.Visitor
                     profile.RecordSouvenirPurchase();
                     if (emotionBubble != null)
                         emotionBubble.ShowBubble(EmotionBubbleType.LovingIt, EmotionBubbleColor.Blue);
-                    Debug.Log($"[VisitorAI] Visitor {visitorId} bought souvenir for {actualPrice}. {parameters}");
+                    WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} bought souvenir for {actualPrice}. {parameters}");
                     TransitionTo(VisitorBehaviorState.Idle);
                     break;
                 default:
@@ -933,7 +949,7 @@ namespace ThemeParkGame.Visitor
                             if (!parameters.SpendCash(ticketCost))
                             {
                                 // お金が足りない → 別行動
-                                Debug.Log($"[VisitorAI] Visitor {visitorId} can't afford {attraction.DisplayName} (${ticketCost})");
+                                WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} can't afford {attraction.DisplayName} (${ticketCost})");
                                 TransitionTo(VisitorBehaviorState.Idle);
                             }
                             else if (attraction.OnVisitorArrive(visitorId))
@@ -945,13 +961,13 @@ namespace ThemeParkGame.Visitor
                             {
                                 // キューが満員 → 返金して別行動
                                 parameters.AddCash(ticketCost);
-                                Debug.Log($"[VisitorAI] Visitor {visitorId} couldn't join queue at {attraction.DisplayName}");
+                                WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} couldn't join queue at {attraction.DisplayName}");
                                 TransitionTo(VisitorBehaviorState.Idle);
                             }
                         }
                         else
                         {
-                            Debug.Log($"[VisitorAI] Visitor {visitorId} arrived but attraction unavailable");
+                            WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} arrived but attraction unavailable");
                             TransitionTo(VisitorBehaviorState.Idle);
                         }
                     }
@@ -1005,7 +1021,7 @@ namespace ThemeParkGame.Visitor
             {
                 parameters.ApplyAccidentEffect();
                 GameEvents.FireVisitorHadAccident(visitorId);
-                Debug.Log($"[VisitorAI] Visitor {visitorId} had a toilet accident! {parameters}");
+                WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} had a toilet accident! {parameters}");
 
                 if (emotionBubble != null)
                     emotionBubble.ShowBubble(EmotionBubbleType.LookingForToilet, EmotionBubbleColor.Green);
@@ -1027,10 +1043,16 @@ namespace ThemeParkGame.Visitor
             // パーク閉園
             if (isParkClosing) return true;
 
-            // お金がなくなった → これ以上楽しめないので退園
+            // お金がなくなった場合:
+            // 幸福度が高い(>=50)なら散策を楽しめるのでまだ滞在
+            // 幸福度が低い場合は退園
             if (!parameters.HasMoney)
             {
-                Debug.Log($"[VisitorAI] Visitor {visitorId} leaving: out of money.");
+                if (parameters.Happiness >= 50f)
+                {
+                    // 散策モードに切り替え（アトラクション/ショップには行かない）
+                    return false;
+                }
                 return true;
             }
 
@@ -1041,7 +1063,6 @@ namespace ThemeParkGame.Visitor
 
             if (parameters.Happiness < leaveThreshold)
             {
-                Debug.Log($"[VisitorAI] Visitor {visitorId} leaving: unhappy ({parameters.Happiness:F0}).");
                 return true;
             }
 
@@ -1059,7 +1080,7 @@ namespace ThemeParkGame.Visitor
             }
 
             GameEvents.FireVisitorLeavePark(visitorId);
-            Debug.Log($"[VisitorAI] Visitor {visitorId} left the park. Final: {parameters}");
+            WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} left the park. Final: {parameters}");
 
             isInitialized = false;
         }
@@ -1476,7 +1497,7 @@ namespace ThemeParkGame.Visitor
             if (stateMachine != null)
                 stateMachine.OnBehaviorStateChanged(newState);
 
-            Debug.Log($"[VisitorAI] Visitor {visitorId}: {previousState} -> {newState}");
+            WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId}: {previousState} -> {newState}");
         }
 
         /// <summary>状態に入った時の初期化処理</summary>
@@ -1629,7 +1650,7 @@ namespace ThemeParkGame.Visitor
 
             GameEvents.FireVisitorHappinessChanged(visitorId, parameters.Happiness);
             GameEvents.FireVisitorSatisfactionChanged(visitorId, parameters.Satisfaction, satDelta);
-            Debug.Log($"[VisitorAI] Visitor {visitorId} finished riding '{attractionName}'. Sat:{parameters.Satisfaction:F0}(Δ{satDelta:+0.0;-0.0}) {parameters}");
+            WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} finished riding '{attractionName}'. Sat:{parameters.Satisfaction:F0}(Δ{satDelta:+0.0;-0.0}) {parameters}");
 
             TransitionTo(VisitorBehaviorState.Idle);
         }
@@ -1668,7 +1689,7 @@ namespace ThemeParkGame.Visitor
                 parameters.ModifyHappiness(-15f);
                 if (emotionBubble != null)
                     emotionBubble.ShowBubble(EmotionBubbleType.LongWait, EmotionBubbleColor.Gray);
-                Debug.Log($"[VisitorAI] Visitor {visitorId} forced out of queue (attraction breakdown).");
+                WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} forced out of queue (attraction breakdown).");
                 TransitionTo(VisitorBehaviorState.Idle);
             }
         }
@@ -1806,6 +1827,44 @@ namespace ThemeParkGame.Visitor
                 case FacilityType.Bench:        return "Bench";
                 case FacilityType.InfoBoard:    return "InfoBoard";
                 default: return null;
+            }
+        }
+
+        /// <summary>悪天候かどうかを判定する（雨・雪）</summary>
+        private bool IsWeatherBad()
+        {
+            Weather w = GetCurrentWeather();
+            return w == Weather.Rainy || w == Weather.Snowy;
+        }
+
+        /// <summary>
+        /// エンターテイナーとの近接判定。
+        /// 近くにエンターテイナーがいると幸福度と興奮度が少し回復する。
+        /// </summary>
+        private float _entertainerCheckTimer;
+        private void CheckEntertainerProximity(float dt)
+        {
+            _entertainerCheckTimer -= dt;
+            if (_entertainerCheckTimer > 0f) return;
+            _entertainerCheckTimer = 5f; // 5秒ごとにチェック
+
+            var sm = GameManager.Instance?.StaffManager;
+            if (sm == null) return;
+
+            foreach (var staff in sm.GetAllStaff())
+            {
+                if (staff.StaffType != StaffType.Entertainer) continue;
+                if (staff == null || !staff.gameObject.activeInHierarchy) continue;
+                float dist = Vector3.Distance(transform.position, staff.transform.position);
+                if (dist < 8f)
+                {
+                    // エンターテイナーの近くにいると幸福度+3、興奮+5
+                    parameters.ModifyHappiness(3f);
+                    parameters.ModifyExcitement(5f);
+                    if (emotionBubble != null && UnityEngine.Random.value < 0.3f)
+                        emotionBubble.ShowBubble(EmotionBubbleType.Happy, EmotionBubbleColor.Pink);
+                    break; // 1回のチェックで1人のエンターテイナーのみ
+                }
             }
         }
     }

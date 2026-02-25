@@ -212,7 +212,7 @@ namespace ThemeParkGame.Staff
                 NavigateTo(currentTarget.transform.position);
             }
 
-            Debug.Log($"[Guard] {Name} がフーリガンの追跡を開始しました");
+            WebGLOptimizer.LogVerbose($"[Guard] {Name} がフーリガンの追跡を開始しました");
         }
 
         /// <summary>追跡を終了して通常速度に戻す</summary>
@@ -243,7 +243,7 @@ namespace ThemeParkGame.Staff
             apprehendTimer = 0f;
             apprehendDuration = CalculateApprehendDuration();
 
-            Debug.Log($"[Guard] {Name} がフーリガンの確保を開始しました");
+            WebGLOptimizer.LogVerbose($"[Guard] {Name} がフーリガンの確保を開始しました");
         }
 
         /// <summary>
@@ -275,7 +275,7 @@ namespace ThemeParkGame.Staff
         {
             TotalApprehensions++;
 
-            Debug.Log($"[Guard] {Name} がフーリガンを確保しました"
+            WebGLOptimizer.LogVerbose($"[Guard] {Name} がフーリガンを確保しました"
                       + $"（累計確保数: {TotalApprehensions}）");
 
             // フーリガンを退場させる
@@ -284,7 +284,7 @@ namespace ThemeParkGame.Staff
             {
                 // フーリガンの退場フラグを設定する想定
                 // visitorManager.EjectVisitor(currentTarget);
-                Debug.Log($"[Guard] フーリガンをパークから退場させました");
+                WebGLOptimizer.LogVerbose($"[Guard] フーリガンをパークから退場させました");
             }
 
             currentTarget = null;

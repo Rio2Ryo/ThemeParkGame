@@ -410,7 +410,7 @@ namespace ThemeParkGame.Attraction
             stateObj.Enter(context);
 
             UpdateStateCounts();
-            Debug.Log($"[AttractionManager] 登録: {attraction.DisplayName} (ID={id}, " +
+            WebGLOptimizer.LogVerbose($"[AttractionManager] 登録: {attraction.DisplayName} (ID={id}, " +
                       $"初期状態={initialState})");
         }
 
@@ -432,7 +432,7 @@ namespace ThemeParkGame.Attraction
             // 施設キャッシュをクリア
             VisitorAI.InvalidateFacilityCache();
 
-            Debug.Log($"[AttractionManager] 登録解除: ID={facilityId}");
+            WebGLOptimizer.LogVerbose($"[AttractionManager] 登録解除: ID={facilityId}");
         }
 
         // ================================================================
@@ -466,7 +466,7 @@ namespace ThemeParkGame.Attraction
 
             UpdateStateCounts();
 
-            Debug.Log($"[AttractionManager] 状態遷移: {context.Attraction.DisplayName} " +
+            WebGLOptimizer.LogVerbose($"[AttractionManager] 状態遷移: {context.Attraction.DisplayName} " +
                       $"({oldState?.StateType} → {newState})");
         }
 
@@ -636,7 +636,7 @@ namespace ThemeParkGame.Attraction
         {
             // StaffManagerのメカニック派遣システムに修理リクエストを送信
             // （StaffManagerは既存のFindAndAssignTask機構で処理する想定）
-            Debug.Log($"[AttractionManager] 修理リクエスト発行: {attraction.DisplayName}");
+            WebGLOptimizer.LogVerbose($"[AttractionManager] 修理リクエスト発行: {attraction.DisplayName}");
         }
 
         /// <summary>状態列挙値から状態オブジェクトを取得する</summary>

@@ -304,7 +304,7 @@ namespace ThemeParkGame.Staff
                 NavigateTo(unhappiestVisitor.transform.position);
                 CurrentState = StaffBehaviorState.MovingToTask;
 
-                Debug.Log($"[Entertainer] {Name} が満足度の低い来場者 " +
+                WebGLOptimizer.LogVerbose($"[Entertainer] {Name} が満足度の低い来場者 " +
                           $"(ID:{unhappiestVisitor.VisitorId}, 幸福度:{lowestHappiness:F0}) " +
                           $"に声かけに向かいます");
                 return true;
@@ -342,7 +342,7 @@ namespace ThemeParkGame.Staff
 
             TotalVisitorsEntertained++;
 
-            Debug.Log($"[Entertainer] {Name} が来場者 (ID:{_greetingTarget.VisitorId}) に声かけ完了 " +
+            WebGLOptimizer.LogVerbose($"[Entertainer] {Name} が来場者 (ID:{_greetingTarget.VisitorId}) に声かけ完了 " +
                       $"(幸福度 +{boost:F1})");
 
             _isGreetingMode = false;
@@ -380,7 +380,7 @@ namespace ThemeParkGame.Staff
             CurrentState = StaffBehaviorState.Working;
             StopNavigation();
 
-            Debug.Log($"[Entertainer] {Name} がパフォーマンスを開始しました"
+            WebGLOptimizer.LogVerbose($"[Entertainer] {Name} がパフォーマンスを開始しました"
                       + $"（コスチューム: {currentCostume}）");
         }
 
@@ -453,7 +453,7 @@ namespace ThemeParkGame.Staff
             isPerforming = false;
             cooldownTimer = PerformanceCooldown;
 
-            Debug.Log($"[Entertainer] {Name} がパフォーマンスを完了しました"
+            WebGLOptimizer.LogVerbose($"[Entertainer] {Name} がパフォーマンスを完了しました"
                       + $"（累計来場者数: {TotalVisitorsEntertained}）");
 
             CompleteCurrentTask();
@@ -470,7 +470,7 @@ namespace ThemeParkGame.Staff
         public void ChangeCostume(CostumeType newCostume)
         {
             currentCostume = newCostume;
-            Debug.Log($"[Entertainer] {Name} のコスチュームを {newCostume} に変更しました"
+            WebGLOptimizer.LogVerbose($"[Entertainer] {Name} のコスチュームを {newCostume} に変更しました"
                       + $"（ゾーン一致: {IsCostumeMatchingZone}）");
         }
 
@@ -479,7 +479,7 @@ namespace ThemeParkGame.Staff
         {
             assignedZone = zone;
             currentCostume = GetDefaultCostumeForZone(zone);
-            Debug.Log($"[Entertainer] {Name} が {zone} 用コスチューム {currentCostume} を装着しました");
+            WebGLOptimizer.LogVerbose($"[Entertainer] {Name} が {zone} 用コスチューム {currentCostume} を装着しました");
         }
 
         /// <summary>テーマゾーンに対応するデフォルトコスチュームを取得する</summary>

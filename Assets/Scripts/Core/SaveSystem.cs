@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using ThemeParkGame.AI;
+using ThemeParkGame.Attraction;
 using ThemeParkGame.Park;
 
 namespace ThemeParkGame.Core
@@ -86,6 +87,38 @@ namespace ThemeParkGame.Core
 
         // ローン
         public List<SavedLoan> ActiveLoans = new List<SavedLoan>();
+
+        // 配置済み建物
+        public List<SavedBuilding> PlacedBuildings = new List<SavedBuilding>();
+    }
+
+    /// <summary>配置済み建物のセーブ用データ構造</summary>
+    [Serializable]
+    public class SavedBuilding
+    {
+        public string Type;           // FacilityType名 (Attraction, FoodShop, etc.)
+        public string DataId;         // 施設データID (FacilityDataId or name)
+        public float PosX;
+        public float PosY;
+        public float PosZ;
+        public int GridX;
+        public int GridY;
+        public int Width;
+        public int Height;
+        public string Zone;           // ThemeZone名
+        public int UpgradeLevel;
+        public int TicketPrice;
+        // Attraction固有
+        public string Category;       // AttractionCategory名
+        public float Excitement;
+        public float NauseaFactor;
+        public int Capacity;
+        public float RideDuration;
+        public int BuildCost;
+        // Shop固有
+        public int WholesalePrice;
+        public int SellingPrice;
+        public int Stock;
     }
 
     /// <summary>ローンのセーブ用データ構造</summary>
@@ -109,7 +142,9 @@ namespace ThemeParkGame.Core
     public class SaveSystem : MonoBehaviour
     {
         private const string SAVE_KEY_PREFIX = "ThemeParkGame_Save_";
+        private const string AUTOSAVE_KEY = "ThemeParkGame_AutoSave";
         private const int MAX_SAVE_SLOTS = 3;
+        private static bool _autoSaveSubscribed;
 
         /// <summary>セーブスロットにデータが存在するか確認する</summary>
         public static bool HasSaveData(int slot)
@@ -353,7 +388,99 @@ namespace ThemeParkGame.Core
                 data.SNSTotalPosts = gm.AIManager.SNSSystem.Feed.Count;
             }
 
+            // 配置済み建物を収集
+            CollectPlacedBuildings(data);
+
             return data;
+        }
+
+        /// <summary>
+        /// ロード時に復元すべき建物データ。
+        /// RuntimeGameSetupがこのデータを参照してサンプル建設をスキップし代わりに復元する。
+        /// </summary>
+        public static List<SavedBuilding> PendingBuildingsToRestore { get; set; }
+
+        private static void CollectPlacedBuildings(SaveData data)
+        {
+            // アトラクション
+            var attractions = UnityEngine.Object.FindObjectsOfType<ThemeParkGame.Attraction.Attraction>();
+            foreach (var attr in attractions)
+            {
+                if (attr.Data == null) continue;
+                var sb = new SavedBuilding
+                {
+                    Type = "Attraction",
+                    DataId = attr.Data.AttractionId ?? attr.DisplayName,
+                    PosX = attr.transform.position.x,
+                    PosY = attr.transform.position.y,
+                    PosZ = attr.transform.position.z,
+                    UpgradeLevel = attr.UpgradeLevel,
+                    TicketPrice = attr.TicketPrice,
+                    Category = attr.Data.Category.ToString(),
+                    Excitement = attr.Data.ExcitementRating,
+                    NauseaFactor = attr.Data.NauseaFactor,
+                    Capacity = attr.Data.Capacity,
+                    RideDuration = attr.Data.RideDuration,
+                    BuildCost = attr.Data.BuildCost,
+                    Zone = "LostKingdom"
+                };
+                // ゾーン判定
+                if (attr.ThemeZone != ThemeZone.LostKingdom)
+                    sb.Zone = attr.ThemeZone.ToString();
+                data.PlacedBuildings.Add(sb);
+            }
+
+            // ショップ
+            var shops = UnityEngine.Object.FindObjectsOfType<Shop>();
+            foreach (var shop in shops)
+            {
+                string typeStr;
+                switch (shop.ShopType)
+                {
+                    case ShopType.DrinkShop:    typeStr = "DrinkShop"; break;
+                    case ShopType.SouvenirShop: typeStr = "SouvenirShop"; break;
+                    default:                    typeStr = "FoodShop"; break;
+                }
+                var sb = new SavedBuilding
+                {
+                    Type = typeStr,
+                    DataId = shop.DisplayName ?? shop.name,
+                    PosX = shop.transform.position.x,
+                    PosY = shop.transform.position.y,
+                    PosZ = shop.transform.position.z,
+                    WholesalePrice = shop.WholesalePrice,
+                    SellingPrice = shop.SellingPrice,
+                    Stock = shop.MaxStock,
+                    Zone = "LostKingdom"
+                };
+                if (shop.ThemeZone != ThemeZone.LostKingdom)
+                    sb.Zone = shop.ThemeZone.ToString();
+                data.PlacedBuildings.Add(sb);
+            }
+
+            // 簡易施設（トイレ・ベンチ等）: タグで判別
+            string[] facilityTags = { "Toilet", "Bench" };
+            foreach (var tag in facilityTags)
+            {
+                GameObject[] tagged;
+                try { tagged = GameObject.FindGameObjectsWithTag(tag); }
+                catch { continue; }
+
+                foreach (var go in tagged)
+                {
+                    data.PlacedBuildings.Add(new SavedBuilding
+                    {
+                        Type = tag,
+                        DataId = go.name,
+                        PosX = go.transform.position.x,
+                        PosY = go.transform.position.y,
+                        PosZ = go.transform.position.z,
+                        Zone = "LostKingdom"
+                    });
+                }
+            }
+
+            Debug.Log($"[SaveSystem] 建物データ収集: {data.PlacedBuildings.Count}件");
         }
 
         // ================================================================
@@ -452,6 +579,17 @@ namespace ThemeParkGame.Core
                 gm.AIManager.SNSSystem.RestoreReputation(data.SNSReputation);
             }
 
+            // 建物データをRuntimeGameSetup用にセット（Playing遷移前に必要）
+            if (data.PlacedBuildings != null && data.PlacedBuildings.Count > 0)
+            {
+                PendingBuildingsToRestore = data.PlacedBuildings;
+                Debug.Log($"[SaveSystem] 建物復元データ準備: {data.PlacedBuildings.Count}件");
+            }
+            else
+            {
+                PendingBuildingsToRestore = null;
+            }
+
             // ゲーム状態をPlayingに遷移
             gm.RestorePlayingState();
 
@@ -484,6 +622,100 @@ namespace ThemeParkGame.Core
                    $"${info.CurrentBalance:N0}  " +
                    $"Ticket:{info.GoldenTickets}{stars}{enjoyPct}{snsRep}  " +
                    $"{info.SaveDate}";
+        }
+
+        // ================================================================
+        // オートセーブ
+        // ================================================================
+
+        /// <summary>
+        /// オートセーブを有効化する。GameManager初期化後に一度だけ呼ぶ。
+        /// TimeManager.OnMonthChangedに購読して月末に自動保存する。
+        /// </summary>
+        public static void EnableAutoSave()
+        {
+            if (_autoSaveSubscribed) return;
+            if (GameManager.Instance == null || GameManager.Instance.TimeManager == null) return;
+
+            GameManager.Instance.TimeManager.OnMonthChanged += PerformAutoSave;
+            _autoSaveSubscribed = true;
+            Debug.Log("[SaveSystem] オートセーブ有効化");
+        }
+
+        /// <summary>オートセーブの購読を解除する</summary>
+        public static void DisableAutoSave()
+        {
+            if (!_autoSaveSubscribed) return;
+            if (GameManager.Instance != null && GameManager.Instance.TimeManager != null)
+                GameManager.Instance.TimeManager.OnMonthChanged -= PerformAutoSave;
+            _autoSaveSubscribed = false;
+        }
+
+        /// <summary>月末オートセーブ実行</summary>
+        private static void PerformAutoSave()
+        {
+            if (GameManager.Instance == null) return;
+            if (GameManager.Instance.CurrentState != GameState.Playing) return;
+
+            try
+            {
+                SaveData data = CollectSaveData();
+                string json = JsonUtility.ToJson(data);
+                PlayerPrefs.SetString(AUTOSAVE_KEY, json);
+                PlayerPrefs.Save();
+
+                // 通知表示
+                if (NotificationSystem.Instance != null)
+                    NotificationSystem.Instance.Notify("オートセーブ完了", NotifLevel.Info);
+
+                Debug.Log($"[SaveSystem] AutoSave completed ({json.Length} bytes)");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[SaveSystem] AutoSave failed: {e.Message}");
+            }
+        }
+
+        /// <summary>オートセーブデータが存在するか</summary>
+        public static bool HasAutoSave()
+        {
+            return PlayerPrefs.HasKey(AUTOSAVE_KEY);
+        }
+
+        /// <summary>オートセーブデータの概要を取得する</summary>
+        public static string GetAutoSaveSummary()
+        {
+            if (!HasAutoSave()) return "--- NO AUTOSAVE ---";
+
+            try
+            {
+                string json = PlayerPrefs.GetString(AUTOSAVE_KEY);
+                var info = JsonUtility.FromJson<SaveData>(json);
+                return $"[AUTO] Y{info.CurrentYear} M{info.CurrentMonth} D{info.CurrentDay}  " +
+                       $"${info.CurrentBalance:N0}  {info.SaveDate}";
+            }
+            catch { return "--- AUTOSAVE CORRUPTED ---"; }
+        }
+
+        /// <summary>オートセーブデータをロードする</summary>
+        public static bool LoadAutoSave()
+        {
+            if (!HasAutoSave()) return false;
+
+            try
+            {
+                string json = PlayerPrefs.GetString(AUTOSAVE_KEY);
+                SaveData data = JsonUtility.FromJson<SaveData>(json);
+                ApplySaveData(data);
+                GameEvents.FireGameLoaded();
+                Debug.Log("[SaveSystem] AutoSave loaded");
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[SaveSystem] AutoSave load failed: {e.Message}");
+                return false;
+            }
         }
     }
 }

@@ -315,7 +315,7 @@ namespace ThemeParkGame.Staff
             StopNavigation();
 
             GameEvents.FireStaffWentOnStrike(Id);
-            Debug.Log($"[Staff] {Name} (ID:{Id}) がストライキに入りました！疲労: {Fatigue:F0}");
+            WebGLOptimizer.LogVerbose($"[Staff] {Name} (ID:{Id}) がストライキに入りました！疲労: {Fatigue:F0}");
         }
 
         /// <summary>
@@ -328,7 +328,7 @@ namespace ThemeParkGame.Staff
 
             highFatigueAccumulator = 0f;
             BeginResting();
-            Debug.Log($"[Staff] {Name} (ID:{Id}) のストライキが解除されました");
+            WebGLOptimizer.LogVerbose($"[Staff] {Name} (ID:{Id}) のストライキが解除されました");
         }
 
         // ============================================================
@@ -358,12 +358,12 @@ namespace ThemeParkGame.Staff
         {
             if (SkillLevel >= MaxSkillLevel)
             {
-                Debug.Log($"[Staff] {Name} は既に最高スキルレベルです");
+                WebGLOptimizer.LogVerbose($"[Staff] {Name} は既に最高スキルレベルです");
                 return false;
             }
 
             SkillLevel++;
-            Debug.Log($"[Staff] {Name} のスキルレベルが {SkillLevel} に上昇しました");
+            WebGLOptimizer.LogVerbose($"[Staff] {Name} のスキルレベルが {SkillLevel} に上昇しました");
             return true;
         }
 
@@ -502,7 +502,7 @@ namespace ThemeParkGame.Staff
         private void OnRestComplete()
         {
             CurrentState = StaffBehaviorState.Idle;
-            Debug.Log($"[Staff] {Name} の休息が完了しました（疲労: {Fatigue:F0}）");
+            WebGLOptimizer.LogVerbose($"[Staff] {Name} の休息が完了しました（疲労: {Fatigue:F0}）");
         }
 
         /// <summary>スタッフルームの参照を設定する</summary>

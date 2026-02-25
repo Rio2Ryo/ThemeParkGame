@@ -123,7 +123,7 @@ namespace ThemeParkGame.Staff
         {
             if (CurrentResearchId == researchId)
             {
-                Debug.Log($"[Scientist] {Name} が担当していた研究 '{researchId}' が完了しました");
+                WebGLOptimizer.LogVerbose($"[Scientist] {Name} が担当していた研究 '{researchId}' が完了しました");
                 CurrentResearchId = null;
                 CurrentState = StaffBehaviorState.Idle;
             }
@@ -146,7 +146,7 @@ namespace ThemeParkGame.Staff
             assignedLabId = labId;
             labSlotIndex = slotIndex;
 
-            Debug.Log($"[Scientist] {Name} がラボ (ID:{labId}, スロット:{slotIndex}) に配置されました");
+            WebGLOptimizer.LogVerbose($"[Scientist] {Name} がラボ (ID:{labId}, スロット:{slotIndex}) に配置されました");
 
             // ラボへ移動を開始
             if (lab != null)
@@ -159,7 +159,7 @@ namespace ThemeParkGame.Staff
         /// <summary>ラボからサイエンティストを撤去する</summary>
         public void RemoveFromLab()
         {
-            Debug.Log($"[Scientist] {Name} がラボ (ID:{assignedLabId}) から撤去されました");
+            WebGLOptimizer.LogVerbose($"[Scientist] {Name} がラボ (ID:{assignedLabId}) から撤去されました");
 
             assignedLab = null;
             assignedLabId = -1;
@@ -174,7 +174,7 @@ namespace ThemeParkGame.Staff
         public void AssignResearch(string researchId)
         {
             CurrentResearchId = researchId;
-            Debug.Log($"[Scientist] {Name} が研究 '{researchId}' に着手しました");
+            WebGLOptimizer.LogVerbose($"[Scientist] {Name} が研究 '{researchId}' に着手しました");
         }
 
         // ============================================================
@@ -225,12 +225,12 @@ namespace ThemeParkGame.Staff
             {
                 CurrentState = StaffBehaviorState.Working;
                 progressReportTimer = 0f;
-                Debug.Log($"[Scientist] {Name} がラボで研究作業を開始しました"
+                WebGLOptimizer.LogVerbose($"[Scientist] {Name} がラボで研究作業を開始しました"
                           + $"（研究: {CurrentResearchId}）");
             }
             else
             {
-                Debug.Log($"[Scientist] {Name} がラボに到着しましたが、研究対象がありません");
+                WebGLOptimizer.LogVerbose($"[Scientist] {Name} がラボに到着しましたが、研究対象がありません");
                 CurrentState = StaffBehaviorState.Idle;
             }
         }
@@ -272,7 +272,7 @@ namespace ThemeParkGame.Staff
             if (progressReportTimer >= ProgressReportInterval)
             {
                 progressReportTimer = 0f;
-                Debug.Log($"[Scientist] {Name} 研究中: {CurrentResearchId}"
+                WebGLOptimizer.LogVerbose($"[Scientist] {Name} 研究中: {CurrentResearchId}"
                           + $"（速度: {EffectiveResearchSpeed:F2} pts/s"
                           + $", 累計: {TotalResearchContribution:F0} pts）");
             }

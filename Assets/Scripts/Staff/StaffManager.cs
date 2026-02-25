@@ -151,7 +151,7 @@ namespace ThemeParkGame.Staff
         /// </summary>
         private void HandleYearPassed(int year)
         {
-            Debug.Log($"[StaffManager] {year}年度末: スタッフ数={TotalStaffCount}"
+            WebGLOptimizer.LogVerbose($"[StaffManager] {year}年度末: スタッフ数={TotalStaffCount}"
                       + $", ストライキ中={StrikingStaffCount}");
         }
 
@@ -247,7 +247,7 @@ namespace ThemeParkGame.Staff
             GameEvents.FireExpensePaid(hiringCost);
             GameEvents.FireStaffHired(staffId, type);
 
-            Debug.Log($"[StaffManager] {type} を雇用しました: {name} (ID:{staffId})"
+            WebGLOptimizer.LogVerbose($"[StaffManager] {type} を雇用しました: {name} (ID:{staffId})"
                       + $" 雇用コスト: {hiringCost}, 月給: {staff.Salary}");
 
             return staff;
@@ -296,7 +296,7 @@ namespace ThemeParkGame.Staff
 
             GameEvents.FireStaffFired(staffId, type);
 
-            Debug.Log($"[StaffManager] {type} を解雇しました: {name} (ID:{staffId})");
+            WebGLOptimizer.LogVerbose($"[StaffManager] {type} を解雇しました: {name} (ID:{staffId})");
             return true;
         }
 
@@ -325,7 +325,7 @@ namespace ThemeParkGame.Staff
             if (totalPaid > 0f)
             {
                 GameEvents.FireExpensePaid(totalPaid);
-                Debug.Log($"[StaffManager] 月次給与支払い: {totalPaid:F0}"
+                WebGLOptimizer.LogVerbose($"[StaffManager] 月次給与支払い: {totalPaid:F0}"
                           + $"（{allStaff.Count}名）");
             }
 
@@ -345,7 +345,7 @@ namespace ThemeParkGame.Staff
             {
                 float oldSalary = staff.Salary;
                 staff.Salary = newSalary;
-                Debug.Log($"[StaffManager] {staff.Name} の給与変更: {oldSalary:F0} → {newSalary:F0}");
+                WebGLOptimizer.LogVerbose($"[StaffManager] {staff.Name} の給与変更: {oldSalary:F0} → {newSalary:F0}");
             }
         }
 
@@ -378,7 +378,7 @@ namespace ThemeParkGame.Staff
             float cost = staff.GetTrainingCost();
             if (cost <= 0f)
             {
-                Debug.Log($"[StaffManager] {staff.Name} は既に最高スキルレベルです");
+                WebGLOptimizer.LogVerbose($"[StaffManager] {staff.Name} は既に最高スキルレベルです");
                 return false;
             }
 
@@ -396,7 +396,7 @@ namespace ThemeParkGame.Staff
             if (staff.Train())
             {
                 GameEvents.FireExpensePaid(cost);
-                Debug.Log($"[StaffManager] {staff.Name} を訓練しました"
+                WebGLOptimizer.LogVerbose($"[StaffManager] {staff.Name} を訓練しました"
                           + $"（コスト: {cost:F0}, 新スキルレベル: {staff.SkillLevel}）");
                 return true;
             }
@@ -436,7 +436,7 @@ namespace ThemeParkGame.Staff
             if (resolvedCount > 0)
             {
                 GameEvents.FireExpensePaid(totalBonus);
-                Debug.Log($"[StaffManager] {resolvedCount}名のストライキを解除しました"
+                WebGLOptimizer.LogVerbose($"[StaffManager] {resolvedCount}名のストライキを解除しました"
                           + $"（ボーナス総額: {totalBonus:F0}）");
             }
 
@@ -459,7 +459,7 @@ namespace ThemeParkGame.Staff
             staff.ResolveStrike();
             GameEvents.FireExpensePaid(strikeResolutionSalaryBonus);
 
-            Debug.Log($"[StaffManager] {staff.Name} のストライキを解除しました"
+            WebGLOptimizer.LogVerbose($"[StaffManager] {staff.Name} のストライキを解除しました"
                       + $"（ボーナス: {strikeResolutionSalaryBonus:F0}）");
             return true;
         }
@@ -476,7 +476,7 @@ namespace ThemeParkGame.Staff
             if (allStaff.TryGetValue(staffId, out StaffMember staff))
             {
                 staff.SetPatrolArea(area);
-                Debug.Log($"[StaffManager] {staff.Name} にパトロールエリアを割り当てました");
+                WebGLOptimizer.LogVerbose($"[StaffManager] {staff.Name} にパトロールエリアを割り当てました");
             }
         }
 
@@ -488,7 +488,7 @@ namespace ThemeParkGame.Staff
             if (allStaff.TryGetValue(staffId, out StaffMember staff))
             {
                 staff.SetPatrolPoints(points);
-                Debug.Log($"[StaffManager] {staff.Name} にパトロール地点を割り当てました"
+                WebGLOptimizer.LogVerbose($"[StaffManager] {staff.Name} にパトロール地点を割り当てました"
                           + $"（{points.Count}地点）");
             }
         }
@@ -511,12 +511,12 @@ namespace ThemeParkGame.Staff
 
             if (available == null)
             {
-                Debug.Log($"[StaffManager] 配置可能な {type} がいません");
+                WebGLOptimizer.LogVerbose($"[StaffManager] 配置可能な {type} がいません");
                 return false;
             }
 
             available.SetPatrolArea(area);
-            Debug.Log($"[StaffManager] {available.Name} をエリアに自動配置しました");
+            WebGLOptimizer.LogVerbose($"[StaffManager] {available.Name} をエリアに自動配置しました");
             return true;
         }
 
@@ -676,7 +676,7 @@ namespace ThemeParkGame.Staff
                 return;
             }
 
-            Debug.Log($"[StaffManager] パトロールエリア指定モード開始: {staff.Name} (ID:{staffId})");
+            WebGLOptimizer.LogVerbose($"[StaffManager] パトロールエリア指定モード開始: {staff.Name} (ID:{staffId})");
             // TODO: InputManagerやCameraControllerと連携して
             // ゲームフィールド上でのエリア選択UIを表示する
         }
@@ -707,7 +707,7 @@ namespace ThemeParkGame.Staff
             }
 
             staff.SendToRest();
-            Debug.Log($"[StaffManager] {staff.Name} をスタッフルームへ送りました");
+            WebGLOptimizer.LogVerbose($"[StaffManager] {staff.Name} をスタッフルームへ送りました");
         }
 
         // ============================================================
@@ -879,7 +879,7 @@ namespace ThemeParkGame.Staff
                     }
                 }
 
-                Debug.Log($"[StaffManager] スタッフルームを登録しました（合計: {staffRooms.Count}）");
+                WebGLOptimizer.LogVerbose($"[StaffManager] スタッフルームを登録しました（合計: {staffRooms.Count}）");
             }
         }
 

@@ -60,7 +60,7 @@ namespace ThemeParkGame.Visitor
         private const float HungerIncreaseRate = 0.8f;
 
         /// <summary>喉の渇きの自然増加レート（毎秒）</summary>
-        private const float ThirstIncreaseRate = 1.0f;
+        private const float ThirstIncreaseRate = 0.7f;
 
         /// <summary>暑い天候での喉の渇き倍率</summary>
         private const float HotWeatherThirstMultiplier = 1.5f;
@@ -74,8 +74,8 @@ namespace ThemeParkGame.Visitor
         /// <summary>興奮度の自然減衰レート（毎秒）</summary>
         private const float ExcitementDecayRate = 0.3f;
 
-        /// <summary>幸福度が不快要因で減少するレート（毎秒）</summary>
-        private const float HappinessDecayFromDiscomfort = 0.2f;
+        /// <summary>幸福度が不快要因で減少するレート（毎秒）。0.12に緩和して長時間プレイを促進。</summary>
+        private const float HappinessDecayFromDiscomfort = 0.12f;
 
         // ---- パラメータフィールド ----
 

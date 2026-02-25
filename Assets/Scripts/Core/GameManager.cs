@@ -127,6 +127,8 @@ namespace ThemeParkGame.Core
             CurrentState = GameState.Playing;
             SpeedLevel = 1;
 
+            SaveSystem.EnableAutoSave();
+
             GameEvents.FireParkOpened();
             Debug.Log($"[GameManager] New game started in {startingZone} (Difficulty: {difficulty}, Money: {money})");
         }
@@ -235,6 +237,7 @@ namespace ThemeParkGame.Core
         {
             CurrentState = GameState.Playing;
             SpeedLevel = 1;
+            SaveSystem.EnableAutoSave();
             GameEvents.FireParkOpened();
         }
 

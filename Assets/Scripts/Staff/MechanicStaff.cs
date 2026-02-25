@@ -154,7 +154,7 @@ namespace ThemeParkGame.Staff
 
                 NavigateTo(attractionPos);
                 CurrentState = StaffBehaviorState.MovingToTask;
-                Debug.Log($"[Mechanic] {Name} がアトラクション {attractionId} の修理に向かいます");
+                WebGLOptimizer.LogVerbose($"[Mechanic] {Name} がアトラクション {attractionId} の修理に向かいます");
                 return true;
             }
 
@@ -214,11 +214,11 @@ namespace ThemeParkGame.Staff
 
             if (isRepairing)
             {
-                Debug.Log($"[Mechanic] {Name} がアトラクション {targetAttractionId} の修理を開始します");
+                WebGLOptimizer.LogVerbose($"[Mechanic] {Name} がアトラクション {targetAttractionId} の修理を開始します");
             }
             else
             {
-                Debug.Log($"[Mechanic] {Name} がアトラクション {targetAttractionId} の点検を開始します");
+                WebGLOptimizer.LogVerbose($"[Mechanic] {Name} がアトラクション {targetAttractionId} の点検を開始します");
             }
         }
 
@@ -250,7 +250,7 @@ namespace ThemeParkGame.Staff
         /// <summary>修理を完了する</summary>
         private void CompleteRepair()
         {
-            Debug.Log($"[Mechanic] {Name} がアトラクション {targetAttractionId} の修理を完了しました"
+            WebGLOptimizer.LogVerbose($"[Mechanic] {Name} がアトラクション {targetAttractionId} の修理を完了しました"
                       + $"（所要時間: {workTimer:F1}秒）");
 
             GameEvents.FireAttractionRepaired(targetAttractionId);
@@ -262,7 +262,7 @@ namespace ThemeParkGame.Staff
         /// <summary>点検を完了する</summary>
         private void CompleteInspection()
         {
-            Debug.Log($"[Mechanic] {Name} がアトラクション {targetAttractionId} の点検を完了しました");
+            WebGLOptimizer.LogVerbose($"[Mechanic] {Name} がアトラクション {targetAttractionId} の点検を完了しました");
 
             // 点検完了により安全性ポイントを加算（AttractionManager側で処理する想定）
             // ここではイベント通知のみ

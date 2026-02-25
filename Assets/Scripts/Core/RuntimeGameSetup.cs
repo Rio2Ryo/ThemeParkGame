@@ -82,14 +82,24 @@ namespace ThemeParkGame.Core
             Transform spawnPoint = CreateMarker("SpawnPoint", new Vector3(0f, 0f, -5f));
             Transform exitPoint = CreateMarker("ExitPoint", new Vector3(0f, 0f, -8f), "ParkExit");
 
-            // サンプルアトラクション生成（5基）
-            CreateSampleAttractions();
+            // セーブデータから建物を復元するか、サンプルを新規生成するか
+            if (SaveSystem.PendingBuildingsToRestore != null &&
+                SaveSystem.PendingBuildingsToRestore.Count > 0)
+            {
+                RestoreSavedBuildings(SaveSystem.PendingBuildingsToRestore);
+                SaveSystem.PendingBuildingsToRestore = null; // 一度復元したらクリア
+            }
+            else
+            {
+                // サンプルアトラクション生成（5基）
+                CreateSampleAttractions();
 
-            // サンプルショップ生成
-            CreateSampleShops();
+                // サンプルショップ生成
+                CreateSampleShops();
 
-            // サンプルトイレ・ベンチ・スタッフルーム
-            CreateSampleFacilities();
+                // サンプルトイレ・ベンチ・スタッフルーム
+                CreateSampleFacilities();
+            }
 
             // 通路ネットワーク生成（NavMesh Bake前に配置）
             CreatePathwayNetwork(spawnPoint.position);
@@ -118,6 +128,92 @@ namespace ThemeParkGame.Core
             }
 
             Debug.Log("[RuntimeGameSetup] === ゲームワールド構築完了 ===");
+        }
+
+        // ================================================================
+        // セーブデータからの建物復元
+        // ================================================================
+
+        private void RestoreSavedBuildings(System.Collections.Generic.List<SavedBuilding> buildings)
+        {
+            var attrParent = new GameObject("--- Attractions ---").transform;
+            var shopParent = new GameObject("--- Shops ---").transform;
+            var facParent  = new GameObject("--- Facilities ---").transform;
+
+            int attrCount = 0, shopCount = 0, facCount = 0;
+
+            foreach (var b in buildings)
+            {
+                Vector3 pos = new Vector3(b.PosX, b.PosY, b.PosZ);
+                ThemeZone zone = ThemeZone.LostKingdom;
+                if (!string.IsNullOrEmpty(b.Zone))
+                    System.Enum.TryParse(b.Zone, out zone);
+
+                switch (b.Type)
+                {
+                    case "Attraction":
+                        AttractionCategory cat = AttractionCategory.RideAttraction;
+                        if (!string.IsNullOrEmpty(b.Category))
+                            System.Enum.TryParse(b.Category, out cat);
+                        CreateAttraction(attrParent, b.DataId, cat,
+                            b.Excitement, b.NauseaFactor, b.Capacity, b.RideDuration,
+                            b.BuildCost, b.TicketPrice, pos);
+                        // アップグレード復元
+                        if (b.UpgradeLevel > 0)
+                        {
+                            var attrs = attrParent.GetComponentsInChildren<Attraction.Attraction>();
+                            foreach (var a in attrs)
+                            {
+                                if (a.DisplayName == b.DataId)
+                                {
+                                    for (int i = 0; i < b.UpgradeLevel; i++)
+                                        a.TryUpgrade();
+                                }
+                            }
+                        }
+                        attrCount++;
+                        break;
+
+                    case "FoodShop":
+                        CreateShop(shopParent, b.DataId, FacilityType.FoodShop, pos, "FoodShop");
+                        shopCount++;
+                        break;
+                    case "DrinkShop":
+                        CreateShop(shopParent, b.DataId, FacilityType.DrinkShop, pos, "DrinkShop");
+                        shopCount++;
+                        break;
+                    case "SouvenirShop":
+                        CreateShop(shopParent, b.DataId, FacilityType.SouvenirShop, pos, "SouvenirShop");
+                        shopCount++;
+                        break;
+
+                    case "Toilet":
+                        CreateSimpleFacility(facParent, b.DataId, "Toilet", pos, new Color(1f, 1f, 1f));
+                        facCount++;
+                        break;
+                    case "Bench":
+                        CreateSimpleFacility(facParent, b.DataId, "Bench", pos, new Color(0.6f, 0.4f, 0.2f));
+                        facCount++;
+                        break;
+                    default:
+                        CreateSimpleFacility(facParent, b.DataId, "Untagged", pos, new Color(0.5f, 0.5f, 0.5f));
+                        facCount++;
+                        break;
+                }
+            }
+
+            // スタッフルームが無い場合は追加
+            if (facCount == 0 || !System.Array.Exists(
+                buildings.ToArray(), x => x.DataId.Contains("スタッフ")))
+            {
+                var staffRoom = CreateSimpleFacility(facParent, "スタッフルーム", "Untagged",
+                    new Vector3(-25f, 0f, -20f), new Color(0.4f, 0.6f, 0.4f));
+                var sm = GameManager.Instance?.StaffManager;
+                if (sm != null && staffRoom != null)
+                    sm.RegisterStaffRoom(staffRoom.transform);
+            }
+
+            Debug.Log($"[RuntimeGameSetup] セーブデータから復元: アトラクション{attrCount}, ショップ{shopCount}, 施設{facCount}");
         }
 
         // ================================================================
