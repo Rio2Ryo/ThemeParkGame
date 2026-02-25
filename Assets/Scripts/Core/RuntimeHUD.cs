@@ -137,6 +137,15 @@ namespace ThemeParkGame.Core
         private GameObject _notifBadge;
         private Text _notifBadgeText;
 
+        // ---- アラートバー ----
+        private GameObject _alertBar;
+        private Image _alertBarBg;
+        private Image _alertBarAccent;
+        private Text _alertBarIcon;
+        private Text _alertBarText;
+        private Text _alertBarCount;
+        private float _alertBarBlinkTimer;
+
         // ---- データキャッシュ ----
         private float _updateTimer;
         private const float UpdateInterval = 0.3f;
@@ -217,6 +226,7 @@ namespace ThemeParkGame.Core
             BuildEventPanel(_canvasRoot);
             BuildLifecyclePanel(_canvasRoot);
             BuildRatingPanel(_canvasRoot);
+            BuildAlertBar(_canvasRoot);
             BuildFirstPersonOverlay(_canvasRoot);
         }
 
@@ -1101,11 +1111,21 @@ namespace ThemeParkGame.Core
                 ratingText = $"  Park Rating: [{starsStr}] {overall:F1} - {label}\n";
             }
 
+            // 通知・アラート統計
+            string alertText = "";
+            if (NotificationSystem.Instance != null)
+            {
+                int logCount = NotificationSystem.Instance.Log.Count;
+                int alertCount = AlertMonitor.Instance != null ? AlertMonitor.Instance.TotalAlertCount : 0;
+                alertText = $"  Notifications: {logCount}  Active Alerts: {alertCount}\n";
+            }
+
             _resultsBody.text =
                 $"  Visitors: {visitors}  (Peak: {peak})\n" +
                 $"  Satisfaction: {avgSatisfaction:F0}%  Happiness: {avgHappiness:F0}%\n" +
                 ratingText +
                 lcText +
+                alertText +
                 $"  Revenue: {revenue}         Expenses: {expenses}\n" +
                 $"  Final Balance: {money}\n" +
                 $"  Attractions: {attrCount}         Golden Tickets: {tickets}\n" +
@@ -1509,6 +1529,133 @@ namespace ThemeParkGame.Core
                     var barRt = _ratingCatBars[i].rectTransform;
                     barRt.sizeDelta = new Vector2(barMaxW * Mathf.Clamp01(score / 100f), 0f);
                 }
+            }
+        }
+
+        // ================================================================
+        // アラートバー（画面下部中央）
+        // ================================================================
+
+        private void BuildAlertBar(RectTransform root)
+        {
+            float barW = 600f;
+            float barH = 36f;
+
+            _alertBar = new GameObject("AlertBar");
+            _alertBar.transform.SetParent(root, false);
+            var rt = _alertBar.AddComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0f);
+            rt.pivot = new Vector2(0.5f, 0f);
+            rt.anchoredPosition = new Vector2(0f, 8f);
+            rt.sizeDelta = new Vector2(barW, barH);
+
+            _alertBarBg = _alertBar.AddComponent<Image>();
+            _alertBarBg.color = new Color(0.08f, 0.06f, 0.14f, 0.92f);
+            _alertBarBg.raycastTarget = true;
+
+            // クリックでログパネルを開く
+            var btn = _alertBar.AddComponent<Button>();
+            btn.targetGraphic = _alertBarBg;
+            var bc = btn.colors;
+            bc.highlightedColor = new Color(0.14f, 0.12f, 0.22f, 0.95f);
+            bc.pressedColor = new Color(0.06f, 0.04f, 0.10f, 0.95f);
+            btn.colors = bc;
+            btn.onClick.AddListener(OnEventLogClicked);
+
+            // 左端アクセントライン
+            var accentGo = MakePanel(rt, "Accent", 4f, barH, new Color(0.9f, 0.78f, 0.25f));
+            _alertBarAccent = accentGo.GetComponent<Image>();
+            var accentRt = accentGo.GetComponent<RectTransform>();
+            accentRt.anchorMin = accentRt.anchorMax = new Vector2(0f, 0.5f);
+            accentRt.pivot = new Vector2(0f, 0.5f);
+            accentRt.anchoredPosition = Vector2.zero;
+
+            // アイコン
+            _alertBarIcon = MakeLabel(rt, "Icon", "[!]", 16,
+                new Color(0.9f, 0.78f, 0.25f), FontStyle.Bold, TextAnchor.MiddleCenter);
+            var iRt = _alertBarIcon.rectTransform;
+            iRt.anchorMin = iRt.anchorMax = new Vector2(0f, 0.5f);
+            iRt.pivot = new Vector2(0f, 0.5f);
+            iRt.anchoredPosition = new Vector2(12f, 0f);
+            iRt.sizeDelta = new Vector2(28f, 28f);
+
+            // メッセージ
+            _alertBarText = MakeLabel(rt, "Msg", "", 14,
+                Color.white, FontStyle.Normal, TextAnchor.MiddleLeft);
+            _alertBarText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            var mRt = _alertBarText.rectTransform;
+            mRt.anchorMin = mRt.anchorMax = new Vector2(0f, 0.5f);
+            mRt.pivot = new Vector2(0f, 0.5f);
+            mRt.anchoredPosition = new Vector2(42f, 0f);
+            mRt.sizeDelta = new Vector2(barW - 120f, 28f);
+
+            // カウント
+            _alertBarCount = MakeLabel(rt, "Count", "", 13,
+                new Color(0.7f, 0.72f, 0.8f), FontStyle.Bold, TextAnchor.MiddleRight);
+            var cRt = _alertBarCount.rectTransform;
+            cRt.anchorMin = cRt.anchorMax = new Vector2(1f, 0.5f);
+            cRt.pivot = new Vector2(1f, 0.5f);
+            cRt.anchoredPosition = new Vector2(-10f, 0f);
+            cRt.sizeDelta = new Vector2(60f, 28f);
+
+            _alertBar.SetActive(false);
+        }
+
+        private void UpdateAlertBar()
+        {
+            if (_alertBar == null) return;
+
+            var monitor = AlertMonitor.Instance;
+            if (monitor == null || monitor.TotalAlertCount == 0)
+            {
+                _alertBar.SetActive(false);
+                return;
+            }
+
+            _alertBar.SetActive(true);
+
+            string summary = monitor.GetSummaryText();
+            _alertBarText.text = summary;
+
+            int total = monitor.TotalAlertCount;
+            int danger = monitor.DangerCount;
+            _alertBarCount.text = total > 1 ? $"{total}件" : "";
+
+            // レベルに応じた色
+            NotifLevel level = monitor.HighestLevel;
+            Color accentColor;
+            switch (level)
+            {
+                case NotifLevel.Danger:
+                    accentColor = new Color(0.9f, 0.3f, 0.25f);
+                    break;
+                case NotifLevel.Warning:
+                    accentColor = new Color(0.9f, 0.78f, 0.25f);
+                    break;
+                default:
+                    accentColor = new Color(0.3f, 0.6f, 0.85f);
+                    break;
+            }
+
+            _alertBarAccent.color = accentColor;
+            _alertBarIcon.color = accentColor;
+
+            // Dangerレベルのとき点滅
+            if (level == NotifLevel.Danger)
+            {
+                _alertBarBlinkTimer += Time.unscaledDeltaTime * 3f;
+                float blink = (Mathf.Sin(_alertBarBlinkTimer) + 1f) * 0.5f;
+                _alertBarBg.color = Color.Lerp(
+                    new Color(0.08f, 0.06f, 0.14f, 0.92f),
+                    new Color(0.25f, 0.06f, 0.06f, 0.95f),
+                    blink * 0.5f);
+                _alertBarIcon.text = blink > 0.5f ? "[X]" : "[!]";
+            }
+            else
+            {
+                _alertBarBlinkTimer = 0f;
+                _alertBarBg.color = new Color(0.08f, 0.06f, 0.14f, 0.92f);
+                _alertBarIcon.text = "[!]";
             }
         }
 
@@ -2045,6 +2192,9 @@ namespace ThemeParkGame.Core
 
             // ---- パーク評価 ----
             UpdateRatingPanel();
+
+            // ---- アラートバー ----
+            UpdateAlertBar();
 
             // ---- ファーストパーソンビュー ----
             UpdateFirstPersonOverlay();

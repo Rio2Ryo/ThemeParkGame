@@ -190,18 +190,28 @@ namespace ThemeParkGame.Core
             GameEvents.OnAttractionBrokenDown += OnAttractionBrokenDown;
             GameEvents.OnAttractionRepaired += OnAttractionRepaired;
             GameEvents.OnAttractionAccident += OnAttractionAccident;
+            GameEvents.OnAttractionUpgraded += OnAttractionUpgraded;
             GameEvents.OnStaffHired += OnStaffHired;
+            GameEvents.OnStaffFired += OnStaffFired;
             GameEvents.OnStaffWentOnStrike += OnStaffOnStrike;
+            GameEvents.OnStaffFinishedTask += OnStaffFinishedTask;
             GameEvents.OnVisitorVomited += OnVisitorVomited;
             GameEvents.OnVisitorHadAccident += OnVisitorAccident;
             GameEvents.OnWeatherChanged += OnWeatherChanged;
+            GameEvents.OnResearchStarted += OnResearchStarted;
             GameEvents.OnResearchCompleted += OnResearchCompleted;
             GameEvents.OnGoldenTicketEarned += OnGoldenTicket;
             GameEvents.OnCertificateAwarded += OnCertificate;
             GameEvents.OnVIPArrived += OnVIPArrived;
+            GameEvents.OnVIPRequestCompleted += OnVIPRequestCompleted;
             GameEvents.OnParkYearPassed += OnYearPassed;
             GameEvents.OnThemeZoneUnlocked += OnZoneUnlocked;
             GameEvents.OnGameSaved += OnGameSaved;
+            GameEvents.OnGameLoaded += OnGameLoaded;
+            GameEvents.OnParkRatingChanged += OnParkRatingChanged;
+            GameEvents.OnParkEventStarted += OnParkEventStarted;
+            GameEvents.OnParkEventEnded += OnParkEventEnded;
+            GameEvents.OnPathwayCongestionChanged += OnPathwayCongestion;
         }
 
         private void UnsubscribeFromEvents()
@@ -210,21 +220,31 @@ namespace ThemeParkGame.Core
             GameEvents.OnAttractionBrokenDown -= OnAttractionBrokenDown;
             GameEvents.OnAttractionRepaired -= OnAttractionRepaired;
             GameEvents.OnAttractionAccident -= OnAttractionAccident;
+            GameEvents.OnAttractionUpgraded -= OnAttractionUpgraded;
             GameEvents.OnStaffHired -= OnStaffHired;
+            GameEvents.OnStaffFired -= OnStaffFired;
             GameEvents.OnStaffWentOnStrike -= OnStaffOnStrike;
+            GameEvents.OnStaffFinishedTask -= OnStaffFinishedTask;
             GameEvents.OnVisitorVomited -= OnVisitorVomited;
             GameEvents.OnVisitorHadAccident -= OnVisitorAccident;
             GameEvents.OnWeatherChanged -= OnWeatherChanged;
+            GameEvents.OnResearchStarted -= OnResearchStarted;
             GameEvents.OnResearchCompleted -= OnResearchCompleted;
             GameEvents.OnGoldenTicketEarned -= OnGoldenTicket;
             GameEvents.OnCertificateAwarded -= OnCertificate;
             GameEvents.OnVIPArrived -= OnVIPArrived;
+            GameEvents.OnVIPRequestCompleted -= OnVIPRequestCompleted;
             GameEvents.OnParkYearPassed -= OnYearPassed;
             GameEvents.OnThemeZoneUnlocked -= OnZoneUnlocked;
             GameEvents.OnGameSaved -= OnGameSaved;
+            GameEvents.OnGameLoaded -= OnGameLoaded;
+            GameEvents.OnParkRatingChanged -= OnParkRatingChanged;
+            GameEvents.OnParkEventStarted -= OnParkEventStarted;
+            GameEvents.OnParkEventEnded -= OnParkEventEnded;
+            GameEvents.OnPathwayCongestionChanged -= OnPathwayCongestion;
         }
 
-        // イベントハンドラ
+        // イベントハンドラ - アトラクション
         private void OnAttractionBuilt(int id) =>
             Notify($"アトラクション #{id} が建設されました", NotifLevel.Success);
         private void OnAttractionBrokenDown(int id) =>
@@ -233,16 +253,30 @@ namespace ThemeParkGame.Core
             Notify($"アトラクション #{id} が修理完了", NotifLevel.Success);
         private void OnAttractionAccident(int id) =>
             Notify($"アトラクション #{id} で事故発生！", NotifLevel.Danger);
+        private void OnAttractionUpgraded(int id) =>
+            Notify($"アトラクション #{id} をアップグレードしました", NotifLevel.Success);
+
+        // イベントハンドラ - スタッフ
         private void OnStaffHired(int id, StaffType type) =>
             Notify($"{StaffTypeName(type)}を雇用しました (#{id})", NotifLevel.Info);
+        private void OnStaffFired(int id, StaffType type) =>
+            Notify($"{StaffTypeName(type)} #{id} を解雇しました", NotifLevel.Info);
         private void OnStaffOnStrike(int id) =>
             Notify($"スタッフ #{id} がストライキ中！", NotifLevel.Warning);
+        private void OnStaffFinishedTask(int id) =>
+            NotifyThrottled("staff_task", $"スタッフ #{id} がタスク完了", NotifLevel.Info);
+
+        // イベントハンドラ - 来場者
         private void OnVisitorVomited(int id) =>
             NotifyThrottled("vomit", "来場者が嘔吐しました...", NotifLevel.Warning);
         private void OnVisitorAccident(int id) =>
             NotifyThrottled("visitor_accident", "来場者がトイレ事故を起こしました", NotifLevel.Warning);
+
+        // イベントハンドラ - 天候/研究/パーク
         private void OnWeatherChanged(Weather w) =>
             Notify($"天候が {WeatherName(w)} に変化しました", NotifLevel.Info);
+        private void OnResearchStarted(string researchId) =>
+            Notify($"研究開始: {researchId}", NotifLevel.Info);
         private void OnResearchCompleted(string researchId) =>
             Notify($"研究完了: {researchId}", NotifLevel.Success);
         private void OnGoldenTicket(int count) =>
@@ -251,12 +285,41 @@ namespace ThemeParkGame.Core
             Notify($"{CertName(cat)} 認定証を獲得！", NotifLevel.Success);
         private void OnVIPArrived(int id) =>
             Notify($"VIP来場者 #{id} が到着しました！", NotifLevel.Info);
+        private void OnVIPRequestCompleted(int id, bool success) =>
+            Notify(success ? $"VIP #{id} のリクエスト完了！" : $"VIP #{id} のリクエスト失敗...",
+                   success ? NotifLevel.Success : NotifLevel.Warning);
         private void OnYearPassed(int year) =>
             Notify($"Year {year} に突入！", NotifLevel.Info);
         private void OnZoneUnlocked(ThemeZone zone) =>
             Notify($"新エリア解放: {zone}", NotifLevel.Success);
         private void OnGameSaved() =>
             Notify("ゲームをセーブしました", NotifLevel.Info);
+        private void OnGameLoaded() =>
+            Notify("セーブデータをロードしました", NotifLevel.Info);
+
+        // イベントハンドラ - パーク評価
+        private void OnParkRatingChanged(float newRating, float oldRating)
+        {
+            float delta = newRating - oldRating;
+            if (Mathf.Abs(delta) < 3f) return; // 小さな変動は無視
+            if (delta > 0)
+                NotifyThrottled("rating_up", $"パーク評価が上昇！ ({oldRating:F0} -> {newRating:F0})", NotifLevel.Success);
+            else
+                NotifyThrottled("rating_down", $"パーク評価が下落 ({oldRating:F0} -> {newRating:F0})", NotifLevel.Warning);
+        }
+
+        // イベントハンドラ - パークイベント
+        private void OnParkEventStarted(string eventId, string displayName) =>
+            Notify($"イベント開始: {displayName}", NotifLevel.Info);
+        private void OnParkEventEnded(string eventId, string displayName) =>
+            Notify($"イベント終了: {displayName}", NotifLevel.Info);
+
+        // イベントハンドラ - 通路混雑
+        private void OnPathwayCongestion(float avg)
+        {
+            if (avg > 0.8f)
+                NotifyThrottled("congestion", $"通路が非常に混雑しています (混雑度{avg * 100f:F0}%)", NotifLevel.Warning);
+        }
 
         // ================================================================
         // ポップアップUI構築

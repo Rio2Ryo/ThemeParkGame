@@ -45,6 +45,7 @@ namespace ThemeParkGame.Core
         public NotificationSystem NotificationSystem { get; private set; }
         public ParkEventSystem ParkEventSystem { get; private set; }
         public ParkRatingEvaluator ParkRatingEvaluator { get; private set; }
+        public AlertMonitor AlertMonitor { get; private set; }
 
         // ゲーム状態
         public GameState CurrentState { get; private set; } = GameState.MainMenu;
@@ -97,6 +98,7 @@ namespace ThemeParkGame.Core
             NotificationSystem = GetOrAddComponent<NotificationSystem>();
             ParkEventSystem = GetOrAddComponent<ParkEventSystem>();
             ParkRatingEvaluator = GetOrAddComponent<ParkRatingEvaluator>();
+            AlertMonitor = GetOrAddComponent<AlertMonitor>();
         }
 
         private T GetOrAddComponent<T>() where T : Component
