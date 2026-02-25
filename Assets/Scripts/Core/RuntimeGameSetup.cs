@@ -340,6 +340,9 @@ namespace ThemeParkGame.Core
             int gz = Mathf.Max(0, (int)(position.z + 50f));
             attraction.Place(new Vector2Int(gx, gz), ThemeZone.LostKingdom);
             go.transform.position = position;
+
+            // 浮遊ラベル
+            CreateFloatingLabel(go, nameJP, 5f, Color.white);
         }
 
         // ================================================================
@@ -426,6 +429,9 @@ namespace ThemeParkGame.Core
             int gz = Mathf.Max(0, (int)(position.z + 50f));
             shop.Place(new Vector2Int(gx, gz), ThemeZone.LostKingdom);
             go.transform.position = position;
+
+            // 浮遊ラベル
+            CreateFloatingLabel(go, shopName, 4f, new Color(1f, 0.9f, 0.5f));
         }
 
         // ================================================================
@@ -495,6 +501,10 @@ namespace ThemeParkGame.Core
                 if (shader != null)
                     renderer.material = new Material(shader) { color = color };
             }
+
+            // 浮遊ラベル
+            float labelH = tag == "Toilet" ? 4f : 2f;
+            CreateFloatingLabel(go, facilityName, labelH, new Color(0.8f, 0.9f, 1f));
 
             return go;
         }
@@ -738,5 +748,48 @@ namespace ThemeParkGame.Core
             return go.transform;
         }
 
+        /// <summary>施設の上部に浮遊する名前ラベルを作成する</summary>
+        private void CreateFloatingLabel(GameObject parent, string labelText, float height, Color color)
+        {
+            var labelGo = new GameObject("Label");
+            labelGo.transform.SetParent(parent.transform);
+            labelGo.transform.localPosition = new Vector3(0f, height, 0f);
+
+            var tm = labelGo.AddComponent<TextMesh>();
+            tm.text = labelText;
+            tm.fontSize = 48;
+            tm.characterSize = 0.12f;
+            tm.anchor = TextAnchor.MiddleCenter;
+            tm.alignment = TextAlignment.Center;
+            tm.color = color;
+            tm.fontStyle = FontStyle.Bold;
+
+            // カメラに向くようにBillboard挙動を追加
+            labelGo.AddComponent<FacingCamera>();
+        }
+
+    }
+
+    /// <summary>カメラに常に正面を向けるBillboard挙動</summary>
+    internal class FacingCamera : MonoBehaviour
+    {
+        private Transform camTransform;
+
+        private void Start()
+        {
+            if (Camera.main != null)
+                camTransform = Camera.main.transform;
+        }
+
+        private void LateUpdate()
+        {
+            if (camTransform == null)
+            {
+                if (Camera.main != null)
+                    camTransform = Camera.main.transform;
+                return;
+            }
+            transform.rotation = Quaternion.LookRotation(transform.position - camTransform.position);
+        }
     }
 }

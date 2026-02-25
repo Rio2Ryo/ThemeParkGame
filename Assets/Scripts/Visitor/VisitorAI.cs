@@ -268,6 +268,12 @@ namespace ThemeParkGame.Visitor
             GameEvents.FireVisitorEnterPark(visitorId);
             GameEvents.FireVisitorHappinessChanged(visitorId, parameters.Happiness);
 
+            // 入場料を徴収
+            if (GameManager.Instance?.EconomyManager != null)
+            {
+                GameManager.Instance.EconomyManager.ChargeEntranceFee();
+            }
+
             Debug.Log($"[VisitorAI] Visitor {visitorId} ({visitorType}) entered the park. {parameters}");
         }
 

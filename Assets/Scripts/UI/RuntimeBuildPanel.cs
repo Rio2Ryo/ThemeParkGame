@@ -1021,6 +1021,9 @@ namespace ThemeParkGame.UI
             attraction.Place(new Vector2Int(gx, gz), ThemeZone.LostKingdom);
             go.transform.position = position;
 
+            // 浮遊ラベル
+            AddFloatingLabel(go, item.NameJa, 5f, Color.white);
+
             // NavMesh再Bake
             RebakeNavMesh();
 
@@ -1089,6 +1092,9 @@ namespace ThemeParkGame.UI
             shop.Place(new Vector2Int(gx, gz), ThemeZone.LostKingdom);
             go.transform.position = position;
 
+            // 浮遊ラベル
+            AddFloatingLabel(go, item.NameJa, 4f, new Color(1f, 0.9f, 0.5f));
+
             RebakeNavMesh();
             return go;
         }
@@ -1153,6 +1159,9 @@ namespace ThemeParkGame.UI
                 if (sm != null) sm.RegisterStaffRoom(go.transform);
             }
 
+            // 浮遊ラベル
+            AddFloatingLabel(go, item.NameJa, size.y + 1f, new Color(0.8f, 0.9f, 1f));
+
             RebakeNavMesh();
             return go;
         }
@@ -1160,6 +1169,24 @@ namespace ThemeParkGame.UI
         // ================================================================
         // ユーティリティ
         // ================================================================
+
+        private void AddFloatingLabel(GameObject parent, string text, float height, Color color)
+        {
+            var labelGo = new GameObject("Label");
+            labelGo.transform.SetParent(parent.transform);
+            labelGo.transform.localPosition = new Vector3(0f, height, 0f);
+
+            var tm = labelGo.AddComponent<TextMesh>();
+            tm.text = text;
+            tm.fontSize = 48;
+            tm.characterSize = 0.12f;
+            tm.anchor = TextAnchor.MiddleCenter;
+            tm.alignment = TextAlignment.Center;
+            tm.color = color;
+            tm.fontStyle = FontStyle.Bold;
+
+            labelGo.AddComponent<FacingCamera>();
+        }
 
         private void RebakeNavMesh()
         {
