@@ -1042,7 +1042,7 @@ namespace ThemeParkGame.UI
 
             int gx = Mathf.Max(0, (int)(position.x + 50f));
             int gz = Mathf.Max(0, (int)(position.z + 50f));
-            attraction.Place(new Vector2Int(gx, gz), ThemeZone.LostKingdom);
+            attraction.Place(new Vector2Int(gx, gz), ParseThemeZone(item.ThemeZone));
             go.transform.position = position;
 
             // 浮遊ラベル
@@ -1113,7 +1113,7 @@ namespace ThemeParkGame.UI
 
             int gx = Mathf.Max(0, (int)(position.x + 50f));
             int gz = Mathf.Max(0, (int)(position.z + 50f));
-            shop.Place(new Vector2Int(gx, gz), ThemeZone.LostKingdom);
+            shop.Place(new Vector2Int(gx, gz), ParseThemeZone(item.ThemeZone));
             go.transform.position = position;
 
             // 浮遊ラベル
@@ -1223,6 +1223,18 @@ namespace ThemeParkGame.UI
                     surface.BuildNavMesh();
             }
             catch (Exception) { /* NavMesh unavailable */ }
+        }
+
+        private static ThemeZone ParseThemeZone(string zone)
+        {
+            if (string.IsNullOrEmpty(zone)) return ThemeZone.LostKingdom;
+            switch (zone)
+            {
+                case "HalloweenWorld": return ThemeZone.HalloweenWorld;
+                case "Wonderland": return ThemeZone.Wonderland;
+                case "SpaceZone": return ThemeZone.SpaceZone;
+                default: return ThemeZone.LostKingdom;
+            }
         }
 
         private static Color GetAttractionColor(AttractionCategory category)

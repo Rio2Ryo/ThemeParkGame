@@ -80,6 +80,22 @@ namespace ThemeParkGame.Core
         // SNSレピュテーション
         public float SNSReputation;
         public int SNSTotalPosts;
+
+        // ローン
+        public List<SavedLoan> ActiveLoans = new List<SavedLoan>();
+    }
+
+    /// <summary>ローンのセーブ用データ構造</summary>
+    [Serializable]
+    public class SavedLoan
+    {
+        public int LoanId;
+        public float Principal;
+        public float AnnualInterestRate;
+        public float RemainingBalance;
+        public float MonthlyPayment;
+        public int TermMonths;
+        public int ElapsedMonths;
     }
 
     /// <summary>
@@ -235,6 +251,22 @@ namespace ThemeParkGame.Core
                 data.CurrentBalance = gm.EconomyManager.CurrentBalance;
                 data.TotalRevenueEarned = gm.EconomyManager.TotalRevenueEarned;
                 data.TotalExpensesPaid = gm.EconomyManager.TotalExpensesPaid;
+
+                // ローンデータ
+                var loans = gm.EconomyManager.GetActiveLoans();
+                foreach (var loan in loans)
+                {
+                    data.ActiveLoans.Add(new SavedLoan
+                    {
+                        LoanId = loan.LoanId,
+                        Principal = loan.Principal,
+                        AnnualInterestRate = loan.AnnualInterestRate,
+                        RemainingBalance = loan.RemainingBalance,
+                        MonthlyPayment = loan.MonthlyPayment,
+                        TermMonths = loan.TermMonths,
+                        ElapsedMonths = loan.ElapsedMonths
+                    });
+                }
             }
 
             // 来場者統計
@@ -340,6 +372,12 @@ namespace ThemeParkGame.Core
             if (gm.EconomyManager != null)
             {
                 gm.EconomyManager.Initialize((int)data.CurrentBalance);
+
+                // ローン復元
+                if (data.ActiveLoans != null && data.ActiveLoans.Count > 0)
+                {
+                    gm.EconomyManager.RestoreLoans(data.ActiveLoans);
+                }
             }
 
             // 時間の復元

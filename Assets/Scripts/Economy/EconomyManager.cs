@@ -506,6 +506,28 @@ namespace ThemeParkGame.Economy
             return true;
         }
 
+        /// <summary>セーブデータからローンを復元する</summary>
+        public void RestoreLoans(List<SavedLoan> savedLoans)
+        {
+            _activeLoans.Clear();
+            foreach (var sl in savedLoans)
+            {
+                _activeLoans.Add(new LoanData
+                {
+                    LoanId = sl.LoanId,
+                    Principal = sl.Principal,
+                    AnnualInterestRate = sl.AnnualInterestRate,
+                    RemainingBalance = sl.RemainingBalance,
+                    MonthlyPayment = sl.MonthlyPayment,
+                    TermMonths = sl.TermMonths,
+                    ElapsedMonths = sl.ElapsedMonths
+                });
+                if (sl.LoanId >= _nextLoanId)
+                    _nextLoanId = sl.LoanId + 1;
+            }
+            Debug.Log($"[EconomyManager] ローン復元: {_activeLoans.Count}件");
+        }
+
         // ================================================================
         // アトラクション別収益トラッキング
         // ================================================================
