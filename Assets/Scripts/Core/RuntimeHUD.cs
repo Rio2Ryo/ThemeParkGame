@@ -16,6 +16,7 @@ using UnityEngine.UI;
 using ThemeParkGame.AI;
 using ThemeParkGame.Attraction;
 using ThemeParkGame.Park;
+using ThemeParkGame.UI;
 using ThemeParkGame.Visitor;
 
 namespace ThemeParkGame.Core
@@ -138,6 +139,10 @@ namespace ThemeParkGame.Core
         private GameObject _notifBadge;
         private Text _notifBadgeText;
 
+        // ---- 建設/スタッフボタン ----
+        private GameObject _buildBtn;
+        private GameObject _staffBtn;
+
         // ---- アラートバー ----
         private GameObject _alertBar;
         private Image _alertBarBg;
@@ -231,6 +236,7 @@ namespace ThemeParkGame.Core
             BuildAttractionPanel(_canvasRoot);
             BuildVisitorInfoPanel(_canvasRoot);
             BuildMenuButton(_canvasRoot);
+            BuildActionButtons(_canvasRoot);
             BuildPauseOverlay(_canvasRoot);
             BuildResultsOverlay(_canvasRoot);
             BuildScenarioPanel(_canvasRoot);
@@ -618,6 +624,75 @@ namespace ThemeParkGame.Core
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(_notifBadgeText.rectTransform);
             _notifBadge.SetActive(false);
+        }
+
+        // ================================================================
+        // 建設/スタッフ アクションボタン
+        // ================================================================
+
+        private void BuildActionButtons(RectTransform root)
+        {
+            // BUILD ボタン（MENUの右隣）
+            _buildBtn = MakePanel(root, "BuildBtn", 90f, 36f, new Color(0.2f, 0.55f, 0.3f, 0.9f));
+            var brt = _buildBtn.GetComponent<RectTransform>();
+            brt.anchorMin = brt.anchorMax = new Vector2(0f, 1f);
+            brt.pivot = new Vector2(0f, 1f);
+            brt.anchoredPosition = new Vector2(110f, -10f);
+
+            var bImg = _buildBtn.GetComponent<Image>();
+            bImg.raycastTarget = true;
+            var bBtn = _buildBtn.AddComponent<Button>();
+            bBtn.targetGraphic = bImg;
+            var bc = bBtn.colors;
+            bc.highlightedColor = new Color(0.3f, 0.65f, 0.4f);
+            bc.pressedColor = new Color(0.15f, 0.4f, 0.2f);
+            bBtn.colors = bc;
+            bBtn.onClick.AddListener(OnBuildClicked);
+
+            var bLabel = MakeLabel(brt, "Label", "BUILD", 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(bLabel.rectTransform);
+
+            // STAFF ボタン（BUILDの右隣）
+            _staffBtn = MakePanel(root, "StaffBtn", 90f, 36f, new Color(0.4f, 0.3f, 0.55f, 0.9f));
+            var srt = _staffBtn.GetComponent<RectTransform>();
+            srt.anchorMin = srt.anchorMax = new Vector2(0f, 1f);
+            srt.pivot = new Vector2(0f, 1f);
+            srt.anchoredPosition = new Vector2(210f, -10f);
+
+            var sImg = _staffBtn.GetComponent<Image>();
+            sImg.raycastTarget = true;
+            var sBtn = _staffBtn.AddComponent<Button>();
+            sBtn.targetGraphic = sImg;
+            var sc = sBtn.colors;
+            sc.highlightedColor = new Color(0.5f, 0.4f, 0.65f);
+            sc.pressedColor = new Color(0.3f, 0.2f, 0.4f);
+            sBtn.colors = sc;
+            sBtn.onClick.AddListener(OnStaffClicked);
+
+            var sLabel = MakeLabel(srt, "Label", "STAFF", 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(sLabel.rectTransform);
+        }
+
+        private void OnBuildClicked()
+        {
+            // RuntimeBuildPanelがなければ追加
+            var bp = RuntimeBuildPanel.Instance;
+            if (bp == null)
+            {
+                bp = gameObject.AddComponent<RuntimeBuildPanel>();
+            }
+            bp.Toggle();
+        }
+
+        private void OnStaffClicked()
+        {
+            // RuntimeStaffPanelがなければ追加
+            var sp = RuntimeStaffPanel.Instance;
+            if (sp == null)
+            {
+                sp = gameObject.AddComponent<RuntimeStaffPanel>();
+            }
+            sp.Toggle();
         }
 
         // ================================================================
@@ -2088,9 +2163,11 @@ namespace ThemeParkGame.Core
             if (_resultsOverlay != null)
                 _resultsOverlay.SetActive(state == GameState.GameOver);
 
-            // メニューボタンはPlaying中のみ
-            if (_menuBtn != null)
-                _menuBtn.SetActive(state == GameState.Playing);
+            // メニューボタン群はPlaying中のみ
+            bool isPlaying = (state == GameState.Playing);
+            if (_menuBtn != null) _menuBtn.SetActive(isPlaying);
+            if (_buildBtn != null) _buildBtn.SetActive(isPlaying);
+            if (_staffBtn != null) _staffBtn.SetActive(isPlaying);
 
             // GameOver表示
             if (state == GameState.GameOver)
