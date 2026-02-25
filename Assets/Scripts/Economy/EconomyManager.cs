@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using ThemeParkGame.Attraction;
 using ThemeParkGame.Core;
 
 namespace ThemeParkGame.Economy
@@ -404,6 +405,59 @@ namespace ThemeParkGame.Economy
             return loan;
         }
 
+        /// <summary>スタッフの月次給与を処理する</summary>
+        private void ProcessMonthlyStaffSalaries()
+        {
+            if (GameManager.Instance == null || GameManager.Instance.StaffManager == null) return;
+
+            var staffManager = GameManager.Instance.StaffManager;
+            float totalSalary = staffManager.TotalMonthlySalary;
+
+            if (totalSalary > 0f)
+            {
+                PayExpense(totalSalary, ExpenseCategory.StaffSalary);
+                Debug.Log($"[EconomyManager] スタッフ給与支払い: ${totalSalary:F0} ({staffManager.TotalStaffCount}名)");
+            }
+        }
+
+        /// <summary>施設の月次維持費を処理する</summary>
+        private void ProcessMonthlyMaintenanceCosts()
+        {
+            float totalMaintenance = 0f;
+
+            // アトラクションの維持費
+            var attractions = UnityEngine.Object.FindObjectsOfType<Attraction.Attraction>();
+            foreach (var attr in attractions)
+            {
+                if (attr.Data != null && attr.IsActive)
+                {
+                    float cost = attr.Data.MaintenanceCost;
+                    if (cost > 0f)
+                    {
+                        PayExpense(cost, ExpenseCategory.Maintenance, attr.FacilityId);
+                        totalMaintenance += cost;
+                    }
+                }
+            }
+
+            // ショップの維持費（月$50固定）
+            var shops = UnityEngine.Object.FindObjectsOfType<Shop>();
+            foreach (var shop in shops)
+            {
+                if (shop.IsActive)
+                {
+                    float cost = 50f;
+                    PayExpense(cost, ExpenseCategory.Maintenance, shop.FacilityId);
+                    totalMaintenance += cost;
+                }
+            }
+
+            if (totalMaintenance > 0f)
+            {
+                Debug.Log($"[EconomyManager] 施設維持費支払い: ${totalMaintenance:F0}");
+            }
+        }
+
         /// <summary>全アクティブローンの月次返済を実行する</summary>
         private void ProcessMonthlyLoanRepayments()
         {
@@ -507,9 +561,15 @@ namespace ThemeParkGame.Economy
         // 月次・年次処理
         // ================================================================
 
-        /// <summary>月末処理。レポート生成とデータリセット。</summary>
+        /// <summary>月末処理。給与・維持費の支払い、レポート生成とデータリセット。</summary>
         private void OnMonthEnd()
         {
+            // スタッフ月次給与の支払い
+            ProcessMonthlyStaffSalaries();
+
+            // 施設維持費の支払い
+            ProcessMonthlyMaintenanceCosts();
+
             // ローン返済を処理
             ProcessMonthlyLoanRepayments();
 

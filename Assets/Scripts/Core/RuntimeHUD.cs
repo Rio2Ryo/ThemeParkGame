@@ -153,6 +153,7 @@ namespace ThemeParkGame.Core
         private Text _fiStats;
         private Button _fiPriceUp;
         private Button _fiPriceDown;
+        private Button _fiDemolishBtn;
         private FacilityBase _selectedFacility;
 
         // ---- アラートバー ----
@@ -608,7 +609,7 @@ namespace ThemeParkGame.Core
         private void BuildFacilityInfoPanel(RectTransform root)
         {
             float panelW = 280f;
-            float panelH = 290f;
+            float panelH = 340f;
 
             _facilityInfoPanel = MakePanel(root, "FacilityInfo", panelW, panelH, BgDark);
             var rt = _facilityInfoPanel.GetComponent<RectTransform>();
@@ -676,6 +677,20 @@ namespace ThemeParkGame.Core
             _fiPriceUp.onClick.AddListener(OnFacilityPriceUp);
             var upLabel = MakeLabel(upRt, "L", "+$5", 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(upLabel.rectTransform);
+
+            // 撤去ボタン
+            var demolishGo = MakePanel(rt, "DemolishBtn", panelW - 60f, 30f, new Color(0.7f, 0.15f, 0.15f, 0.95f));
+            var demolishRt = demolishGo.GetComponent<RectTransform>();
+            demolishRt.anchorMin = demolishRt.anchorMax = new Vector2(0.5f, 0f);
+            demolishRt.pivot = new Vector2(0.5f, 0f);
+            demolishRt.anchoredPosition = new Vector2(0f, 48f);
+            var demolishImg = demolishGo.GetComponent<Image>();
+            demolishImg.raycastTarget = true;
+            _fiDemolishBtn = demolishGo.AddComponent<Button>();
+            _fiDemolishBtn.targetGraphic = demolishImg;
+            _fiDemolishBtn.onClick.AddListener(OnFacilityDemolish);
+            var demolishLabel = MakeLabel(demolishRt, "L", "撤去する", 15, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(demolishLabel.rectTransform);
 
             // 閉じるボタン
             var closeGo = MakePanel(rt, "CloseBtn", 24f, 24f, new Color(0.8f, 0.2f, 0.2f, 0.9f));
@@ -820,6 +835,44 @@ namespace ThemeParkGame.Core
                 shop.SellingPrice = Mathf.Max(shop.SellingPrice - 5, 0);
                 RefreshFacilityInfo();
             }
+        }
+
+        private void OnFacilityDemolish()
+        {
+            if (_selectedFacility == null) return;
+
+            var facilityGo = _selectedFacility.gameObject;
+
+            // FacilityBase.Demolish()を呼ぶ（キューのクリア等を行う）
+            _selectedFacility.Demolish();
+
+            // ParkManagerからグリッド登録を解除
+            if (GameManager.Instance?.ParkManager != null)
+            {
+                GameManager.Instance.ParkManager.RemoveFacility(_selectedFacility.FacilityId);
+            }
+
+            // 来場者の施設キャッシュを無効化
+            VisitorAI.InvalidateFacilityCache();
+
+            // GameObjectを破棄
+            Destroy(facilityGo);
+
+            // NavMesh再構築
+            try
+            {
+                var ground = GameObject.Find("Ground");
+                if (ground != null)
+                {
+                    var surface = ground.GetComponent<Unity.AI.Navigation.NavMeshSurface>();
+                    if (surface != null)
+                        surface.BuildNavMesh();
+                }
+            }
+            catch (System.Exception) { }
+
+            // パネルを閉じる
+            HideFacilityInfo();
         }
 
         // ================================================================
