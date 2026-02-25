@@ -580,13 +580,13 @@ namespace ThemeParkGame.Core
             _viLifecycle     = MakeInfoLine(rt, "Lifecycle",     ref y, lineH, lx, lw, Cyan, FontStyle.Bold, 13);
             _viLifecycleStats = MakeInfoLine(rt, "LifecycleStats", ref y, lineH, lx, lw, Muted, FontStyle.Normal, 12);
 
-            // ファーストパーソンビュー「搭乗」ボタン
+            // ファーストパーソンビュー「搭乗」ボタン + 「話しかける」ボタン
             y -= 8f;
-            var fpBtnGo = MakePanel(rt, "FirstPersonBtn", 120f, 30f, new Color(0.2f, 0.5f, 0.7f));
+            var fpBtnGo = MakePanel(rt, "FirstPersonBtn", 110f, 30f, new Color(0.2f, 0.5f, 0.7f));
             var fpBtnRt = fpBtnGo.GetComponent<RectTransform>();
             fpBtnRt.anchorMin = fpBtnRt.anchorMax = new Vector2(0.5f, 0f);
-            fpBtnRt.pivot = new Vector2(0.5f, 1f);
-            fpBtnRt.anchoredPosition = new Vector2(0f, y);
+            fpBtnRt.pivot = new Vector2(1f, 1f);
+            fpBtnRt.anchoredPosition = new Vector2(-4f, y);
 
             _viFirstPersonButton = fpBtnGo.AddComponent<Button>();
             _viFirstPersonButton.targetGraphic = fpBtnGo.GetComponent<Image>();
@@ -595,14 +595,30 @@ namespace ThemeParkGame.Core
             fpBtnColors.pressedColor = new Color(0.15f, 0.38f, 0.55f);
             _viFirstPersonButton.colors = fpBtnColors;
 
-            var fpLabel = MakeLabel(fpBtnRt, "FPLabel", "搭乗", 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
-            var fpLabelRt = fpLabel.rectTransform;
-            fpLabelRt.anchorMin = Vector2.zero;
-            fpLabelRt.anchorMax = Vector2.one;
-            fpLabelRt.offsetMin = Vector2.zero;
-            fpLabelRt.offsetMax = Vector2.zero;
+            var fpLabel = MakeLabel(fpBtnRt, "FPLabel", "搭乗", 14, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(fpLabel.rectTransform);
 
             _viFirstPersonButton.onClick.AddListener(OnFirstPersonButtonClicked);
+
+            // 「話しかける」ボタン
+            var talkBtnGo = MakePanel(rt, "TalkBtn", 110f, 30f, new Color(0.5f, 0.35f, 0.6f));
+            var talkBtnRt = talkBtnGo.GetComponent<RectTransform>();
+            talkBtnRt.anchorMin = talkBtnRt.anchorMax = new Vector2(0.5f, 0f);
+            talkBtnRt.pivot = new Vector2(0f, 1f);
+            talkBtnRt.anchoredPosition = new Vector2(4f, y);
+
+            var talkImg = talkBtnGo.GetComponent<Image>();
+            talkImg.raycastTarget = true;
+            var talkBtn = talkBtnGo.AddComponent<Button>();
+            talkBtn.targetGraphic = talkImg;
+            var talkColors = talkBtn.colors;
+            talkColors.highlightedColor = new Color(0.6f, 0.45f, 0.72f);
+            talkColors.pressedColor = new Color(0.35f, 0.25f, 0.45f);
+            talkBtn.colors = talkColors;
+            talkBtn.onClick.AddListener(OnTalkToVisitorClicked);
+
+            var talkLabel = MakeLabel(talkBtnRt, "TalkLabel", "話しかける", 13, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(talkLabel.rectTransform);
 
             _visitorInfoPanel.SetActive(false);
         }
@@ -2654,6 +2670,13 @@ namespace ThemeParkGame.Core
             // 来場者パネルを閉じる
             if (_visitorInfoPanel != null)
                 _visitorInfoPanel.SetActive(false);
+        }
+
+        private void OnTalkToVisitorClicked()
+        {
+            if (_selectedVisitor == null) return;
+            int visitorId = _selectedVisitor.VisitorId;
+            GameEvents.FireNPCConversationStarted(visitorId, "player_initiated");
         }
 
         private void OnFPVExitClicked()
