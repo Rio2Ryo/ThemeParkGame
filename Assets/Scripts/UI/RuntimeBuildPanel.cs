@@ -105,6 +105,7 @@ namespace ThemeParkGame.UI
             public int GridHeight;
             public int SuggestedPrice;
             public int WholesalePrice;
+            public string RequiredResearchId;
         }
 
         // JSON wrapper classes
@@ -129,6 +130,8 @@ namespace ThemeParkGame.UI
             public int maintenanceCostPerMonth;
             public int gridWidth;
             public int gridHeight;
+            public string requiredResearchId;
+            public string requiredResearchId;
         }
 
         [Serializable]
@@ -258,7 +261,8 @@ namespace ThemeParkGame.UI
                                 RideDuration = a.rideDurationSeconds,
                                 GridWidth = a.gridWidth,
                                 GridHeight = a.gridHeight,
-                                SuggestedPrice = Mathf.RoundToInt(a.excitementRating * 6f)
+                                SuggestedPrice = Mathf.RoundToInt(a.excitementRating * 6f),
+                                RequiredResearchId = a.requiredResearchId
                             });
                         }
                     }
@@ -652,9 +656,19 @@ namespace ThemeParkGame.UI
                 _headerMoneyText.text = $"所持金: ${currentMoney:N0}";
         }
 
+        private bool IsResearchUnlocked(string requiredResearchId)
+        {
+            if (string.IsNullOrEmpty(requiredResearchId)) return true;
+            var rm = GameManager.Instance?.ResearchManager;
+            if (rm == null) return true; // no research system = all unlocked
+            return rm.IsResearchCompleted(requiredResearchId);
+        }
+
         private GameObject CreateItemCard(BuildableItem item, float currentMoney)
         {
+            bool researched = IsResearchUnlocked(item.RequiredResearchId);
             bool canAfford = currentMoney >= item.BuildCost;
+            bool canBuild = researched && canAfford;
             float cardH = 52f;
 
             var cardGo = new GameObject($"Card_{item.Id}");
@@ -667,11 +681,14 @@ namespace ThemeParkGame.UI
             le.preferredHeight = cardH;
 
             var bgImg = cardGo.AddComponent<Image>();
-            bgImg.color = canAfford ? BgLight : new Color(0.15f, 0.15f, 0.18f, 0.7f);
+            bgImg.color = !researched ? new Color(0.12f, 0.12f, 0.15f, 0.6f)
+                         : canAfford ? BgLight
+                         : new Color(0.15f, 0.15f, 0.18f, 0.7f);
             bgImg.raycastTarget = true;
 
             var btn = cardGo.AddComponent<Button>();
             btn.targetGraphic = bgImg;
+            btn.interactable = researched;
             var colors = btn.colors;
             colors.highlightedColor = new Color(0.25f, 0.35f, 0.5f, 0.95f);
             colors.pressedColor = new Color(0.2f, 0.25f, 0.4f, 0.95f);
@@ -680,9 +697,12 @@ namespace ThemeParkGame.UI
             BuildableItem capturedItem = item;
             btn.onClick.AddListener(() => SelectItem(capturedItem));
 
-            // 名前
-            var nameText = MakeLabel(cardRt, "Name", item.NameJa, 14,
-                canAfford ? TextWhite : TextMuted, FontStyle.Bold, TextAnchor.MiddleLeft);
+            // 名前（未研究はロック表示）
+            string displayName = researched ? item.NameJa : $"[要研究] {item.NameJa}";
+            var nameText = MakeLabel(cardRt, "Name", displayName, 14,
+                !researched ? new Color(0.45f, 0.45f, 0.5f)
+                : canAfford ? TextWhite : TextMuted,
+                FontStyle.Bold, TextAnchor.MiddleLeft);
             PlaceInParent(nameText.rectTransform, 10f, -4f, 300f, 22f);
 
             // サブ情報（タイプ/ゾーン）
@@ -696,8 +716,10 @@ namespace ThemeParkGame.UI
             PlaceInParent(subText.rectTransform, 10f, -26f, 300f, 18f);
 
             // コスト
-            var costText = MakeLabel(cardRt, "Cost", $"${item.BuildCost:N0}", 14,
-                canAfford ? new Color(0.95f, 0.88f, 0.45f) : AccentRed,
+            string costLabel = researched ? $"${item.BuildCost:N0}" : "LOCKED";
+            var costText = MakeLabel(cardRt, "Cost", costLabel, 14,
+                !researched ? new Color(0.6f, 0.4f, 0.4f)
+                : canAfford ? new Color(0.95f, 0.88f, 0.45f) : AccentRed,
                 FontStyle.Bold, TextAnchor.MiddleRight);
             var crt = costText.rectTransform;
             crt.anchorMin = new Vector2(1f, 0f);
