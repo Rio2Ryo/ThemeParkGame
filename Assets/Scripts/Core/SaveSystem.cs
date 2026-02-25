@@ -81,6 +81,9 @@ namespace ThemeParkGame.Core
         public float SNSReputation;
         public int SNSTotalPosts;
 
+        // 入場料
+        public float EntranceFee = 15f;
+
         // ローン
         public List<SavedLoan> ActiveLoans = new List<SavedLoan>();
     }
@@ -252,6 +255,10 @@ namespace ThemeParkGame.Core
                 data.TotalRevenueEarned = gm.EconomyManager.TotalRevenueEarned;
                 data.TotalExpensesPaid = gm.EconomyManager.TotalExpensesPaid;
 
+                // 入場料
+                if (gm.EconomyManager.Pricing != null)
+                    data.EntranceFee = gm.EconomyManager.Pricing.EntranceFee;
+
                 // ローンデータ
                 var loans = gm.EconomyManager.GetActiveLoans();
                 foreach (var loan in loans)
@@ -372,6 +379,10 @@ namespace ThemeParkGame.Core
             if (gm.EconomyManager != null)
             {
                 gm.EconomyManager.Initialize((int)data.CurrentBalance);
+
+                // 入場料復元
+                if (gm.EconomyManager.Pricing != null)
+                    gm.EconomyManager.Pricing.SetEntranceFee(data.EntranceFee);
 
                 // ローン復元
                 if (data.ActiveLoans != null && data.ActiveLoans.Count > 0)
