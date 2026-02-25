@@ -382,7 +382,8 @@ namespace ThemeParkGame.Staff
 
             SkillLevel++;
             _workExperience = 0f;
-            WebGLOptimizer.LogVerbose($"[Staff] {Name} のスキルレベルが {SkillLevel} に上昇しました");
+            AdjustSalaryForLevel();
+            WebGLOptimizer.LogVerbose($"[Staff] {Name} のスキルレベルが {SkillLevel} に上昇しました (給与: ${Salary:N0})");
             return true;
         }
 
@@ -401,15 +402,29 @@ namespace ThemeParkGame.Staff
             {
                 _workExperience = 0f;
                 SkillLevel++;
-                WebGLOptimizer.LogVerbose($"[Staff] {Name} が経験によりスキルLv{SkillLevel}に昇格");
+                AdjustSalaryForLevel();
+                WebGLOptimizer.LogVerbose($"[Staff] {Name} が経験によりスキルLv{SkillLevel}に昇格 (給与: ${Salary:N0})");
 
                 if (NotificationSystem.Instance != null)
                 {
                     NotificationSystem.Instance.Notify(
-                        $"{Name}のスキルがLv{SkillLevel}に上昇！",
+                        $"{Name}のスキルがLv{SkillLevel}に上昇！(給与: ${Salary:N0})",
                         NotifLevel.Info);
                 }
             }
+        }
+
+        /// <summary>
+        /// スキルレベルに応じて給与を自動調整する。
+        /// レベルアップごとに基本給の15%を加算する。
+        /// </summary>
+        private void AdjustSalaryForLevel()
+        {
+            // 基本給 × (1 + 0.15 × (Level - 1))
+            const float SalaryScalePerLevel = 0.15f;
+            float baseSalary = salary / (1f + SalaryScalePerLevel * (SkillLevel - 2));
+            if (baseSalary < 100f) baseSalary = salary; // 初回レベルアップ時のフォールバック
+            Salary = baseSalary * (1f + SalaryScalePerLevel * (SkillLevel - 1));
         }
 
         /// <summary>セーブ用: 経験値を設定する</summary>

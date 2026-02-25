@@ -49,13 +49,13 @@ namespace ThemeParkGame.Core
             if (s_hasBootstrapped)
             {
                 if (verboseLogging)
-                    Debug.Log("[SceneBootstrapper] 既に初期化済み - スキップ");
+                    WebGLOptimizer.LogVerbose("[SceneBootstrapper] 既に初期化済み - スキップ");
                 return;
             }
             s_hasBootstrapped = true;
 
             if (verboseLogging)
-                Debug.Log("[SceneBootstrapper] === シーン起動シーケンス開始 ===");
+                WebGLOptimizer.LogVerbose("[SceneBootstrapper] === シーン起動シーケンス開始 ===");
 
             // Phase 1: 必須マネージャーの確保
             if (autoCreateManagers)
@@ -85,7 +85,7 @@ namespace ThemeParkGame.Core
             }
 
             if (verboseLogging)
-                Debug.Log("[SceneBootstrapper] === シーン起動シーケンス完了 ===");
+                WebGLOptimizer.LogVerbose("[SceneBootstrapper] === シーン起動シーケンス完了 ===");
         }
 
         private void OnDestroy()
@@ -103,14 +103,14 @@ namespace ThemeParkGame.Core
             if (GameManager.Instance != null)
             {
                 if (verboseLogging)
-                    Debug.Log("[SceneBootstrapper] GameManager 検出済み");
+                    WebGLOptimizer.LogVerbose("[SceneBootstrapper] GameManager 検出済み");
                 return;
             }
 
             var go = new GameObject("--- Managers ---");
             go.AddComponent<GameManager>();
             if (verboseLogging)
-                Debug.Log("[SceneBootstrapper] GameManager を自動生成しました");
+                WebGLOptimizer.LogVerbose("[SceneBootstrapper] GameManager を自動生成しました");
         }
 
         private void EnsureAudioManager()
@@ -118,14 +118,14 @@ namespace ThemeParkGame.Core
             if (AudioManager.Instance != null)
             {
                 if (verboseLogging)
-                    Debug.Log("[SceneBootstrapper] AudioManager 検出済み");
+                    WebGLOptimizer.LogVerbose("[SceneBootstrapper] AudioManager 検出済み");
                 return;
             }
 
             var go = new GameObject("AudioManager");
             go.AddComponent<AudioManager>();
             if (verboseLogging)
-                Debug.Log("[SceneBootstrapper] AudioManager を自動生成しました");
+                WebGLOptimizer.LogVerbose("[SceneBootstrapper] AudioManager を自動生成しました");
         }
 
         private void EnsureInputManager()
@@ -133,14 +133,14 @@ namespace ThemeParkGame.Core
             if (InputManager.Instance != null)
             {
                 if (verboseLogging)
-                    Debug.Log("[SceneBootstrapper] InputManager 検出済み");
+                    WebGLOptimizer.LogVerbose("[SceneBootstrapper] InputManager 検出済み");
                 return;
             }
 
             var go = new GameObject("InputManager");
             go.AddComponent<InputManager>();
             if (verboseLogging)
-                Debug.Log("[SceneBootstrapper] InputManager を自動生成しました");
+                WebGLOptimizer.LogVerbose("[SceneBootstrapper] InputManager を自動生成しました");
         }
 
         private void EnsureEventSystem()
@@ -149,7 +149,7 @@ namespace ThemeParkGame.Core
             if (existingES != null)
             {
                 if (verboseLogging)
-                    Debug.Log("[SceneBootstrapper] EventSystem 検出済み");
+                    WebGLOptimizer.LogVerbose("[SceneBootstrapper] EventSystem 検出済み");
                 return;
             }
 
@@ -157,7 +157,7 @@ namespace ThemeParkGame.Core
             go.AddComponent<UnityEngine.EventSystems.EventSystem>();
             go.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
             if (verboseLogging)
-                Debug.Log("[SceneBootstrapper] EventSystem を自動生成しました");
+                WebGLOptimizer.LogVerbose("[SceneBootstrapper] EventSystem を自動生成しました");
         }
 
         // ================================================================
@@ -169,7 +169,7 @@ namespace ThemeParkGame.Core
             if (Camera.main != null)
             {
                 if (verboseLogging)
-                    Debug.Log("[SceneBootstrapper] MainCamera 検出済み");
+                    WebGLOptimizer.LogVerbose("[SceneBootstrapper] MainCamera 検出済み");
                 return;
             }
 
@@ -185,7 +185,7 @@ namespace ThemeParkGame.Core
             go.transform.rotation = Quaternion.Euler(60f, 0f, 0f);
 
             if (verboseLogging)
-                Debug.Log("[SceneBootstrapper] MainCamera を自動生成しました");
+                WebGLOptimizer.LogVerbose("[SceneBootstrapper] MainCamera を自動生成しました");
         }
 
         private void EnsureDirectionalLight()
@@ -194,7 +194,7 @@ namespace ThemeParkGame.Core
             if (existingLight != null && existingLight.type == LightType.Directional)
             {
                 if (verboseLogging)
-                    Debug.Log("[SceneBootstrapper] DirectionalLight 検出済み");
+                    WebGLOptimizer.LogVerbose("[SceneBootstrapper] DirectionalLight 検出済み");
                 return;
             }
 
@@ -207,7 +207,7 @@ namespace ThemeParkGame.Core
             go.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
 
             if (verboseLogging)
-                Debug.Log("[SceneBootstrapper] DirectionalLight を自動生成しました");
+                WebGLOptimizer.LogVerbose("[SceneBootstrapper] DirectionalLight を自動生成しました");
         }
 
         private void EnsureGround()
@@ -217,7 +217,7 @@ namespace ThemeParkGame.Core
             if (existingGround != null)
             {
                 if (verboseLogging)
-                    Debug.Log("[SceneBootstrapper] Ground 検出済み");
+                    WebGLOptimizer.LogVerbose("[SceneBootstrapper] Ground 検出済み");
                 return;
             }
 
@@ -243,7 +243,7 @@ namespace ThemeParkGame.Core
             go.isStatic = true;
 
             if (verboseLogging)
-                Debug.Log("[SceneBootstrapper] Ground を自動生成しました (100x100)");
+                WebGLOptimizer.LogVerbose("[SceneBootstrapper] Ground を自動生成しました (100x100)");
         }
 
         private void EnsureParkEntrance()
@@ -252,7 +252,7 @@ namespace ThemeParkGame.Core
             if (existingEntrance != null)
             {
                 if (verboseLogging)
-                    Debug.Log("[SceneBootstrapper] ParkEntrance 検出済み");
+                    WebGLOptimizer.LogVerbose("[SceneBootstrapper] ParkEntrance 検出済み");
                 return;
             }
 
@@ -269,7 +269,7 @@ namespace ThemeParkGame.Core
             go.transform.position = Vector3.zero;
 
             if (verboseLogging)
-                Debug.Log("[SceneBootstrapper] ParkEntrance を自動生成しました");
+                WebGLOptimizer.LogVerbose("[SceneBootstrapper] ParkEntrance を自動生成しました");
         }
 
         // ================================================================
@@ -282,7 +282,7 @@ namespace ThemeParkGame.Core
             if (AttractionDatabase.Count > 0)
             {
                 if (verboseLogging)
-                    Debug.Log("[SceneBootstrapper] AttractionDatabase 既にロード済み");
+                    WebGLOptimizer.LogVerbose("[SceneBootstrapper] AttractionDatabase 既にロード済み");
             }
             else
             {
@@ -297,7 +297,7 @@ namespace ThemeParkGame.Core
                 if (shopsJson != null) loadedCount++;
 
                 if (verboseLogging)
-                    Debug.Log($"[SceneBootstrapper] Config JSON ロード: {loadedCount}/3 ファイル");
+                    WebGLOptimizer.LogVerbose($"[SceneBootstrapper] Config JSON ロード: {loadedCount}/3 ファイル");
             }
         }
 
@@ -328,7 +328,7 @@ namespace ThemeParkGame.Core
         {
             if (GameManager.Instance == null)
             {
-                Debug.LogWarning("[SceneBootstrapper] GameManager が見つかりません。自動開始をスキップ。");
+                WebGLOptimizer.LogVerbose("[SceneBootstrapper] GameManager が見つかりません。自動開始をスキップ。");
                 return;
             }
 
@@ -336,12 +336,12 @@ namespace ThemeParkGame.Core
             if (GameManager.Instance.CurrentState != GameState.MainMenu)
             {
                 if (verboseLogging)
-                    Debug.Log("[SceneBootstrapper] ゲーム既に開始済み - 自動開始スキップ");
+                    WebGLOptimizer.LogVerbose("[SceneBootstrapper] ゲーム既に開始済み - 自動開始スキップ");
                 return;
             }
 
             if (verboseLogging)
-                Debug.Log($"[SceneBootstrapper] サンドボックスモード自動開始: ゾーン={startingZone}");
+                WebGLOptimizer.LogVerbose($"[SceneBootstrapper] サンドボックスモード自動開始: ゾーン={startingZone}");
 
             GameManager.Instance.StartNewGame(startingZone);
         }

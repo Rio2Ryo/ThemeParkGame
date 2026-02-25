@@ -17,7 +17,7 @@ namespace ThemeParkGame.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
         {
-            Debug.Log("[GameBootstrapper] === 初期化開始 ===");
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] === 初期化開始 ===");
 
             EnsureGameManager();
             EnsureAudioManager();
@@ -33,7 +33,7 @@ namespace ThemeParkGame.Core
 
             CreateStartScreen();
 
-            Debug.Log("[GameBootstrapper] === 初期化完了 ===");
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] === 初期化完了 ===");
         }
 
         // ================================================================
@@ -44,12 +44,12 @@ namespace ThemeParkGame.Core
         {
             if (GameManager.Instance != null)
             {
-                Debug.Log("[GameBootstrapper] GameManager 検出済み");
+                WebGLOptimizer.LogVerbose("[GameBootstrapper] GameManager 検出済み");
                 return;
             }
             var go = new GameObject("--- Managers ---");
             go.AddComponent<GameManager>();
-            Debug.Log("[GameBootstrapper] GameManager を生成");
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] GameManager を生成");
         }
 
         private static void EnsureAudioManager()
@@ -57,7 +57,7 @@ namespace ThemeParkGame.Core
             if (AudioManager.Instance != null) return;
             var go = new GameObject("AudioManager");
             go.AddComponent<AudioManager>();
-            Debug.Log("[GameBootstrapper] AudioManager を生成");
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] AudioManager を生成");
         }
 
         private static void EnsureInputManager()
@@ -65,7 +65,7 @@ namespace ThemeParkGame.Core
             if (InputManager.Instance != null) return;
             var go = new GameObject("InputManager");
             go.AddComponent<InputManager>();
-            Debug.Log("[GameBootstrapper] InputManager を生成");
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] InputManager を生成");
         }
 
         private static void EnsureEventSystem()
@@ -74,7 +74,7 @@ namespace ThemeParkGame.Core
             var go = new GameObject("EventSystem");
             go.AddComponent<EventSystem>();
             go.AddComponent<StandaloneInputModule>();
-            Debug.Log("[GameBootstrapper] EventSystem を生成");
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] EventSystem を生成");
         }
 
         // ================================================================
@@ -93,7 +93,7 @@ namespace ThemeParkGame.Core
             go.AddComponent<FirstPersonCamera>();
             go.transform.position = new Vector3(0f, 30f, -20f);
             go.transform.rotation = Quaternion.Euler(60f, 0f, 0f);
-            Debug.Log("[GameBootstrapper] MainCamera を生成");
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] MainCamera を生成");
         }
 
         private static void EnsureDirectionalLight()
@@ -109,7 +109,7 @@ namespace ThemeParkGame.Core
             newLight.intensity = 1.2f;
             newLight.shadows = LightShadows.Soft;
             go.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
-            Debug.Log("[GameBootstrapper] DirectionalLight を生成");
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] DirectionalLight を生成");
         }
 
         private static void EnsureGround()
@@ -145,7 +145,7 @@ namespace ThemeParkGame.Core
                 mr.material = new Material(shader) { color = new Color(0.45f, 0.65f, 0.35f) };
 
             go.isStatic = true;
-            Debug.Log("[GameBootstrapper] Ground を生成");
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] Ground を生成");
         }
 
         // ================================================================
@@ -158,7 +158,7 @@ namespace ThemeParkGame.Core
             var go = new GameObject("RuntimeGameSetup");
             go.AddComponent<RuntimeGameSetup>();
             Object.DontDestroyOnLoad(go);
-            Debug.Log("[GameBootstrapper] RuntimeGameSetup を生成");
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] RuntimeGameSetup を生成");
         }
 
         // ================================================================
@@ -366,7 +366,7 @@ namespace ThemeParkGame.Core
             // ---- バージョン表示 ----
             var ver = CreateUIElement("Version", canvasGo.transform);
             var verText = ver.AddComponent<Text>();
-            verText.text = "v1.3 - WebGL Build";
+            verText.text = "v1.4 - WebGL Build";
             verText.font = GetBuiltinFont();
             verText.fontSize = 18;
             verText.alignment = TextAnchor.LowerRight;
@@ -393,7 +393,7 @@ namespace ThemeParkGame.Core
             crRect.anchoredPosition = new Vector2(20, 10);
             crRect.sizeDelta = new Vector2(400, 30);
 
-            Debug.Log("[GameBootstrapper] タイトル画面を生成");
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] タイトル画面を生成");
         }
 
         // ================================================================
@@ -509,7 +509,7 @@ namespace ThemeParkGame.Core
                 return;
             }
             GameManager.Instance.StartNewGame(ThemeZone.LostKingdom, difficulty);
-            Debug.Log($"[GameBootstrapper] ゲーム開始! 難易度: {difficulty}");
+            WebGLOptimizer.LogVerbose($"[GameBootstrapper] ゲーム開始! 難易度: {difficulty}");
             Destroy(gameObject);
         }
 
@@ -522,7 +522,7 @@ namespace ThemeParkGame.Core
                 {
                     if (SaveSystem.Load(i))
                     {
-                        Debug.Log($"[StartScreen] Loaded save slot {i}");
+                        WebGLOptimizer.LogVerbose($"[StartScreen] Loaded save slot {i}");
                         Destroy(gameObject);
                     }
                     else

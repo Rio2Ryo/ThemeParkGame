@@ -2278,6 +2278,7 @@ namespace ThemeParkGame.Core
 
         private void OnResumeClicked()
         {
+            if (_soundPanel != null) _soundPanel.SetActive(false);
             if (GameManager.Instance == null) return;
             GameManager.Instance.ResumeGame();
         }
@@ -3974,7 +3975,7 @@ namespace ThemeParkGame.Core
                 _sbVisitorValue.text = $"{active}";
 
                 float avgSat = gm.VisitorManager.AverageSatisfaction;
-                _sbSatisfactionValue.text = $"{avgSat:F0}%";
+                _sbSatisfactionValue.text = $"{avgSat:F0}% (幸福:{avgHappy:F0}%)";
                 Color satColor = avgSat >= 70f ? Green : avgSat >= 40f ? Yellow : Red;
                 _sbSatisfactionValue.color = satColor;
 

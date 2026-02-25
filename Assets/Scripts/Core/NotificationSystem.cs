@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using ThemeParkGame.AI;
+using ThemeParkGame.Attraction;
 
 namespace ThemeParkGame.Core
 {
@@ -249,15 +250,31 @@ namespace ThemeParkGame.Core
 
         // イベントハンドラ - アトラクション
         private void OnAttractionBuilt(int id) =>
-            Notify($"アトラクション #{id} が建設されました", NotifLevel.Success);
+            Notify($"{GetFacilityLabel(id)} が建設されました", NotifLevel.Success);
         private void OnAttractionBrokenDown(int id) =>
-            NotifyThrottled($"breakdown_{id}", $"アトラクション #{id} が故障しました！", NotifLevel.Warning);
+            NotifyThrottled($"breakdown_{id}", $"{GetFacilityLabel(id)} が故障しました！メカニックを派遣してください", NotifLevel.Warning);
         private void OnAttractionRepaired(int id) =>
-            Notify($"アトラクション #{id} が修理完了", NotifLevel.Success);
+            Notify($"{GetFacilityLabel(id)} の修理が完了しました", NotifLevel.Success);
         private void OnAttractionAccident(int id) =>
-            Notify($"アトラクション #{id} で事故発生！", NotifLevel.Danger);
+            Notify($"{GetFacilityLabel(id)} で事故が発生！安全性に影響", NotifLevel.Danger);
         private void OnAttractionUpgraded(int id) =>
-            Notify($"アトラクション #{id} をアップグレードしました", NotifLevel.Success);
+            Notify($"{GetFacilityLabel(id)} をアップグレードしました", NotifLevel.Success);
+
+        /// <summary>施設IDから表示名を取得する。見つからない場合はID表記にフォールバック</summary>
+        private string GetFacilityLabel(int id)
+        {
+            var pm = GameManager.Instance?.ParkManager;
+            if (pm != null)
+            {
+                var facility = pm.GetPlacedFacility(id);
+                if (facility != null)
+                {
+                    var def = AttractionDatabase.GetById(facility.FacilityDataId);
+                    if (def != null) return def.NameJP;
+                }
+            }
+            return $"アトラクション #{id}";
+        }
 
         // イベントハンドラ - スタッフ
         private void OnStaffHired(int id, StaffType type) =>
