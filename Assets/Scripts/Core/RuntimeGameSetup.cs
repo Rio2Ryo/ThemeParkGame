@@ -36,7 +36,7 @@ namespace ThemeParkGame.Core
         {
             if (!_isSetUp) return;
 
-            Debug.Log("[RuntimeGameSetup] パーク閉園 → ワールドクリーンアップ");
+            WebGLOptimizer.LogVerbose("[RuntimeGameSetup] パーク閉園 → ワールドクリーンアップ");
             CleanupGameWorld();
             _isSetUp = false;
         }
@@ -76,7 +76,7 @@ namespace ThemeParkGame.Core
 
         private void SetupGameWorld()
         {
-            Debug.Log("[RuntimeGameSetup] === ゲームワールド構築開始 ===");
+            WebGLOptimizer.LogVerbose("[RuntimeGameSetup] === ゲームワールド構築開始 ===");
 
             // スポーン/出口ポイント作成
             Transform spawnPoint = CreateMarker("SpawnPoint", new Vector3(0f, 0f, -5f));
@@ -124,10 +124,10 @@ namespace ThemeParkGame.Core
             {
                 var weatherFx = new GameObject("WeatherEffectController");
                 weatherFx.AddComponent<WeatherEffectController>();
-                Debug.Log("[RuntimeGameSetup] WeatherEffectController を生成");
+                WebGLOptimizer.LogVerbose("[RuntimeGameSetup] WeatherEffectController を生成");
             }
 
-            Debug.Log("[RuntimeGameSetup] === ゲームワールド構築完了 ===");
+            WebGLOptimizer.LogVerbose("[RuntimeGameSetup] === ゲームワールド構築完了 ===");
         }
 
         // ================================================================
@@ -213,7 +213,7 @@ namespace ThemeParkGame.Core
                     sm.RegisterStaffRoom(staffRoom.transform);
             }
 
-            Debug.Log($"[RuntimeGameSetup] セーブデータから復元: アトラクション{attrCount}, ショップ{shopCount}, 施設{facCount}");
+            WebGLOptimizer.LogVerbose($"[RuntimeGameSetup] セーブデータから復元: アトラクション{attrCount}, ショップ{shopCount}, 施設{facCount}");
         }
 
         // ================================================================
@@ -285,7 +285,7 @@ namespace ThemeParkGame.Core
                 pathSystem.CreateSegment(ring[i], ring[next], 2f);
             }
 
-            Debug.Log($"[RuntimeGameSetup] 通路ネットワーク生成: {pathSystem.Segments.Count}セグメント, 総延長{pathSystem.TotalPathLength:F0}m");
+            WebGLOptimizer.LogVerbose($"[RuntimeGameSetup] 通路ネットワーク生成: {pathSystem.Segments.Count}セグメント, 総延長{pathSystem.TotalPathLength:F0}m");
         }
 
         // ================================================================
@@ -313,7 +313,7 @@ namespace ThemeParkGame.Core
                 surface.collectObjects = Unity.AI.Navigation.CollectObjects.All;
                 surface.useGeometry = UnityEngine.AI.NavMeshCollectGeometry.PhysicsColliders;
                 surface.BuildNavMesh();
-                Debug.Log("[RuntimeGameSetup] NavMesh構築完了");
+                WebGLOptimizer.LogVerbose("[RuntimeGameSetup] NavMesh構築完了");
             }
             catch (System.Exception e)
             {
@@ -350,7 +350,7 @@ namespace ThemeParkGame.Core
                 AttractionCategory.RideAttraction, 3.5f, 0.02f, 24, 8f,
                 3000, 25, new Vector3(0f, 0f, 25f));
 
-            Debug.Log("[RuntimeGameSetup] サンプルアトラクション5基を生成");
+            WebGLOptimizer.LogVerbose("[RuntimeGameSetup] サンプルアトラクション5基を生成");
         }
 
         private void CreateAttraction(Transform parent, string nameJP,
@@ -456,7 +456,7 @@ namespace ThemeParkGame.Core
             CreateShop(parent, "おみやげ城", FacilityType.SouvenirShop,
                 new Vector3(0f, 0f, -2f), "SouvenirShop");
 
-            Debug.Log("[RuntimeGameSetup] サンプルショップ3店を生成");
+            WebGLOptimizer.LogVerbose("[RuntimeGameSetup] サンプルショップ3店を生成");
         }
 
         private void CreateShop(Transform parent, string shopName, FacilityType type,
@@ -562,7 +562,7 @@ namespace ThemeParkGame.Core
                 sm.RegisterStaffRoom(staffRoom.transform);
             }
 
-            Debug.Log("[RuntimeGameSetup] サンプル施設（トイレ2、ベンチ6、スタッフルーム1）を生成");
+            WebGLOptimizer.LogVerbose("[RuntimeGameSetup] サンプル施設（トイレ2、ベンチ6、スタッフルーム1）を生成");
         }
 
         private GameObject CreateSimpleFacility(Transform parent, string facilityName,
@@ -628,30 +628,19 @@ namespace ThemeParkGame.Core
             sm.ConfigureRuntimePrefabs(mechanicPrefab, cleanerPrefab,
                 entertainerPrefab, guardPrefab, scientistPrefab);
 
-            // アトラクション位置情報を取得してスタッフを近くに配置
-            var attractions = FindObjectsOfType<Attraction.Attraction>();
-
-            // メカニック2名: アトラクション近辺に配置
-            if (attractions.Length >= 2)
+            // セーブデータからスタッフを復元するか、デフォルト配置するか
+            if (SaveSystem.PendingStaffToRestore != null &&
+                SaveSystem.PendingStaffToRestore.Count > 0)
             {
-                sm.HireStaff(StaffType.Mechanic,
-                    attractions[0].transform.position + new Vector3(3f, 0f, 0f), "メカニック太郎");
-                sm.HireStaff(StaffType.Mechanic,
-                    attractions[2 % attractions.Length].transform.position + new Vector3(3f, 0f, 0f), "メカニック次郎");
+                RestoreSavedStaff(sm, SaveSystem.PendingStaffToRestore);
+                SaveSystem.PendingStaffToRestore = null;
+            }
+            else
+            {
+                HireDefaultStaff(sm);
             }
 
-            // クリーナー2名: パーク中央付近
-            sm.HireStaff(StaffType.Cleaner, new Vector3(5f, 0f, 5f), "クリーナーA");
-            sm.HireStaff(StaffType.Cleaner, new Vector3(-5f, 0f, -5f), "クリーナーB");
-
-            // エンターテイナー1名: 入口付近
-            sm.HireStaff(StaffType.Entertainer, new Vector3(0f, 0f, -3f), "パフォーマー花子");
-
-            // ガード1名: パーク中央
-            sm.HireStaff(StaffType.Guard, new Vector3(0f, 0f, 10f), "ガードマン一号");
-
-            // スタッフにパトロールエリアを自動割り当て
-            // パーク全体 (-30,-30) ~ (30,30) の範囲
+            // パトロールエリア未割り当てスタッフにデフォルト範囲を設定
             Bounds parkBounds = new Bounds(Vector3.zero, new Vector3(60f, 10f, 60f));
             foreach (var staff in sm.GetAllStaff())
             {
@@ -661,7 +650,57 @@ namespace ThemeParkGame.Core
                 }
             }
 
-            Debug.Log($"[RuntimeGameSetup] スタッフ{sm.TotalStaffCount}名を配置");
+            WebGLOptimizer.LogVerbose($"[RuntimeGameSetup] スタッフ{sm.TotalStaffCount}名を配置");
+        }
+
+        /// <summary>デフォルトのスタッフ配置（新規ゲーム用）</summary>
+        private void HireDefaultStaff(StaffManager sm)
+        {
+            var attractions = FindObjectsOfType<Attraction.Attraction>();
+
+            if (attractions.Length >= 2)
+            {
+                sm.HireStaff(StaffType.Mechanic,
+                    attractions[0].transform.position + new Vector3(3f, 0f, 0f), "メカニック太郎");
+                sm.HireStaff(StaffType.Mechanic,
+                    attractions[2 % attractions.Length].transform.position + new Vector3(3f, 0f, 0f), "メカニック次郎");
+            }
+
+            sm.HireStaff(StaffType.Cleaner, new Vector3(5f, 0f, 5f), "クリーナーA");
+            sm.HireStaff(StaffType.Cleaner, new Vector3(-5f, 0f, -5f), "クリーナーB");
+            sm.HireStaff(StaffType.Entertainer, new Vector3(0f, 0f, -3f), "パフォーマー花子");
+            sm.HireStaff(StaffType.Guard, new Vector3(0f, 0f, 10f), "ガードマン一号");
+        }
+
+        /// <summary>セーブデータからスタッフを復元する</summary>
+        private void RestoreSavedStaff(StaffManager sm, System.Collections.Generic.List<SavedStaff> staffList)
+        {
+            foreach (var ss in staffList)
+            {
+                if (!System.Enum.TryParse<StaffType>(ss.Type, out var staffType))
+                    continue;
+
+                Vector3 pos = new Vector3(ss.PosX, ss.PosY, ss.PosZ);
+                var staff = sm.HireStaff(staffType, pos, ss.Name);
+                if (staff == null) continue;
+
+                // スキルレベル復元（訓練を繰り返す）
+                for (int i = 1; i < ss.SkillLevel; i++)
+                    staff.Train();
+
+                // 給与復元
+                staff.Salary = ss.Salary;
+
+                // パトロールエリア復元
+                if (ss.PatrolSizeX > 0f || ss.PatrolSizeZ > 0f)
+                {
+                    var center = new Vector3(ss.PatrolCenterX, ss.PatrolCenterY, ss.PatrolCenterZ);
+                    var size = new Vector3(ss.PatrolSizeX, ss.PatrolSizeY, ss.PatrolSizeZ);
+                    staff.SetPatrolArea(new Bounds(center, size));
+                }
+            }
+
+            WebGLOptimizer.LogVerbose($"[RuntimeGameSetup] セーブデータからスタッフ{staffList.Count}名を復元");
         }
 
         /// <summary>スタッフプレハブをランタイムで生成する</summary>
@@ -754,7 +793,7 @@ namespace ThemeParkGame.Core
             // 再初期化
             vm.Initialize();
 
-            Debug.Log("[RuntimeGameSetup] VisitorManager設定完了");
+            WebGLOptimizer.LogVerbose("[RuntimeGameSetup] VisitorManager設定完了");
         }
 
         /// <summary>来場者プレハブをコードで生成する</summary>

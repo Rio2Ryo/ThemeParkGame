@@ -332,7 +332,7 @@ namespace ThemeParkGame.UI
 
             if (newStaff != null)
             {
-                Debug.Log($"[StaffPanelUI] スタッフ雇用完了: {_selectedStaffType}, ID={newStaff.Id}");
+                WebGLOptimizer.LogVerbose($"[StaffPanelUI] スタッフ雇用完了: {_selectedStaffType}, ID={newStaff.Id}");
             }
 
             // リスト更新
@@ -609,7 +609,7 @@ namespace ThemeParkGame.UI
             gm.EconomyManager.SpendMoney(cost);
             gm.StaffManager.TrainStaff(_selectedStaffId);
 
-            Debug.Log($"[StaffPanelUI] スタッフ訓練完了: ID={_selectedStaffId}, 費用=¥{cost}");
+            WebGLOptimizer.LogVerbose($"[StaffPanelUI] スタッフ訓練完了: ID={_selectedStaffId}, 費用=¥{cost}");
 
             // 表示更新
             RefreshSelectedStaffDetail();
@@ -662,7 +662,7 @@ namespace ThemeParkGame.UI
             gm.StaffManager.FireStaff(_selectedStaffId);
             GameEvents.FireStaffFired(_selectedStaffId, firedType);
 
-            Debug.Log($"[StaffPanelUI] スタッフ解雇: ID={_selectedStaffId}");
+            WebGLOptimizer.LogVerbose($"[StaffPanelUI] スタッフ解雇: ID={_selectedStaffId}");
 
             HideFireConfirmDialog();
             HideDetailPanel();
@@ -680,7 +680,7 @@ namespace ThemeParkGame.UI
             var staffManager = GameManager.Instance?.StaffManager;
             staffManager?.StartPatrolAreaAssignment(_selectedStaffId);
 
-            Debug.Log($"[StaffPanelUI] パトロールエリア指定モード開始: ID={_selectedStaffId}");
+            WebGLOptimizer.LogVerbose($"[StaffPanelUI] パトロールエリア指定モード開始: ID={_selectedStaffId}");
         }
 
         /// <summary>休憩ボタン押下</summary>
@@ -693,7 +693,7 @@ namespace ThemeParkGame.UI
 
             staffManager.SendToStaffRoom(_selectedStaffId);
 
-            Debug.Log($"[StaffPanelUI] スタッフを休憩室へ送りました: ID={_selectedStaffId}");
+            WebGLOptimizer.LogVerbose($"[StaffPanelUI] スタッフを休憩室へ送りました: ID={_selectedStaffId}");
 
             RefreshSelectedStaffDetail();
             PopulateStaffList(_selectedStaffType);

@@ -102,7 +102,7 @@ namespace ThemeParkGame.Core
 
             // メニューBGM開始
             PlayBGM(clipMenuBGM);
-            Debug.Log("[AudioManager] Initialized with procedural audio");
+            WebGLOptimizer.LogVerbose("[AudioManager] Initialized with procedural audio");
         }
 
         private void OnDestroy()
@@ -177,7 +177,7 @@ namespace ThemeParkGame.Core
             clipResearchComplete = ProceduralAudioLibrary.GenerateResearchCompleteSE();
             clipWeatherChange = ProceduralAudioLibrary.GenerateWeatherChangeSE();
 
-            Debug.Log("[AudioManager] All procedural audio clips generated");
+            WebGLOptimizer.LogVerbose("[AudioManager] All procedural audio clips generated");
         }
 
         // ================================================================

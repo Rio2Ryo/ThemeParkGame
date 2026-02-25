@@ -92,7 +92,7 @@ namespace ThemeParkGame.Attraction
             context.StateTimer = 0f;
             context.ConstructionProgress = 0f;
             context.Attraction.SetActive(false);
-            Debug.Log($"[AttractionState] 建設開始: {context.Attraction.DisplayName}");
+            WebGLOptimizer.LogVerbose($"[AttractionState] 建設開始: {context.Attraction.DisplayName}");
         }
 
         public void Update(AttractionContext context, float deltaTime)
@@ -111,7 +111,7 @@ namespace ThemeParkGame.Attraction
         public void Exit(AttractionContext context)
         {
             context.ConstructionProgress = 1f;
-            Debug.Log($"[AttractionState] 建設完了: {context.Attraction.DisplayName}");
+            WebGLOptimizer.LogVerbose($"[AttractionState] 建設完了: {context.Attraction.DisplayName}");
         }
     }
 
@@ -124,7 +124,7 @@ namespace ThemeParkGame.Attraction
         {
             context.Attraction.SetActive(true);
             GameEvents.FireAttractionBuilt(context.Attraction.FacilityId);
-            Debug.Log($"[AttractionState] 稼働開始: {context.Attraction.DisplayName}");
+            WebGLOptimizer.LogVerbose($"[AttractionState] 稼働開始: {context.Attraction.DisplayName}");
         }
 
         public void Update(AttractionContext context, float deltaTime)
@@ -157,7 +157,7 @@ namespace ThemeParkGame.Attraction
         {
             context.StateTimer = 0f;
             GameEvents.FireAttractionBrokenDown(context.Attraction.FacilityId);
-            Debug.Log($"[AttractionState] 故障発生: {context.Attraction.DisplayName}");
+            WebGLOptimizer.LogVerbose($"[AttractionState] 故障発生: {context.Attraction.DisplayName}");
 
             // メカニックへの修理リクエストを発行
             context.Manager.RequestRepair(context.Attraction);
@@ -191,7 +191,7 @@ namespace ThemeParkGame.Attraction
         public void Enter(AttractionContext context)
         {
             context.StateTimer = 0f;
-            Debug.Log($"[AttractionState] 修理開始: {context.Attraction.DisplayName}");
+            WebGLOptimizer.LogVerbose($"[AttractionState] 修理開始: {context.Attraction.DisplayName}");
         }
 
         public void Update(AttractionContext context, float deltaTime)
@@ -214,7 +214,7 @@ namespace ThemeParkGame.Attraction
 
         public void Exit(AttractionContext context)
         {
-            Debug.Log($"[AttractionState] 修理完了: {context.Attraction.DisplayName}");
+            WebGLOptimizer.LogVerbose($"[AttractionState] 修理完了: {context.Attraction.DisplayName}");
         }
     }
 
@@ -260,7 +260,7 @@ namespace ThemeParkGame.Attraction
         public void Enter(AttractionContext context)
         {
             context.Attraction.SetActive(false);
-            Debug.Log($"[AttractionState] 休止: {context.Attraction.DisplayName}");
+            WebGLOptimizer.LogVerbose($"[AttractionState] 休止: {context.Attraction.DisplayName}");
         }
 
         public void Update(AttractionContext context, float deltaTime)
@@ -347,7 +347,7 @@ namespace ThemeParkGame.Attraction
             ConstructionCount = 0;
 
             SubscribeToEvents();
-            Debug.Log("[AttractionManager] 初期化完了");
+            WebGLOptimizer.LogVerbose("[AttractionManager] 初期化完了");
         }
 
         private void OnDestroy()

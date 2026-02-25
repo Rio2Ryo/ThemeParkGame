@@ -184,7 +184,7 @@ namespace ThemeParkGame.UI
             // データ取得と表示
             PopulateVisitorInfo(visitorId);
 
-            Debug.Log($"[VisitorInfoPanel] 来場者情報パネルを表示: ID={visitorId}");
+            WebGLOptimizer.LogVerbose($"[VisitorInfoPanel] 来場者情報パネルを表示: ID={visitorId}");
         }
 
         /// <summary>パネルを閉じる</summary>
@@ -375,7 +375,7 @@ namespace ThemeParkGame.UI
             // AI会話開始イベント発火
             GameEvents.FireNPCConversationStarted(_currentVisitorId, "visitor_greeting");
 
-            Debug.Log($"[VisitorInfoPanel] 来場者 ID={_currentVisitorId} との会話を開始");
+            WebGLOptimizer.LogVerbose($"[VisitorInfoPanel] 来場者 ID={_currentVisitorId} との会話を開始");
         }
 
         /// <summary>「閉じる」ボタン押下</summary>
@@ -399,7 +399,7 @@ namespace ThemeParkGame.UI
             {
                 GameEvents.FireCameraFollowRequested(_currentVisitorId);
             }
-            Debug.Log($"[VisitorInfoPanel] フォロー{(_isFollowing ? "開始" : "解除")}: ID={_currentVisitorId}");
+            WebGLOptimizer.LogVerbose($"[VisitorInfoPanel] フォロー{(_isFollowing ? "開始" : "解除")}: ID={_currentVisitorId}");
         }
 
         /// <summary>会話ボタンの有効/無効を更新する</summary>
@@ -449,7 +449,7 @@ namespace ThemeParkGame.UI
         {
             if (visitorId == _currentVisitorId)
             {
-                Debug.Log($"[VisitorInfoPanel] 表示中の来場者が退園しました: ID={visitorId}");
+                WebGLOptimizer.LogVerbose($"[VisitorInfoPanel] 表示中の来場者が退園しました: ID={visitorId}");
                 ClosePanel();
             }
         }

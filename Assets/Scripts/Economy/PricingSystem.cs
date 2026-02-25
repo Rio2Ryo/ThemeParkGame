@@ -119,7 +119,7 @@ namespace ThemeParkGame.Economy
         public void SetEntranceFee(float fee)
         {
             EntranceFee = Mathf.Max(0f, fee);
-            Debug.Log($"[PricingSystem] 入場料を {EntranceFee:F0} に設定");
+            WebGLOptimizer.LogVerbose($"[PricingSystem] 入場料を {EntranceFee:F0} に設定");
         }
 
         /// <summary>
@@ -378,7 +378,7 @@ namespace ThemeParkGame.Economy
                 }
             }
 
-            Debug.Log("[PricingSystem] 全施設に推奨価格を適用しました");
+            WebGLOptimizer.LogVerbose("[PricingSystem] 全施設に推奨価格を適用しました");
         }
 
         // ================================================================

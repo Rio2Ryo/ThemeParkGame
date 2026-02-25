@@ -227,7 +227,7 @@ namespace ThemeParkGame.Visitor
             // イベント発火
             GameEvents.FireVisitorLifecycleChanged(_visitorId, oldPhase, newPhase);
 
-            Debug.Log($"[VisitorStateMachine] Visitor {_visitorId}: {oldPhase} -> {newPhase} " +
+            WebGLOptimizer.LogVerbose($"[VisitorStateMachine] Visitor {_visitorId}: {oldPhase} -> {newPhase} " +
                       $"(exp:{_waitToEnjoyCount}, done:{_enjoyToWaitCount})");
         }
 

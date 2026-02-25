@@ -173,7 +173,7 @@ namespace ThemeParkGame.Economy
             _nextLoanId = 1;
 
             SubscribeToEvents();
-            Debug.Log($"[EconomyManager] 初期化完了。初期資金: {startingMoney}");
+            WebGLOptimizer.LogVerbose($"[EconomyManager] 初期化完了。初期資金: {startingMoney}");
         }
 
         private void SubscribeToEvents()
@@ -401,7 +401,7 @@ namespace ThemeParkGame.Economy
             CurrentBalance += amount;
             GameEvents.FireMoneyChanged(CurrentBalance);
 
-            Debug.Log($"[EconomyManager] ローン借入: {amount:F0} (月額返済: {monthlyPayment:F0}, {termMonths}ヶ月)");
+            WebGLOptimizer.LogVerbose($"[EconomyManager] ローン借入: {amount:F0} (月額返済: {monthlyPayment:F0}, {termMonths}ヶ月)");
             return loan;
         }
 
@@ -416,7 +416,7 @@ namespace ThemeParkGame.Economy
             if (totalSalary > 0f)
             {
                 PayExpense(totalSalary, ExpenseCategory.StaffSalary);
-                Debug.Log($"[EconomyManager] スタッフ給与支払い: ${totalSalary:F0} ({staffManager.TotalStaffCount}名)");
+                WebGLOptimizer.LogVerbose($"[EconomyManager] スタッフ給与支払い: ${totalSalary:F0} ({staffManager.TotalStaffCount}名)");
             }
         }
 
@@ -440,13 +440,19 @@ namespace ThemeParkGame.Economy
                 }
             }
 
-            // ショップの維持費（月$50固定）
+            // ショップの維持費（種別に応じたコスト）
             var shops = UnityEngine.Object.FindObjectsOfType<Shop>();
             foreach (var shop in shops)
             {
                 if (shop.IsActive)
                 {
-                    float cost = 50f;
+                    float cost = shop.ShopType switch
+                    {
+                        ShopType.FoodShop => 40f,
+                        ShopType.DrinkShop => 30f,
+                        ShopType.SouvenirShop => 60f,
+                        _ => 50f
+                    };
                     PayExpense(cost, ExpenseCategory.Maintenance, shop.FacilityId);
                     totalMaintenance += cost;
                 }
@@ -454,7 +460,7 @@ namespace ThemeParkGame.Economy
 
             if (totalMaintenance > 0f)
             {
-                Debug.Log($"[EconomyManager] 施設維持費支払い: ${totalMaintenance:F0}");
+                WebGLOptimizer.LogVerbose($"[EconomyManager] 施設維持費支払い: ${totalMaintenance:F0}");
             }
         }
 
@@ -472,7 +478,7 @@ namespace ThemeParkGame.Economy
                 if (loan.RemainingBalance < 0.01f)
                 {
                     loan.RemainingBalance = 0f;
-                    Debug.Log($"[EconomyManager] ローン#{loan.LoanId} 完済!");
+                    WebGLOptimizer.LogVerbose($"[EconomyManager] ローン#{loan.LoanId} 完済!");
                 }
 
                 PayExpense(payment, ExpenseCategory.LoanRepayment);
@@ -499,7 +505,7 @@ namespace ThemeParkGame.Economy
             if (loan.RemainingBalance < 0.01f)
             {
                 loan.RemainingBalance = 0f;
-                Debug.Log($"[EconomyManager] ローン#{loan.LoanId} 繰り上げ完済!");
+                WebGLOptimizer.LogVerbose($"[EconomyManager] ローン#{loan.LoanId} 繰り上げ完済!");
             }
 
             PayExpense(actualPayment, ExpenseCategory.LoanRepayment);
@@ -525,7 +531,7 @@ namespace ThemeParkGame.Economy
                 if (sl.LoanId >= _nextLoanId)
                     _nextLoanId = sl.LoanId + 1;
             }
-            Debug.Log($"[EconomyManager] ローン復元: {_activeLoans.Count}件");
+            WebGLOptimizer.LogVerbose($"[EconomyManager] ローン復元: {_activeLoans.Count}件");
         }
 
         // ================================================================
@@ -606,7 +612,7 @@ namespace ThemeParkGame.Economy
                 _revenueHistory.RemoveAt(0);
             }
 
-            Debug.Log($"[EconomyManager] 月次レポート: 収入={report.Revenue.Total:F0}, " +
+            WebGLOptimizer.LogVerbose($"[EconomyManager] 月次レポート: 収入={report.Revenue.Total:F0}, " +
                       $"支出={report.Expenses.Total:F0}, 利益={report.NetProfit:F0}");
 
             // 当月データをリセット
@@ -620,7 +626,7 @@ namespace ThemeParkGame.Economy
             if (yearlyReport != null)
             {
                 _yearlyReports.Add(yearlyReport);
-                Debug.Log($"[EconomyManager] 年次レポート Year{yearlyReport.Year}: " +
+                WebGLOptimizer.LogVerbose($"[EconomyManager] 年次レポート Year{yearlyReport.Year}: " +
                           $"総収入={yearlyReport.TotalRevenue:F0}, 純利益={yearlyReport.NetProfit:F0}");
             }
         }

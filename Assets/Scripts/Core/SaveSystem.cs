@@ -9,6 +9,7 @@ using UnityEngine;
 using ThemeParkGame.AI;
 using ThemeParkGame.Attraction;
 using ThemeParkGame.Park;
+using ThemeParkGame.Staff;
 
 namespace ThemeParkGame.Core
 {
@@ -18,7 +19,7 @@ namespace ThemeParkGame.Core
     [Serializable]
     public class SaveData
     {
-        public string SaveVersion = "2.1";
+        public string SaveVersion = "2.2";
         public string SaveDate;
 
         // ゲーム時間
@@ -90,6 +91,9 @@ namespace ThemeParkGame.Core
 
         // 配置済み建物
         public List<SavedBuilding> PlacedBuildings = new List<SavedBuilding>();
+
+        // スタッフ
+        public List<SavedStaff> StaffMembers = new List<SavedStaff>();
     }
 
     /// <summary>配置済み建物のセーブ用データ構造</summary>
@@ -119,6 +123,21 @@ namespace ThemeParkGame.Core
         public int WholesalePrice;
         public int SellingPrice;
         public int Stock;
+    }
+
+    /// <summary>スタッフのセーブ用データ構造</summary>
+    [Serializable]
+    public class SavedStaff
+    {
+        public string Type;          // StaffType名
+        public string Name;
+        public int SkillLevel;
+        public float Fatigue;
+        public float Salary;
+        public float PosX, PosY, PosZ;
+        // パトロールエリア
+        public float PatrolCenterX, PatrolCenterY, PatrolCenterZ;
+        public float PatrolSizeX, PatrolSizeY, PatrolSizeZ;
     }
 
     /// <summary>ローンのセーブ用データ構造</summary>
@@ -190,7 +209,7 @@ namespace ThemeParkGame.Core
                 PlayerPrefs.Save();
 
                 GameEvents.FireGameSaved();
-                Debug.Log($"[SaveSystem] Saved to slot {slot} ({json.Length} bytes)");
+                WebGLOptimizer.LogVerbose($"[SaveSystem] Saved to slot {slot} ({json.Length} bytes)");
                 return true;
             }
             catch (Exception e)
@@ -221,7 +240,7 @@ namespace ThemeParkGame.Core
                 ApplySaveData(data);
 
                 GameEvents.FireGameLoaded();
-                Debug.Log($"[SaveSystem] Loaded from slot {slot} " +
+                WebGLOptimizer.LogVerbose($"[SaveSystem] Loaded from slot {slot} " +
                           $"(Year {data.CurrentYear}, Balance: {data.CurrentBalance:F0})");
                 return true;
             }
@@ -238,7 +257,7 @@ namespace ThemeParkGame.Core
             if (slot < 0 || slot >= MAX_SAVE_SLOTS) return;
             PlayerPrefs.DeleteKey(SAVE_KEY_PREFIX + slot);
             PlayerPrefs.Save();
-            Debug.Log($"[SaveSystem] Deleted slot {slot}");
+            WebGLOptimizer.LogVerbose($"[SaveSystem] Deleted slot {slot}");
         }
 
         /// <summary>セーブスロットのメタ情報を取得する</summary>
@@ -361,6 +380,7 @@ namespace ThemeParkGame.Core
             if (gm.StaffManager != null)
             {
                 data.TotalStaff = gm.StaffManager.TotalStaffCount;
+                CollectStaffData(data, gm.StaffManager);
             }
 
             // パーク評価
@@ -480,8 +500,46 @@ namespace ThemeParkGame.Core
                 }
             }
 
-            Debug.Log($"[SaveSystem] 建物データ収集: {data.PlacedBuildings.Count}件");
+            WebGLOptimizer.LogVerbose($"[SaveSystem] 建物データ収集: {data.PlacedBuildings.Count}件");
         }
+
+        /// <summary>スタッフデータを収集する</summary>
+        private static void CollectStaffData(SaveData data, StaffManager sm)
+        {
+            foreach (var staff in sm.GetAllStaff())
+            {
+                if (staff == null) continue;
+                var ss = new SavedStaff
+                {
+                    Type = staff.StaffType.ToString(),
+                    Name = staff.Name,
+                    SkillLevel = staff.SkillLevel,
+                    Fatigue = staff.Fatigue,
+                    Salary = staff.Salary,
+                    PosX = staff.transform.position.x,
+                    PosY = staff.transform.position.y,
+                    PosZ = staff.transform.position.z
+                };
+                if (staff.HasPatrolArea)
+                {
+                    var bounds = staff.PatrolArea;
+                    ss.PatrolCenterX = bounds.center.x;
+                    ss.PatrolCenterY = bounds.center.y;
+                    ss.PatrolCenterZ = bounds.center.z;
+                    ss.PatrolSizeX = bounds.size.x;
+                    ss.PatrolSizeY = bounds.size.y;
+                    ss.PatrolSizeZ = bounds.size.z;
+                }
+                data.StaffMembers.Add(ss);
+            }
+            WebGLOptimizer.LogVerbose($"[SaveSystem] スタッフデータ収集: {data.StaffMembers.Count}名");
+        }
+
+        /// <summary>
+        /// ロード時に復元すべきスタッフデータ。
+        /// RuntimeGameSetupがこのデータを参照してデフォルトスタッフ配置をスキップする。
+        /// </summary>
+        public static List<SavedStaff> PendingStaffToRestore { get; set; }
 
         // ================================================================
         // データ復元
@@ -583,17 +641,28 @@ namespace ThemeParkGame.Core
             if (data.PlacedBuildings != null && data.PlacedBuildings.Count > 0)
             {
                 PendingBuildingsToRestore = data.PlacedBuildings;
-                Debug.Log($"[SaveSystem] 建物復元データ準備: {data.PlacedBuildings.Count}件");
+                WebGLOptimizer.LogVerbose($"[SaveSystem] 建物復元データ準備: {data.PlacedBuildings.Count}件");
             }
             else
             {
                 PendingBuildingsToRestore = null;
             }
 
+            // スタッフデータをRuntimeGameSetup用にセット
+            if (data.StaffMembers != null && data.StaffMembers.Count > 0)
+            {
+                PendingStaffToRestore = data.StaffMembers;
+                WebGLOptimizer.LogVerbose($"[SaveSystem] スタッフ復元データ準備: {data.StaffMembers.Count}名");
+            }
+            else
+            {
+                PendingStaffToRestore = null;
+            }
+
             // ゲーム状態をPlayingに遷移
             gm.RestorePlayingState();
 
-            Debug.Log($"[SaveSystem] Game state restored " +
+            WebGLOptimizer.LogVerbose($"[SaveSystem] Game state restored " +
                       $"(Year {data.CurrentYear} M{data.CurrentMonth} D{data.CurrentDay}, " +
                       $"Balance: ${data.CurrentBalance:N0}, " +
                       $"Difficulty: {data.Difficulty})");
@@ -639,7 +708,7 @@ namespace ThemeParkGame.Core
 
             GameManager.Instance.TimeManager.OnMonthChanged += PerformAutoSave;
             _autoSaveSubscribed = true;
-            Debug.Log("[SaveSystem] オートセーブ有効化");
+            WebGLOptimizer.LogVerbose("[SaveSystem] オートセーブ有効化");
         }
 
         /// <summary>オートセーブの購読を解除する</summary>
@@ -668,7 +737,7 @@ namespace ThemeParkGame.Core
                 if (NotificationSystem.Instance != null)
                     NotificationSystem.Instance.Notify("オートセーブ完了", NotifLevel.Info);
 
-                Debug.Log($"[SaveSystem] AutoSave completed ({json.Length} bytes)");
+                WebGLOptimizer.LogVerbose($"[SaveSystem] AutoSave completed ({json.Length} bytes)");
             }
             catch (Exception e)
             {
@@ -708,7 +777,7 @@ namespace ThemeParkGame.Core
                 SaveData data = JsonUtility.FromJson<SaveData>(json);
                 ApplySaveData(data);
                 GameEvents.FireGameLoaded();
-                Debug.Log("[SaveSystem] AutoSave loaded");
+                WebGLOptimizer.LogVerbose("[SaveSystem] AutoSave loaded");
                 return true;
             }
             catch (Exception e)

@@ -156,7 +156,7 @@ namespace ThemeParkGame.Park
             InitializeRatingAndStats();
             SubscribeToEvents();
 
-            Debug.Log($"[ParkManager] 初期化完了。開始ゾーン: {startingZone}");
+            WebGLOptimizer.LogVerbose($"[ParkManager] 初期化完了。開始ゾーン: {startingZone}");
         }
 
         /// <summary>
@@ -178,7 +178,7 @@ namespace ThemeParkGame.Park
                     facility.GridX, facility.GridY, 2, 2, facility.Zone);
             }
 
-            Debug.Log($"[ParkManager] シナリオ初期化完了: {scenario.Country} " +
+            WebGLOptimizer.LogVerbose($"[ParkManager] シナリオ初期化完了: {scenario.Country} " +
                       $"(初期施設: {scenario.PrebuiltFacilities.Count}件)");
         }
 
@@ -267,19 +267,19 @@ namespace ThemeParkGame.Park
 
             if (state.IsUnlocked)
             {
-                Debug.Log($"[ParkManager] {zone} は既にアンロック済み");
+                WebGLOptimizer.LogVerbose($"[ParkManager] {zone} は既にアンロック済み");
                 return false;
             }
 
             if (GameManager.Instance == null || !GameManager.Instance.SpendGoldenTicket(state.UnlockCost))
             {
-                Debug.Log($"[ParkManager] ゴールデンチケット不足。必要: {state.UnlockCost}枚");
+                WebGLOptimizer.LogVerbose($"[ParkManager] ゴールデンチケット不足。必要: {state.UnlockCost}枚");
                 return false;
             }
 
             state.IsUnlocked = true;
             GameEvents.FireThemeZoneUnlocked(zone);
-            Debug.Log($"[ParkManager] {zone} をアンロック! (チケット消費: {state.UnlockCost}枚)");
+            WebGLOptimizer.LogVerbose($"[ParkManager] {zone} をアンロック! (チケット消費: {state.UnlockCost}枚)");
             return true;
         }
 
@@ -376,7 +376,7 @@ namespace ThemeParkGame.Park
             }
 
             GameEvents.FireAttractionBuilt(facilityId);
-            Debug.Log($"[ParkManager] 施設配置: {facilityDataId} (ID:{facilityId}) at ({gridX},{gridY}) in {zone}");
+            WebGLOptimizer.LogVerbose($"[ParkManager] 施設配置: {facilityDataId} (ID:{facilityId}) at ({gridX},{gridY}) in {zone}");
             return facilityId;
         }
 
@@ -418,7 +418,7 @@ namespace ThemeParkGame.Park
             }
 
             _placedFacilities.Remove(facilityId);
-            Debug.Log($"[ParkManager] 施設撤去: ID={facilityId}");
+            WebGLOptimizer.LogVerbose($"[ParkManager] 施設撤去: ID={facilityId}");
             return true;
         }
 
@@ -582,7 +582,7 @@ namespace ThemeParkGame.Park
                 if (completed)
                 {
                     objective.IsCompleted = true;
-                    Debug.Log($"[ParkManager] シナリオ目標達成: {objective.DescriptionKey}");
+                    WebGLOptimizer.LogVerbose($"[ParkManager] シナリオ目標達成: {objective.DescriptionKey}");
                 }
             }
 
@@ -645,7 +645,7 @@ namespace ThemeParkGame.Park
 
         private void OnScenarioCompleted()
         {
-            Debug.Log($"[ParkManager] シナリオクリア! {CurrentScenario.Country}");
+            WebGLOptimizer.LogVerbose($"[ParkManager] シナリオクリア! {CurrentScenario.Country}");
 
             // 報酬を付与
             ScenarioReward reward = CurrentScenario.CompletionReward;
@@ -691,7 +691,7 @@ namespace ThemeParkGame.Park
             }
             Rating.RecordAccident(currentYear);
 
-            Debug.Log($"[ParkManager] 事故発生! アトラクションID: {attractionId}, 累計事故: {Stats.TotalAccidents}");
+            WebGLOptimizer.LogVerbose($"[ParkManager] 事故発生! アトラクションID: {attractionId}, 累計事故: {Stats.TotalAccidents}");
         }
 
         private void OnVisitorEnterHandler(int visitorId)
@@ -711,7 +711,7 @@ namespace ThemeParkGame.Park
             var newCertificates = CheckCertificates();
             foreach (var cert in newCertificates)
             {
-                Debug.Log($"[ParkManager] 新認定証: {cert}");
+                WebGLOptimizer.LogVerbose($"[ParkManager] 新認定証: {cert}");
             }
 
             // シナリオ目標チェック
@@ -721,7 +721,7 @@ namespace ThemeParkGame.Park
         private void OnYearEnd(int newYear)
         {
             Rating.OnYearAdvanced(newYear);
-            Debug.Log($"[ParkManager] Year {newYear} 開始。総合評価: {Rating.OverallRating:F1}");
+            WebGLOptimizer.LogVerbose($"[ParkManager] Year {newYear} 開始。総合評価: {Rating.OverallRating:F1}");
         }
 
         // ================================================================

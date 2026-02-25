@@ -130,7 +130,7 @@ namespace ThemeParkGame.Core
             SaveSystem.EnableAutoSave();
 
             GameEvents.FireParkOpened();
-            Debug.Log($"[GameManager] New game started in {startingZone} (Difficulty: {difficulty}, Money: {money})");
+            WebGLOptimizer.LogVerbose($"[GameManager] New game started in {startingZone} (Difficulty: {difficulty}, Money: {money})");
         }
 
         /// <summary>難易度に応じた初期資金を返す</summary>
@@ -189,7 +189,7 @@ namespace ThemeParkGame.Core
             SpeedLevel = 1;
 
             GameEvents.FireParkOpened();
-            Debug.Log($"[GameManager] Scenario started: {country}");
+            WebGLOptimizer.LogVerbose($"[GameManager] Scenario started: {country}");
         }
 
         /// <summary>視点モードを切り替える</summary>
@@ -217,7 +217,7 @@ namespace ThemeParkGame.Core
         {
             GoldenTickets++;
             GameEvents.FireGoldenTicketEarned(GoldenTickets);
-            Debug.Log($"[GameManager] Golden Ticket earned! Total: {GoldenTickets}");
+            WebGLOptimizer.LogVerbose($"[GameManager] Golden Ticket earned! Total: {GoldenTickets}");
         }
 
         /// <summary>セーブデータからゴールデンチケット数を復元する</summary>
@@ -282,7 +282,7 @@ namespace ThemeParkGame.Core
         {
             CurrentState = GameState.GameOver;
             Time.timeScale = 0f;
-            Debug.Log("[GameManager] ゲーム終了 → 結果画面");
+            WebGLOptimizer.LogVerbose("[GameManager] ゲーム終了 → 結果画面");
         }
 
         /// <summary>現在のゲームをリスタートする（結果画面から直接再開始）</summary>
@@ -291,7 +291,7 @@ namespace ThemeParkGame.Core
             Time.timeScale = 1f;
             GameEvents.FireParkClosed();
             StartNewGame(ThemeZone.LostKingdom, CurrentDifficulty);
-            Debug.Log("[GameManager] ゲームをリスタートしました");
+            WebGLOptimizer.LogVerbose("[GameManager] ゲームをリスタートしました");
         }
 
         /// <summary>メインメニューに戻る</summary>
@@ -306,7 +306,7 @@ namespace ThemeParkGame.Core
             // スタート画面を再生成する
             GameBootstrapper.RecreateStartScreen();
 
-            Debug.Log("[GameManager] メインメニューに戻りました");
+            WebGLOptimizer.LogVerbose("[GameManager] メインメニューに戻りました");
         }
 
         private void OnDestroy()

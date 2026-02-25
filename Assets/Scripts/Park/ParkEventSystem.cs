@@ -406,7 +406,7 @@ namespace ThemeParkGame.Park
                 SatisfactionBonus = 8f
             });
 
-            Debug.Log($"[ParkEventSystem] イベントDB構築完了: {_eventDatabase.Count}件");
+            WebGLOptimizer.LogVerbose($"[ParkEventSystem] イベントDB構築完了: {_eventDatabase.Count}件");
         }
 
         // ================================================================
@@ -484,7 +484,7 @@ namespace ThemeParkGame.Park
                 NotifyEventStart(data);
                 GameEvents.FireParkEventStarted(data.Id, data.DisplayName);
 
-                Debug.Log($"[ParkEventSystem] 季節イベント開始: {data.DisplayName}");
+                WebGLOptimizer.LogVerbose($"[ParkEventSystem] 季節イベント開始: {data.DisplayName}");
             }
         }
 
@@ -524,7 +524,7 @@ namespace ThemeParkGame.Park
 
                     NotifyEventStart(data);
                     GameEvents.FireParkEventStarted(data.Id, data.DisplayName);
-                    Debug.Log($"[ParkEventSystem] ショー開始: {data.DisplayName} ({data.StartHour:F0}:00～)");
+                    WebGLOptimizer.LogVerbose($"[ParkEventSystem] ショー開始: {data.DisplayName} ({data.StartHour:F0}:00～)");
                 }
                 else if (!inTimeWindow && alreadyActive)
                 {
@@ -577,7 +577,7 @@ namespace ThemeParkGame.Park
             NotifyEventStart(selected);
             GameEvents.FireParkEventStarted(selected.Id, selected.DisplayName);
 
-            Debug.Log($"[ParkEventSystem] 期間限定イベント発生: {selected.DisplayName} " +
+            WebGLOptimizer.LogVerbose($"[ParkEventSystem] 期間限定イベント発生: {selected.DisplayName} " +
                       $"({selected.DurationDays}日間)");
         }
 
@@ -599,7 +599,7 @@ namespace ThemeParkGame.Park
                 GameEvents.FireParkEventStarted(data.Id,
                     $"{data.DisplayName} (Year {newYear})");
 
-                Debug.Log($"[ParkEventSystem] 周年記念イベント開始: Year {newYear}");
+                WebGLOptimizer.LogVerbose($"[ParkEventSystem] 周年記念イベント開始: Year {newYear}");
             }
         }
 
@@ -659,7 +659,7 @@ namespace ThemeParkGame.Park
                     $"イベント終了: {ae.Data.DisplayName}", NotifLevel.Info);
             }
 
-            Debug.Log($"[ParkEventSystem] イベント終了: {ae.Data.DisplayName}");
+            WebGLOptimizer.LogVerbose($"[ParkEventSystem] イベント終了: {ae.Data.DisplayName}");
 
             _activeEvents.RemoveAt(index);
         }

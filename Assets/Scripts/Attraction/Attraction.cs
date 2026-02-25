@@ -545,7 +545,7 @@ namespace ThemeParkGame.Attraction
             TotalBreakdownCount++;
 
             GameEvents.FireAttractionBrokenDown(FacilityId);
-            Debug.Log($"[Attraction] 故障発生: {DisplayName} (ID: {FacilityId})");
+            WebGLOptimizer.LogVerbose($"[Attraction] 故障発生: {DisplayName} (ID: {FacilityId})");
         }
 
         /// <summary>
@@ -583,7 +583,7 @@ namespace ThemeParkGame.Attraction
             currentBreakdownProbability = attractionData.BaseBreakdownRate;
 
             GameEvents.FireAttractionRepaired(FacilityId);
-            Debug.Log($"[Attraction] 修理完了: {DisplayName} (ID: {FacilityId})");
+            WebGLOptimizer.LogVerbose($"[Attraction] 修理完了: {DisplayName} (ID: {FacilityId})");
         }
 
         /// <summary>
@@ -594,7 +594,7 @@ namespace ThemeParkGame.Attraction
         {
             _lastMaintenanceTime = Time.time;
             currentBreakdownProbability = attractionData.BaseBreakdownRate;
-            Debug.Log($"[Attraction] 定期点検完了: {DisplayName} (ID: {FacilityId})");
+            WebGLOptimizer.LogVerbose($"[Attraction] 定期点検完了: {DisplayName} (ID: {FacilityId})");
         }
 
         // ---- アップグレード ----
@@ -625,7 +625,7 @@ namespace ThemeParkGame.Attraction
             }
 
             GameEvents.FireAttractionUpgraded(FacilityId);
-            Debug.Log($"[Attraction] アップグレード完了: {DisplayName} → Lv.{upgradeLevel}");
+            WebGLOptimizer.LogVerbose($"[Attraction] アップグレード完了: {DisplayName} → Lv.{upgradeLevel}");
             return true;
         }
 
@@ -792,7 +792,7 @@ namespace ThemeParkGame.Attraction
         protected override void OnPlaced()
         {
             GameEvents.FireAttractionBuilt(FacilityId);
-            Debug.Log($"[Attraction] アトラクション建設完了: {DisplayName} (ID: {FacilityId})");
+            WebGLOptimizer.LogVerbose($"[Attraction] アトラクション建設完了: {DisplayName} (ID: {FacilityId})");
         }
 
         protected override void OnDemolished()

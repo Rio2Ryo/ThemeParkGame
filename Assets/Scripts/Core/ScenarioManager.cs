@@ -70,7 +70,7 @@ namespace ThemeParkGame.Core
                     obj.IsCompleted = false;
             }
 
-            Debug.Log($"[ScenarioManager] Scenario started: {scenario.Country} ({scenario.Difficulty})");
+            WebGLOptimizer.LogVerbose($"[ScenarioManager] Scenario started: {scenario.Country} ({scenario.Difficulty})");
         }
 
         /// <summary>シナリオを終了してサンドボックスに戻す</summary>
@@ -114,7 +114,7 @@ namespace ThemeParkGame.Core
                 if (met)
                 {
                     obj.IsCompleted = true;
-                    Debug.Log($"[ScenarioManager] Objective completed: {obj.DescriptionKey}");
+                    WebGLOptimizer.LogVerbose($"[ScenarioManager] Objective completed: {obj.DescriptionKey}");
                 }
                 else
                 {
@@ -211,14 +211,14 @@ namespace ThemeParkGame.Core
 
             // ゲーム終了画面へ（クリアとして）
             GameManager.Instance.EndGame();
-            Debug.Log($"[ScenarioManager] SCENARIO CLEARED: {ActiveScenario.Country}!");
+            WebGLOptimizer.LogVerbose($"[ScenarioManager] SCENARIO CLEARED: {ActiveScenario.Country}!");
         }
 
         private void OnScenarioFailed()
         {
             IsScenarioFailed = true;
             GameManager.Instance.EndGame();
-            Debug.Log($"[ScenarioManager] Scenario failed (time limit): {ActiveScenario.Country}");
+            WebGLOptimizer.LogVerbose($"[ScenarioManager] Scenario failed (time limit): {ActiveScenario.Country}");
         }
 
         // ================================================================

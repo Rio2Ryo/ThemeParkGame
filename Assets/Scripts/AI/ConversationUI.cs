@@ -216,7 +216,7 @@ namespace ThemeParkGame.AI
                 playerInputField.ActivateInputField();
             }
 
-            Debug.Log($"[ConversationUI] Opened conversation with NPC #{npcId} ({npcName})");
+            WebGLOptimizer.LogVerbose($"[ConversationUI] Opened conversation with NPC #{npcId} ({npcName})");
         }
 
         /// <summary>
@@ -244,7 +244,7 @@ namespace ThemeParkGame.AI
             HideTypingIndicator();
 
             OnConversationClosed?.Invoke(closedNpcId);
-            Debug.Log($"[ConversationUI] Closed conversation with NPC #{closedNpcId}");
+            WebGLOptimizer.LogVerbose($"[ConversationUI] Closed conversation with NPC #{closedNpcId}");
         }
 
         /// <summary>
@@ -653,7 +653,7 @@ namespace ThemeParkGame.AI
         {
             if (newMode != ViewMode.ResidentView && _isConversationActive)
             {
-                Debug.Log("[ConversationUI] Closing conversation due to view mode change.");
+                WebGLOptimizer.LogVerbose("[ConversationUI] Closing conversation due to view mode change.");
                 CloseConversation();
             }
         }

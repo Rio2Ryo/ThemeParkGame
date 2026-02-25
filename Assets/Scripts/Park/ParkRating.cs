@@ -372,7 +372,7 @@ namespace ThemeParkGame.Park
                     newlyAwarded.Add(category);
                     GameEvents.FireCertificateAwarded(category);
 
-                    Debug.Log($"[ParkRating] 認定証授与: {category} (スコア: {rating.Score:F1})");
+                    WebGLOptimizer.LogVerbose($"[ParkRating] 認定証授与: {category} (スコア: {rating.Score:F1})");
                 }
             }
 

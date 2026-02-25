@@ -171,7 +171,7 @@ namespace ThemeParkGame.Core
                 GameManager.Instance.SwitchViewMode(ViewMode.FirstPerson);
             }
 
-            Debug.Log($"[FirstPersonCamera] Enter: Visitor {visitor.VisitorId} ({visitor.Profile?.VisitorName})");
+            WebGLOptimizer.LogVerbose($"[FirstPersonCamera] Enter: Visitor {visitor.VisitorId} ({visitor.Profile?.VisitorName})");
         }
 
         /// <summary>
@@ -198,7 +198,7 @@ namespace ThemeParkGame.Core
                 GameManager.Instance.SwitchViewMode(ViewMode.GodView);
             }
 
-            Debug.Log("[FirstPersonCamera] Exit: returning to God View");
+            WebGLOptimizer.LogVerbose("[FirstPersonCamera] Exit: returning to God View");
         }
 
         // ---- Update ----

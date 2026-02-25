@@ -175,7 +175,7 @@ namespace ThemeParkGame.Core
                 if (PlayerPrefs.GetInt(PREF_PREFIX + def.Id, 0) == 1)
                     _unlocked.Add(def.Id);
             }
-            Debug.Log($"[AchievementSystem] Loaded {_unlocked.Count}/{_definitions.Count} achievements");
+            WebGLOptimizer.LogVerbose($"[AchievementSystem] Loaded {_unlocked.Count}/{_definitions.Count} achievements");
         }
 
         private void SaveUnlocked(string id)
@@ -198,7 +198,7 @@ namespace ThemeParkGame.Core
                 Instance._unlocked.Clear();
             }
             PlayerPrefs.Save();
-            Debug.Log("[AchievementSystem] All achievements reset");
+            WebGLOptimizer.LogVerbose("[AchievementSystem] All achievements reset");
         }
 
         // ================================================================
@@ -223,7 +223,7 @@ namespace ThemeParkGame.Core
             // トースト通知キュー
             _pendingToasts.Enqueue(def);
 
-            Debug.Log($"[AchievementSystem] Unlocked: {def.Title} ({def.Id})");
+            WebGLOptimizer.LogVerbose($"[AchievementSystem] Unlocked: {def.Title} ({def.Id})");
         }
 
         public bool IsUnlocked(string id) => _unlocked.Contains(id);

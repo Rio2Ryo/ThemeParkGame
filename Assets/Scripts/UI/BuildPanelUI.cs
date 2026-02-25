@@ -560,7 +560,7 @@ namespace ThemeParkGame.UI
                 ApplyPreviewMaterial(_placementPreview, validPlacementMaterial);
             }
 
-            Debug.Log($"[BuildPanelUI] 配置モード開始: {itemData.DisplayName}");
+            WebGLOptimizer.LogVerbose($"[BuildPanelUI] 配置モード開始: {itemData.DisplayName}");
         }
 
         /// <summary>配置プレビューを毎フレーム更新する</summary>
@@ -686,7 +686,7 @@ namespace ThemeParkGame.UI
             // 建設イベント発火
             GameEvents.FireAttractionBuilt(_selectedItem.ItemId);
 
-            Debug.Log($"[BuildPanelUI] 配置完了: {_selectedItem.DisplayName} at {position}");
+            WebGLOptimizer.LogVerbose($"[BuildPanelUI] 配置完了: {_selectedItem.DisplayName} at {position}");
 
             // アイテムグリッドを再更新（資金反映）
             PopulateItemGrid(_selectedCategory);

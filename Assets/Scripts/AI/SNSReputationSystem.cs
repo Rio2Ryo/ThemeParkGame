@@ -240,7 +240,7 @@ namespace ThemeParkGame.AI
                 var post = CreatePost(visitorId, personality.DisplayName, response.Content, true);
                 AnalyzeSentimentLocal(post, personality.Happiness);
 
-                Debug.Log($"[SNSReputation] LLM post generated for {personality.DisplayName}: {post.Content}");
+                WebGLOptimizer.LogVerbose($"[SNSReputation] LLM post generated for {personality.DisplayName}: {post.Content}");
             }
             else
             {
@@ -262,7 +262,7 @@ namespace ThemeParkGame.AI
             var post = CreatePost(visitorId, authorName, content, false);
             AnalyzeSentimentLocal(post, happiness);
 
-            Debug.Log($"[SNSReputation] Template post generated for {authorName}: {post.Content}");
+            WebGLOptimizer.LogVerbose($"[SNSReputation] Template post generated for {authorName}: {post.Content}");
         }
 
         /// <summary>

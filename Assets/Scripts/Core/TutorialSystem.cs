@@ -390,7 +390,7 @@ namespace ThemeParkGame.Core
             _isActive = true;
             _currentStep = TutorialStep.Welcome;
             ShowCurrentStep();
-            Debug.Log("[TutorialSystem] Tutorial started");
+            WebGLOptimizer.LogVerbose("[TutorialSystem] Tutorial started");
         }
 
         /// <summary>チュートリアルをスキップする</summary>
@@ -402,7 +402,7 @@ namespace ThemeParkGame.Core
             PlayerPrefs.Save();
             HideUI();
             OnTutorialCompleted?.Invoke();
-            Debug.Log("[TutorialSystem] Tutorial skipped");
+            WebGLOptimizer.LogVerbose("[TutorialSystem] Tutorial skipped");
         }
 
         /// <summary>チュートリアルリセット（デバッグ用）</summary>
@@ -410,7 +410,7 @@ namespace ThemeParkGame.Core
         {
             PlayerPrefs.DeleteKey(PREF_KEY);
             PlayerPrefs.Save();
-            Debug.Log("[TutorialSystem] Tutorial reset");
+            WebGLOptimizer.LogVerbose("[TutorialSystem] Tutorial reset");
         }
 
         /// <summary>次のステップに進む</summary>
@@ -464,7 +464,7 @@ namespace ThemeParkGame.Core
             _autoHideTimer = 5f;
 
             OnTutorialCompleted?.Invoke();
-            Debug.Log("[TutorialSystem] Tutorial completed!");
+            WebGLOptimizer.LogVerbose("[TutorialSystem] Tutorial completed!");
         }
 
         // ================================================================

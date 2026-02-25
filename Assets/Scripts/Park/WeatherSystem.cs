@@ -122,7 +122,7 @@ namespace ThemeParkGame.Park
             UpdateSeason();
             GenerateForecasts();
 
-            Debug.Log("[WeatherSystem] 初期化完了");
+            WebGLOptimizer.LogVerbose("[WeatherSystem] 初期化完了");
         }
 
         private void InitializeWeatherEffects()
@@ -283,7 +283,7 @@ namespace ThemeParkGame.Park
             if (CurrentWeather != previousWeather)
             {
                 GameEvents.FireWeatherChanged(CurrentWeather);
-                Debug.Log($"[WeatherSystem] 天候変化: {previousWeather} → {CurrentWeather}");
+                WebGLOptimizer.LogVerbose($"[WeatherSystem] 天候変化: {previousWeather} → {CurrentWeather}");
             }
 
             // 予報を再生成
@@ -326,7 +326,7 @@ namespace ThemeParkGame.Park
             if (newSeason != CurrentSeason)
             {
                 CurrentSeason = newSeason;
-                Debug.Log($"[WeatherSystem] 季節変化: {CurrentSeason}");
+                WebGLOptimizer.LogVerbose($"[WeatherSystem] 季節変化: {CurrentSeason}");
             }
         }
 
@@ -463,7 +463,7 @@ namespace ThemeParkGame.Park
             {
                 GameEvents.FireWeatherChanged(CurrentWeather);
                 GenerateForecasts();
-                Debug.Log($"[WeatherSystem] 天候を強制変更: {previous} → {CurrentWeather}");
+                WebGLOptimizer.LogVerbose($"[WeatherSystem] 天候を強制変更: {previous} → {CurrentWeather}");
             }
         }
 

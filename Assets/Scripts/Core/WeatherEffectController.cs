@@ -71,7 +71,7 @@ namespace ThemeParkGame.Core
             if (GameManager.Instance != null && GameManager.Instance.WeatherSystem != null)
             {
                 ApplyImmediate(GameManager.Instance.WeatherSystem.CurrentWeather);
-                Debug.Log($"[WeatherEffect] Initial weather: {GameManager.Instance.WeatherSystem.CurrentWeather}");
+                WebGLOptimizer.LogVerbose($"[WeatherEffect] Initial weather: {GameManager.Instance.WeatherSystem.CurrentWeather}");
             }
         }
 
@@ -358,7 +358,7 @@ namespace ThemeParkGame.Core
 
             SetTargetValues(weather);
 
-            Debug.Log($"[WeatherEffect] Transitioning to: {weather}");
+            WebGLOptimizer.LogVerbose($"[WeatherEffect] Transitioning to: {weather}");
         }
 
         /// <summary>天候ごとの目標値を設定する</summary>

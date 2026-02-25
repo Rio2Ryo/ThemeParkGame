@@ -477,7 +477,7 @@ namespace ThemeParkGame.Staff
         /// <summary>休息が必要かどうかを判定する</summary>
         protected bool ShouldRest()
         {
-            return Fatigue > 70f;
+            return Fatigue > 65f;
         }
 
         /// <summary>

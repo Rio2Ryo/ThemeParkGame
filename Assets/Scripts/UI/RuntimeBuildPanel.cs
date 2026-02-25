@@ -341,7 +341,7 @@ namespace ThemeParkGame.UI
                 }
             }
 
-            Debug.Log($"[RuntimeBuildPanel] Loaded {_allItems.Count} buildable items");
+            WebGLOptimizer.LogVerbose($"[RuntimeBuildPanel] Loaded {_allItems.Count} buildable items");
         }
 
         // ================================================================
@@ -939,7 +939,7 @@ namespace ThemeParkGame.UI
                         NotifLevel.Success);
             }
 
-            Debug.Log($"[RuntimeBuildPanel] Placed {_selectedItem.NameJa} at {position}");
+            WebGLOptimizer.LogVerbose($"[RuntimeBuildPanel] Placed {_selectedItem.NameJa} at {position}");
 
             // プレビュー破棄して配置モード終了
             CancelPlacement();

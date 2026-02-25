@@ -239,7 +239,7 @@ namespace ThemeParkGame.AI
             if (string.IsNullOrEmpty(dialogueText)) return false;
             if (_activeQuests.Count >= maxActiveQuests)
             {
-                Debug.Log("[DynamicQuestSystem] Max active quests reached, skipping detection.");
+                WebGLOptimizer.LogVerbose("[DynamicQuestSystem] Max active quests reached, skipping detection.");
                 return false;
             }
 
@@ -370,7 +370,7 @@ namespace ThemeParkGame.AI
             OnQuestCreated?.Invoke(quest);
             GameEvents.FireQuestGenerated(questId);
 
-            Debug.Log($"[DynamicQuestSystem] Quest created: {title} (ID: {questId}, Type: {type})");
+            WebGLOptimizer.LogVerbose($"[DynamicQuestSystem] Quest created: {title} (ID: {questId}, Type: {type})");
             return quest;
         }
 
@@ -407,7 +407,7 @@ namespace ThemeParkGame.AI
             _completedQuests.Add(quest);
 
             OnQuestCompleted?.Invoke(quest);
-            Debug.Log($"[DynamicQuestSystem] Quest completed: {quest.Title} (Reward: {quest.MoneyReward}円)");
+            WebGLOptimizer.LogVerbose($"[DynamicQuestSystem] Quest completed: {quest.Title} (Reward: {quest.MoneyReward}円)");
         }
 
         /// <summary>
@@ -426,7 +426,7 @@ namespace ThemeParkGame.AI
             GameEvents.FireVisitorHappinessChanged(quest.RequestingVisitorId, -5f);
 
             OnQuestFailed?.Invoke(quest);
-            Debug.Log($"[DynamicQuestSystem] Quest failed: {quest.Title}" +
+            WebGLOptimizer.LogVerbose($"[DynamicQuestSystem] Quest failed: {quest.Title}" +
                       (reason != null ? $" - Reason: {reason}" : ""));
         }
 
@@ -508,7 +508,7 @@ namespace ThemeParkGame.AI
             GameEvents.FireRevenueEarned(finalMoney);
             GameEvents.FireVisitorHappinessChanged(quest.RequestingVisitorId, finalHappiness);
 
-            Debug.Log($"[DynamicQuestSystem] Rewards: {finalMoney}円, " +
+            WebGLOptimizer.LogVerbose($"[DynamicQuestSystem] Rewards: {finalMoney}円, " +
                       $"Happiness +{finalHappiness:F1}, Reputation +{finalReputation:F1}");
         }
 
@@ -525,7 +525,7 @@ namespace ThemeParkGame.AI
                     _completedQuests.Add(quest);
 
                     OnQuestFailed?.Invoke(quest);
-                    Debug.Log($"[DynamicQuestSystem] Quest expired: {quest.Title}");
+                    WebGLOptimizer.LogVerbose($"[DynamicQuestSystem] Quest expired: {quest.Title}");
                 }
             }
         }

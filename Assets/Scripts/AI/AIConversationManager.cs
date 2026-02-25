@@ -100,7 +100,7 @@ namespace ThemeParkGame.AI
 
             _conversationUI = FindObjectOfType<ConversationUI>();
 
-            Debug.Log($"[AIConversationManager] 初期化完了 (Provider: {preferredProvider}, " +
+            WebGLOptimizer.LogVerbose($"[AIConversationManager] 初期化完了 (Provider: {preferredProvider}, " +
                       $"API Available: {!string.IsNullOrEmpty(apiKey)})");
         }
 
@@ -395,12 +395,12 @@ namespace ThemeParkGame.AI
 
         private void OnConversationStarted(int visitorId, string topic)
         {
-            Debug.Log($"[AIConversation] 会話開始: Visitor {visitorId}, Topic: {topic}");
+            WebGLOptimizer.LogVerbose($"[AIConversation] 会話開始: Visitor {visitorId}, Topic: {topic}");
         }
 
         private void OnConversationEnded(int visitorId, string summary)
         {
-            Debug.Log($"[AIConversation] 会話終了: Visitor {visitorId}, Summary: {summary}");
+            WebGLOptimizer.LogVerbose($"[AIConversation] 会話終了: Visitor {visitorId}, Summary: {summary}");
         }
 
         // ================================================================
@@ -418,7 +418,7 @@ namespace ThemeParkGame.AI
             _providerConfig.ApiKey = key;
             _llmClient = LLMClientFactory.Create(_providerConfig);
 
-            Debug.Log("[AIConversation] APIキーが更新されました");
+            WebGLOptimizer.LogVerbose("[AIConversation] APIキーが更新されました");
         }
 
         /// <summary>LLMプロバイダーを切り替える</summary>
@@ -429,7 +429,7 @@ namespace ThemeParkGame.AI
             _providerConfig.ApiKey = apiKey;
             _llmClient = LLMClientFactory.Create(_providerConfig);
 
-            Debug.Log($"[AIConversation] プロバイダー切替: {provider}");
+            WebGLOptimizer.LogVerbose($"[AIConversation] プロバイダー切替: {provider}");
         }
 
         // ================================================================

@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
+using ThemeParkGame.Core;
 
 namespace ThemeParkGame.AI
 {
@@ -220,7 +221,7 @@ namespace ThemeParkGame.AI
                     // Add jitter to prevent thundering herd
                     delay += UnityEngine.Random.Range(0f, delay * 0.3f);
                     yield return new WaitForSecondsRealtime(delay);
-                    Debug.Log($"[LLMApiClient] Retry attempt {attempt}/{MaxRetries}");
+                    WebGLOptimizer.LogVerbose($"[LLMApiClient] Retry attempt {attempt}/{MaxRetries}");
                 }
 
                 float startTime = Time.realtimeSinceStartup;

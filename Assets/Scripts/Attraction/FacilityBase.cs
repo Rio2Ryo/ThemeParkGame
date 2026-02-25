@@ -163,7 +163,7 @@ namespace ThemeParkGame.Attraction
             IsActive = false;
             IsBuilt = false;
             OnDemolished();
-            Debug.Log($"[FacilityBase] 施設撤去: {DisplayName} (ID: {FacilityId})");
+            WebGLOptimizer.LogVerbose($"[FacilityBase] 施設撤去: {DisplayName} (ID: {FacilityId})");
         }
 
         /// <summary>施設のアクティブ状態を切り替える</summary>

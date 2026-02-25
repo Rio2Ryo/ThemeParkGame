@@ -126,7 +126,7 @@ namespace ThemeParkGame.Staff
             }
 
             isInitialized = true;
-            Debug.Log("[StaffManager] 初期化完了");
+            WebGLOptimizer.LogVerbose("[StaffManager] 初期化完了");
         }
 
         // ============================================================
@@ -160,6 +160,36 @@ namespace ThemeParkGame.Staff
         {
             Debug.LogWarning($"[StaffManager] スタッフ (ID:{staffId}) がストライキに入りました！"
                              + $" 現在のストライキ人数: {StrikingStaffCount}");
+
+            // ストライキ発生を通知
+            if (NotificationSystem.Instance != null)
+                NotificationSystem.Instance.Notify("スタッフがストライキ！休息場所を確保してください", NotifLevel.Warning);
+        }
+
+        /// <summary>疲労警告チェック用タイマー</summary>
+        private float _fatigueCheckTimer;
+
+        private void Update()
+        {
+            if (!isInitialized || allStaff.Count == 0) return;
+
+            _fatigueCheckTimer -= Time.deltaTime;
+            if (_fatigueCheckTimer > 0f) return;
+            _fatigueCheckTimer = 30f; // 30秒ごとにチェック
+
+            int highFatigueCount = 0;
+            foreach (var staff in allStaff.Values)
+            {
+                if (staff != null && staff.Fatigue > 75f && !staff.IsOnStrike)
+                    highFatigueCount++;
+            }
+
+            if (highFatigueCount >= 2 && NotificationSystem.Instance != null)
+            {
+                NotificationSystem.Instance.Notify(
+                    $"スタッフ{highFatigueCount}名が疲労困憊！スタッフルームを増設しましょう",
+                    NotifLevel.Warning);
+            }
         }
 
         // ============================================================
@@ -915,7 +945,7 @@ namespace ThemeParkGame.Staff
 
             MechanicStaff.ClearRepairQueue();
 
-            Debug.Log("[StaffManager] 全スタッフを削除しました");
+            WebGLOptimizer.LogVerbose("[StaffManager] 全スタッフを削除しました");
         }
     }
 

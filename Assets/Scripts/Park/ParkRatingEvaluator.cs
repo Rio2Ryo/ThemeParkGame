@@ -160,7 +160,7 @@ namespace ThemeParkGame.Park
             if (newStars != _lastStarRating && _lastStarRating > 0)
             {
                 bool improved = newStars > _lastStarRating;
-                Debug.Log($"[ParkRatingEvaluator] Star rating: {_lastStarRating} -> {newStars} " +
+                WebGLOptimizer.LogVerbose($"[ParkRatingEvaluator] Star rating: {_lastStarRating} -> {newStars} " +
                           $"({(improved ? "UP" : "DOWN")})");
             }
 
@@ -188,7 +188,7 @@ namespace ThemeParkGame.Park
             var gm = GameManager.Instance;
             if (gm != null && gm.ParkManager != null)
             {
-                Debug.Log($"[ParkRatingEvaluator] Year {newYear} - Rating: {OverallRating:F1} " +
+                WebGLOptimizer.LogVerbose($"[ParkRatingEvaluator] Year {newYear} - Rating: {OverallRating:F1} " +
                           $"Stars: {StarRating:F1}");
             }
         }

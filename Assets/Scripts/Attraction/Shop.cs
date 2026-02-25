@@ -376,7 +376,7 @@ namespace ThemeParkGame.Attraction
             PayRestockExpense(restockCost);
 
             currentStock += amountToRestock;
-            Debug.Log($"[Shop] 在庫補充: {shopName} +{amountToRestock}個 (在庫: {currentStock}/{maxStock}, コスト: {restockCost})");
+            WebGLOptimizer.LogVerbose($"[Shop] 在庫補充: {shopName} +{amountToRestock}個 (在庫: {currentStock}/{maxStock}, コスト: {restockCost})");
         }
 
         /// <summary>在庫を手動で全補充する</summary>
@@ -475,7 +475,7 @@ namespace ThemeParkGame.Attraction
 
         protected override void OnPlaced()
         {
-            Debug.Log($"[Shop] ショップ建設完了: {shopName} (ID: {FacilityId}, Type: {shopType})");
+            WebGLOptimizer.LogVerbose($"[Shop] ショップ建設完了: {shopName} (ID: {FacilityId}, Type: {shopType})");
         }
 
         protected override void OnDemolished()

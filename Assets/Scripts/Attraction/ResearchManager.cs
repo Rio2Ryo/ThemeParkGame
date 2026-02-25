@@ -168,7 +168,7 @@ namespace ThemeParkGame.Attraction
             UpdateResearchAvailability();
             RefreshScientistInfo();
 
-            Debug.Log($"[ResearchManager] 初期化完了: {_allResearch.Count}件の研究項目を登録");
+            WebGLOptimizer.LogVerbose($"[ResearchManager] 初期化完了: {_allResearch.Count}件の研究項目を登録");
         }
 
         // ---- 研究項目の登録 ----
@@ -540,7 +540,7 @@ namespace ThemeParkGame.Attraction
             _currentResearch = item;
 
             GameEvents.FireResearchStarted(researchId);
-            Debug.Log($"[ResearchManager] 研究開始: {item.NameJP} (コスト: {item.ResearchCost})");
+            WebGLOptimizer.LogVerbose($"[ResearchManager] 研究開始: {item.NameJP} (コスト: {item.ResearchCost})");
             return true;
         }
 
@@ -557,7 +557,7 @@ namespace ThemeParkGame.Attraction
             _currentResearch.CurrentProgress = 0f;
             _currentResearch = null;
 
-            Debug.Log($"[ResearchManager] 研究キャンセル: {cancelledId}");
+            WebGLOptimizer.LogVerbose($"[ResearchManager] 研究キャンセル: {cancelledId}");
         }
 
         /// <summary>
@@ -602,7 +602,7 @@ namespace ThemeParkGame.Attraction
             UpdateResearchAvailability();
 
             GameEvents.FireResearchCompleted(completedId);
-            Debug.Log($"[ResearchManager] 研究完了: {completedItem.NameJP}");
+            WebGLOptimizer.LogVerbose($"[ResearchManager] 研究完了: {completedItem.NameJP}");
         }
 
         /// <summary>
@@ -729,7 +729,7 @@ namespace ThemeParkGame.Attraction
 
             UpdateResearchAvailability();
             GameEvents.FireResearchCompleted(researchId);
-            Debug.Log($"[ResearchManager] 研究完了: {item.NameJP}");
+            WebGLOptimizer.LogVerbose($"[ResearchManager] 研究完了: {item.NameJP}");
         }
 
         /// <summary>全研究を即座に完了させる（デバッグ用）</summary>
@@ -741,7 +741,7 @@ namespace ThemeParkGame.Attraction
                 kvp.Value.CurrentProgress = kvp.Value.BaseResearchTime;
             }
             _currentResearch = null;
-            Debug.Log("[ResearchManager] 全研究完了");
+            WebGLOptimizer.LogVerbose("[ResearchManager] 全研究完了");
         }
     }
 }

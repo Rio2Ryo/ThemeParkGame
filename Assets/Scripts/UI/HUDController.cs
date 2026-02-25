@@ -537,7 +537,7 @@ namespace ThemeParkGame.UI
 
             // NotificationSystemの通知ログを開くイベントを発行
             // （NotificationSystemが購読して処理する）
-            Debug.Log("[HUDController] 通知ログを開きます");
+            WebGLOptimizer.LogVerbose("[HUDController] 通知ログを開きます");
         }
 
         /// <summary>未読通知数を加算する（NotificationSystemから呼ばれる）</summary>

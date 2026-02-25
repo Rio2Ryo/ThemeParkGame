@@ -243,7 +243,7 @@ namespace ThemeParkGame.Visitor
             spawnTimer = baseSpawnInterval;
             elapsedGameTime = 0f;
 
-            Debug.Log($"[VisitorManager] Initialized. Pool size: {visitorPool.Count}, Max visitors: {maxVisitors}");
+            WebGLOptimizer.LogVerbose($"[VisitorManager] Initialized. Pool size: {visitorPool.Count}, Max visitors: {maxVisitors}");
         }
 
         // ---- オブジェクトプール ----
@@ -373,7 +373,7 @@ namespace ThemeParkGame.Visitor
             if (type == VisitorType.VIP)
             {
                 GameEvents.FireVIPArrived(id);
-                Debug.Log($"[VisitorManager] VIP visitor {id} has arrived!");
+                WebGLOptimizer.LogVerbose($"[VisitorManager] VIP visitor {id} has arrived!");
             }
 
             return visitor;
@@ -704,13 +704,13 @@ namespace ThemeParkGame.Visitor
         private void HandleParkOpened()
         {
             isSpawningEnabled = true;
-            Debug.Log("[VisitorManager] Park opened. Visitor spawning enabled.");
+            WebGLOptimizer.LogVerbose("[VisitorManager] Park opened. Visitor spawning enabled.");
         }
 
         private void HandleParkClosed()
         {
             isSpawningEnabled = false;
-            Debug.Log("[VisitorManager] Park closed. Visitor spawning disabled.");
+            WebGLOptimizer.LogVerbose("[VisitorManager] Park closed. Visitor spawning disabled.");
         }
 
         private void HandleVisitorSelected(int visitorId)
@@ -718,7 +718,7 @@ namespace ThemeParkGame.Visitor
             VisitorAI visitor = FindVisitorById(visitorId);
             if (visitor != null)
             {
-                Debug.Log($"[VisitorManager] Visitor selected: {visitor.Profile.VisitorName} " +
+                WebGLOptimizer.LogVerbose($"[VisitorManager] Visitor selected: {visitor.Profile.VisitorName} " +
                           $"(ID:{visitorId}, {visitor.Type}, {visitor.CurrentState}) {visitor.Parameters}");
             }
         }
@@ -726,7 +726,7 @@ namespace ThemeParkGame.Visitor
         private void HandleWeatherChanged(Weather newWeather)
         {
             // 天候変化時のログ（スポーンレートは自動で反映される）
-            Debug.Log($"[VisitorManager] Weather changed to {newWeather}. Spawn interval will be recalculated.");
+            WebGLOptimizer.LogVerbose($"[VisitorManager] Weather changed to {newWeather}. Spawn interval will be recalculated.");
         }
 
         // ---- ユーティリティ ----
