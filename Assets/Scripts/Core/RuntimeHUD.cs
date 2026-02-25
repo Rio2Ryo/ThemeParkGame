@@ -153,6 +153,7 @@ namespace ThemeParkGame.Core
         private Text _loanBorrowAmountText;
         private float _loanBorrowAmount = 10000f;
         private string _lastLoanState;
+        private Text _entranceFeeText;
 
         // ---- ゾーンパネル ----
         private GameObject _zoneBar;
@@ -1418,7 +1419,7 @@ namespace ThemeParkGame.Core
         private void BuildLoanPanel(RectTransform root)
         {
             float panelW = 420f;
-            float panelH = 400f;
+            float panelH = 460f;
 
             _loanPanel = new GameObject("LoanPanel");
             _loanPanel.transform.SetParent(root, false);
@@ -1561,13 +1562,70 @@ namespace ThemeParkGame.Core
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(repayBtnLbl.rectTransform);
 
+            // ---- 入場料調整セクション ----
+            var feeLabel = MakeLabel(rt, "FeeLabel", "--- 入場料設定 ---", 14, Gold,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            var flRt = feeLabel.rectTransform;
+            flRt.anchorMin = flRt.anchorMax = new Vector2(0.5f, 1f);
+            flRt.pivot = new Vector2(0.5f, 1f);
+            flRt.anchoredPosition = new Vector2(0f, -340f);
+            flRt.sizeDelta = new Vector2(panelW, 20f);
+
+            _entranceFeeText = MakeLabel(rt, "FeeAmount", "$15", 18, Color.white,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            var feeTRt = _entranceFeeText.rectTransform;
+            feeTRt.anchorMin = feeTRt.anchorMax = new Vector2(0.5f, 1f);
+            feeTRt.pivot = new Vector2(0.5f, 1f);
+            feeTRt.anchoredPosition = new Vector2(0f, -362f);
+            feeTRt.sizeDelta = new Vector2(120f, 24f);
+
+            var feeDownGo = MakePanel(rt, "FeeDown", 36f, 24f, new Color(0.5f, 0.3f, 0.3f));
+            var feeDownRt = feeDownGo.GetComponent<RectTransform>();
+            feeDownRt.anchorMin = feeDownRt.anchorMax = new Vector2(0.5f, 1f);
+            feeDownRt.pivot = new Vector2(0.5f, 1f);
+            feeDownRt.anchoredPosition = new Vector2(-80f, -362f);
+            feeDownGo.GetComponent<Image>().raycastTarget = true;
+            var feeDownBtn = feeDownGo.AddComponent<Button>();
+            feeDownBtn.targetGraphic = feeDownGo.GetComponent<Image>();
+            feeDownBtn.onClick.AddListener(() =>
+            {
+                var p = GameManager.Instance?.EconomyManager?.Pricing;
+                if (p != null)
+                {
+                    p.SetEntranceFee(p.EntranceFee - 5f);
+                    _entranceFeeText.text = $"${p.EntranceFee:N0}";
+                }
+            });
+            var fdLbl = MakeLabel(feeDownRt, "L", "-5", 14, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(fdLbl.rectTransform);
+
+            var feeUpGo = MakePanel(rt, "FeeUp", 36f, 24f, new Color(0.3f, 0.5f, 0.3f));
+            var feeUpRt = feeUpGo.GetComponent<RectTransform>();
+            feeUpRt.anchorMin = feeUpRt.anchorMax = new Vector2(0.5f, 1f);
+            feeUpRt.pivot = new Vector2(0.5f, 1f);
+            feeUpRt.anchoredPosition = new Vector2(80f, -362f);
+            feeUpGo.GetComponent<Image>().raycastTarget = true;
+            var feeUpBtn = feeUpGo.AddComponent<Button>();
+            feeUpBtn.targetGraphic = feeUpGo.GetComponent<Image>();
+            feeUpBtn.onClick.AddListener(() =>
+            {
+                var p = GameManager.Instance?.EconomyManager?.Pricing;
+                if (p != null)
+                {
+                    p.SetEntranceFee(p.EntranceFee + 5f);
+                    _entranceFeeText.text = $"${p.EntranceFee:N0}";
+                }
+            });
+            var fuLbl = MakeLabel(feeUpRt, "L", "+5", 14, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(fuLbl.rectTransform);
+
             // ヒントテキスト
             var hint = MakeLabel(rt, "Hint", "年利8% | 最大3件 | 上限$200,000", 12, Muted,
                 FontStyle.Normal, TextAnchor.MiddleCenter);
             var hintRt = hint.rectTransform;
             hintRt.anchorMin = hintRt.anchorMax = new Vector2(0.5f, 1f);
             hintRt.pivot = new Vector2(0.5f, 1f);
-            hintRt.anchoredPosition = new Vector2(0f, -340f);
+            hintRt.anchoredPosition = new Vector2(0f, -394f);
             hintRt.sizeDelta = new Vector2(panelW - 20f, 18f);
 
             // 閉じるボタン
@@ -1637,6 +1695,10 @@ namespace ThemeParkGame.Core
             if (em == null) return;
 
             _loanBalanceText.text = $"所持金: ${em.CurrentBalance:N0}  |  総借入残高: ${em.TotalLoanBalance:N0}";
+
+            // 入場料表示更新
+            if (_entranceFeeText != null && em.Pricing != null)
+                _entranceFeeText.text = $"${em.Pricing.EntranceFee:N0}";
             _loanCountText.text = $"アクティブローン: {em.ActiveLoanCount} / 3";
 
             var loans = em.GetActiveLoans();
@@ -3633,7 +3695,8 @@ namespace ThemeParkGame.Core
             if (gm.EconomyManager != null)
             {
                 _sbRevenueValue.text = $"${gm.EconomyManager.TotalRevenueEarned:N0}";
-                _moneyText.text = $"資金: ${gm.EconomyManager.CurrentMoney:N0}";
+                float fee = gm.EconomyManager.Pricing?.EntranceFee ?? 0f;
+                _moneyText.text = $"資金: ${gm.EconomyManager.CurrentMoney:N0}  入場料: ${fee:N0}";
             }
 
             // ---- 時間 + 天候 ----
