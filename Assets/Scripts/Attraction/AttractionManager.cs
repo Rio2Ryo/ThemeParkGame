@@ -568,6 +568,46 @@ namespace ThemeParkGame.Attraction
         }
 
         // ================================================================
+        // 評価システム用データ提供
+        // ================================================================
+
+        /// <summary>設置済みアトラクションのうち異なるカテゴリの数を返す</summary>
+        public int GetUniqueCategories()
+        {
+            var categories = new HashSet<AttractionCategory>();
+            foreach (var kvp in _contexts)
+            {
+                if (kvp.Value.Attraction != null)
+                    categories.Add(kvp.Value.Attraction.Category);
+            }
+            return categories.Count;
+        }
+
+        /// <summary>稼働中アトラクションの平均品質（0-1）を返す</summary>
+        public float GetAverageQuality()
+        {
+            if (_contexts.Count == 0) return 0f;
+
+            float totalQuality = 0f;
+            int count = 0;
+            foreach (var kvp in _contexts)
+            {
+                var attr = kvp.Value.Attraction;
+                if (attr == null) continue;
+
+                // 品質 = (Excitement * 0.4 + Intensity * 0.3 + Nausea_inverse * 0.3) / 10
+                float excitement = attr.Excitement;
+                float intensity = attr.Intensity;
+                float nauseaInv = Mathf.Clamp(10f - attr.Nausea, 0f, 10f);
+                float quality = (excitement * 0.4f + intensity * 0.3f + nauseaInv * 0.3f) / 10f;
+                totalQuality += Mathf.Clamp01(quality);
+                count++;
+            }
+
+            return count > 0 ? totalQuality / count : 0f;
+        }
+
+        // ================================================================
         // 内部ヘルパー
         // ================================================================
 

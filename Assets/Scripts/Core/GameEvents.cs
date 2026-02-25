@@ -51,6 +51,7 @@ namespace ThemeParkGame.Core
         public static event Action OnParkOpened;
         public static event Action OnParkClosed;
         public static event Action<int> OnParkYearPassed; // year number
+        public static event Action<float, float> OnParkRatingChanged; // newRating, oldRating
 
         // ---- 研究開発関連イベント ----
         public static event Action<string> OnResearchStarted;
@@ -111,6 +112,7 @@ namespace ThemeParkGame.Core
         public static void FireParkOpened() => OnParkOpened?.Invoke();
         public static void FireParkClosed() => OnParkClosed?.Invoke();
         public static void FireParkYearPassed(int year) => OnParkYearPassed?.Invoke(year);
+        public static void FireParkRatingChanged(float newRating, float oldRating) => OnParkRatingChanged?.Invoke(newRating, oldRating);
 
         // 研究
         public static void FireResearchStarted(string researchId) => OnResearchStarted?.Invoke(researchId);
@@ -199,6 +201,7 @@ namespace ThemeParkGame.Core
             OnParkOpened = null;
             OnParkClosed = null;
             OnParkYearPassed = null;
+            OnParkRatingChanged = null;
 
             // 研究
             OnResearchStarted = null;

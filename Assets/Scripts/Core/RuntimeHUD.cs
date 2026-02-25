@@ -116,6 +116,14 @@ namespace ThemeParkGame.Core
         private Image _lcEnjoyingBar;
         private Image _lcLeavingBar;
 
+        // ---- パーク評価表示 ----
+        private Text _ratingStarsText;
+        private Text _ratingScoreText;
+        private Text _ratingLabelText;
+        private Text _ratingTrendText;
+        private Text[] _ratingCatTexts;
+        private Image[] _ratingCatBars;
+
         // ---- ファーストパーソンビュー ----
         private GameObject _fpvOverlay;
         private Text _fpvStatusText;
@@ -208,6 +216,7 @@ namespace ThemeParkGame.Core
             BuildSaveLoadPanel(_canvasRoot);
             BuildEventPanel(_canvasRoot);
             BuildLifecyclePanel(_canvasRoot);
+            BuildRatingPanel(_canvasRoot);
             BuildFirstPersonOverlay(_canvasRoot);
         }
 
@@ -1081,9 +1090,21 @@ namespace ThemeParkGame.Core
                 lcText = $"  Lifecycle: Enjoy {enjoyRatio:F0}%  Starts:{expStarts}  Done:{expDone}\n";
             }
 
+            // パーク評価
+            string ratingText = "";
+            if (gm.ParkManager != null && gm.ParkManager.Rating != null)
+            {
+                float overall = gm.ParkManager.Rating.OverallRating;
+                float stars = ParkRatingEvaluator.ScoreToStars(overall);
+                string starsStr = ParkRatingEvaluator.StarsToText(stars);
+                string label = ParkRatingEvaluator.GetRatingLabel(overall);
+                ratingText = $"  Park Rating: [{starsStr}] {overall:F1} - {label}\n";
+            }
+
             _resultsBody.text =
                 $"  Visitors: {visitors}  (Peak: {peak})\n" +
                 $"  Satisfaction: {avgSatisfaction:F0}%  Happiness: {avgHappiness:F0}%\n" +
+                ratingText +
                 lcText +
                 $"  Revenue: {revenue}         Expenses: {expenses}\n" +
                 $"  Final Balance: {money}\n" +
@@ -1335,6 +1356,160 @@ namespace ThemeParkGame.Core
             if (bar == null) return;
             var rt = bar.rectTransform;
             rt.sizeDelta = new Vector2(maxW * Mathf.Clamp01(ratio), 0f);
+        }
+
+        // ================================================================
+        // パーク評価パネル（右上 240x170）
+        // ================================================================
+
+        private void BuildRatingPanel(RectTransform root)
+        {
+            float panelW = 240f;
+            float panelH = 170f;
+
+            var bg = MakePanel(root, "RatingPanel", panelW, panelH, BgDark);
+            var rt = bg.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(1f, 1f);
+            rt.anchoredPosition = new Vector2(-10f, -52f);
+
+            // ヘッダー
+            var header = MakeLabel(rt, "RHeader", "パーク評価", 14, Cyan, FontStyle.Bold, TextAnchor.MiddleCenter);
+            PlaceInParent(header.rectTransform, 0f, panelH - 2f, panelW, 18f, new Vector2(0f, 1f));
+
+            // 星テキスト（大きめ）
+            _ratingStarsText = MakeLabel(rt, "Stars", "-----", 22, new Color(1f, 0.85f, 0.3f),
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            PlaceInParent(_ratingStarsText.rectTransform, 0f, panelH - 22f, panelW, 24f, new Vector2(0f, 1f));
+
+            // スコア + ラベル
+            _ratingScoreText = MakeLabel(rt, "Score", "0.0", 13, Color.white,
+                FontStyle.Normal, TextAnchor.MiddleLeft);
+            PlaceInParent(_ratingScoreText.rectTransform, 8f, panelH - 48f, 80f, 16f, new Vector2(0f, 1f));
+
+            _ratingLabelText = MakeLabel(rt, "Label", "", 13, Muted,
+                FontStyle.Normal, TextAnchor.MiddleCenter);
+            PlaceInParent(_ratingLabelText.rectTransform, 85f, panelH - 48f, 100f, 16f, new Vector2(0f, 1f));
+
+            _ratingTrendText = MakeLabel(rt, "Trend", "-", 13, Muted,
+                FontStyle.Bold, TextAnchor.MiddleRight);
+            PlaceInParent(_ratingTrendText.rectTransform, panelW - 40f, panelH - 48f, 30f, 16f, new Vector2(0f, 1f));
+
+            // カテゴリバー（5行）
+            var categories = new[] {
+                CertificateCategory.Fame, CertificateCategory.Safety,
+                CertificateCategory.Comfort, CertificateCategory.Excitement,
+                CertificateCategory.Mood
+            };
+            _ratingCatTexts = new Text[5];
+            _ratingCatBars = new Image[5];
+
+            float barMaxW = 100f;
+            float barH = 8f;
+            float lineH = 18f;
+            float startY = panelH - 68f;
+
+            for (int i = 0; i < 5; i++)
+            {
+                float y = startY - i * lineH;
+                string catName = ParkRatingEvaluator.GetCategoryLabel(categories[i]);
+
+                _ratingCatTexts[i] = MakeLabel(rt, $"Cat{i}", $"{catName}: 0", 11, Muted,
+                    FontStyle.Normal, TextAnchor.MiddleLeft);
+                PlaceInParent(_ratingCatTexts[i].rectTransform, 8f, y, 90f, lineH, new Vector2(0f, 1f));
+
+                // バー背景
+                var barBg = MakePanel(rt, $"CatBarBg{i}", barMaxW, barH, new Color(0.15f, 0.15f, 0.2f));
+                var barBgRt = barBg.GetComponent<RectTransform>();
+                barBgRt.anchorMin = barBgRt.anchorMax = new Vector2(0f, 0f);
+                barBgRt.pivot = new Vector2(0f, 0.5f);
+                barBgRt.anchoredPosition = new Vector2(panelW - barMaxW - 10f, y - lineH * 0.5f);
+
+                // バーフィル
+                var fill = MakePanel(barBgRt, $"CatBarFill{i}", 0f, barH, GetCategoryColor(i));
+                var fillRt = fill.GetComponent<RectTransform>();
+                fillRt.anchorMin = new Vector2(0f, 0f);
+                fillRt.anchorMax = new Vector2(0f, 1f);
+                fillRt.pivot = new Vector2(0f, 0.5f);
+                fillRt.anchoredPosition = Vector2.zero;
+                fillRt.sizeDelta = new Vector2(0f, 0f);
+                _ratingCatBars[i] = fill.GetComponent<Image>();
+            }
+        }
+
+        private static Color GetCategoryColor(int idx)
+        {
+            switch (idx)
+            {
+                case 0: return new Color(0.9f, 0.7f, 0.2f);  // Fame: 金
+                case 1: return new Color(0.3f, 0.8f, 0.4f);  // Safety: 緑
+                case 2: return new Color(0.4f, 0.7f, 0.9f);  // Comfort: 水色
+                case 3: return new Color(0.9f, 0.4f, 0.3f);  // Excitement: 赤
+                case 4: return new Color(0.8f, 0.5f, 0.9f);  // Mood: 紫
+                default: return Color.white;
+            }
+        }
+
+        private void UpdateRatingPanel()
+        {
+            var gm = GameManager.Instance;
+            if (gm == null || gm.ParkManager == null || gm.ParkManager.Rating == null) return;
+
+            var evaluator = gm.ParkRatingEvaluator;
+            var rating = gm.ParkManager.Rating;
+            float overall = rating.OverallRating;
+
+            // 星表示
+            if (_ratingStarsText != null)
+            {
+                float stars = evaluator != null ? evaluator.StarRating : ParkRatingEvaluator.ScoreToStars(overall);
+                _ratingStarsText.text = ParkRatingEvaluator.StarsToText(stars);
+            }
+
+            // スコア
+            if (_ratingScoreText != null)
+                _ratingScoreText.text = $"{overall:F1}";
+
+            // ラベル
+            if (_ratingLabelText != null)
+                _ratingLabelText.text = ParkRatingEvaluator.GetRatingLabel(overall);
+
+            // トレンド
+            if (_ratingTrendText != null && evaluator != null)
+            {
+                string arrow = ParkRatingEvaluator.GetTrendArrow(evaluator.Trend);
+                _ratingTrendText.text = arrow;
+                _ratingTrendText.color = evaluator.Trend > 0.5f ? new Color(0.4f, 0.95f, 0.5f)
+                    : evaluator.Trend < -0.5f ? new Color(0.95f, 0.4f, 0.4f) : Muted;
+            }
+
+            // カテゴリバー
+            var categories = new[] {
+                CertificateCategory.Fame, CertificateCategory.Safety,
+                CertificateCategory.Comfort, CertificateCategory.Excitement,
+                CertificateCategory.Mood
+            };
+
+            float barMaxW = 100f;
+            for (int i = 0; i < 5; i++)
+            {
+                float score = rating.GetCategoryScore(categories[i]);
+                bool cert = rating.IsCertificateAwarded(categories[i]);
+                string certMark = cert ? " [C]" : "";
+                string catName = ParkRatingEvaluator.GetCategoryLabel(categories[i]);
+
+                if (_ratingCatTexts[i] != null)
+                {
+                    _ratingCatTexts[i].text = $"{catName}: {score:F0}{certMark}";
+                    _ratingCatTexts[i].color = cert ? new Color(0.95f, 0.88f, 0.45f) : Muted;
+                }
+
+                if (_ratingCatBars[i] != null)
+                {
+                    var barRt = _ratingCatBars[i].rectTransform;
+                    barRt.sizeDelta = new Vector2(barMaxW * Mathf.Clamp01(score / 100f), 0f);
+                }
+            }
         }
 
         // ================================================================
@@ -1867,6 +2042,9 @@ namespace ThemeParkGame.Core
 
             // ---- ライフサイクルフェーズ ----
             UpdateLifecyclePanel();
+
+            // ---- パーク評価 ----
+            UpdateRatingPanel();
 
             // ---- ファーストパーソンビュー ----
             UpdateFirstPersonOverlay();

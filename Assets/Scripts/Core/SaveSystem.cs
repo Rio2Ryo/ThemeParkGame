@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using ThemeParkGame.Park;
 
 namespace ThemeParkGame.Core
 {
@@ -58,6 +59,14 @@ namespace ThemeParkGame.Core
         // シナリオ
         public bool IsScenarioMode;
         public string ScenarioCountry;
+
+        // パーク評価
+        public float RatingOverall;
+        public float RatingFame;
+        public float RatingSafety;
+        public float RatingComfort;
+        public float RatingExcitement;
+        public float RatingMood;
 
         // ライフサイクル統計（累積）
         public float LifecycleWaitingTime;
@@ -275,6 +284,17 @@ namespace ThemeParkGame.Core
                 data.TotalStaff = gm.StaffManager.TotalStaffCount;
             }
 
+            // パーク評価
+            if (gm.ParkManager != null && gm.ParkManager.Rating != null)
+            {
+                data.RatingOverall = gm.ParkManager.Rating.OverallRating;
+                data.RatingFame = gm.ParkManager.Rating.GetCategoryScore(CertificateCategory.Fame);
+                data.RatingSafety = gm.ParkManager.Rating.GetCategoryScore(CertificateCategory.Safety);
+                data.RatingComfort = gm.ParkManager.Rating.GetCategoryScore(CertificateCategory.Comfort);
+                data.RatingExcitement = gm.ParkManager.Rating.GetCategoryScore(CertificateCategory.Excitement);
+                data.RatingMood = gm.ParkManager.Rating.GetCategoryScore(CertificateCategory.Mood);
+            }
+
             // 天候
             if (gm.WeatherSystem != null)
             {
@@ -387,9 +407,12 @@ namespace ThemeParkGame.Core
             string enjoyPct = info.LifecycleEnjoymentRatio > 0f
                 ? $"  Enjoy:{info.LifecycleEnjoymentRatio * 100f:F0}%"
                 : "";
+            string stars = info.RatingOverall > 0f
+                ? $"  [{Park.ParkRatingEvaluator.StarsToText(Park.ParkRatingEvaluator.ScoreToStars(info.RatingOverall))}]"
+                : "";
             return $"Y{info.CurrentYear} M{info.CurrentMonth} D{info.CurrentDay}  " +
                    $"${info.CurrentBalance:N0}  " +
-                   $"Ticket:{info.GoldenTickets}{enjoyPct}  " +
+                   $"Ticket:{info.GoldenTickets}{stars}{enjoyPct}  " +
                    $"{info.SaveDate}";
         }
     }
