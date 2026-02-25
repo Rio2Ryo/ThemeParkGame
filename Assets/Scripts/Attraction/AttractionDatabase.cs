@@ -684,6 +684,163 @@ namespace ThemeParkGame.Attraction
                 }
             });
 
+            // ===================================================================
+            // クラシックアトラクション（スターター）
+            // 研究不要で最初から建設可能なベーシックアトラクション
+            // ===================================================================
+
+            // クラシックローラーコースター（G系）
+            // 初期から建設可能な定番コースター。低コストで安定した興奮度。
+            Register(new AttractionDefinition
+            {
+                AttractionId = "CL_ROLLER_COASTER",
+                NameJP = "ローラーコースター",
+                NameEN = "Classic Roller Coaster",
+                Description = "テーマパークの定番。シンプルだが確かなスリルを楽しめるジェットコースター。",
+                Category = AttractionCategory.GForce,
+                PrimaryThemeZone = ThemeZone.LostKingdom,
+                ExcitementRating = 6.0f,
+                NauseaFactor = 0.18f,
+                Capacity = 20,
+                RideDuration = 80f,
+                BuildCost = 5000,
+                MaintenanceCost = 200,
+                SuggestedTicketPrice = 300,
+                Size = new Vector2Int(4, 3),
+                RequiredResearchId = "",
+                BaseBreakdownRate = 0.025f,
+                UpgradePath = new List<AttractionUpgradeLevel>
+                {
+                    new AttractionUpgradeLevel
+                    {
+                        Level = 1,
+                        UpgradeName = "ループ追加",
+                        Description = "宙返りループを1つ追加。興奮度が向上する。",
+                        UpgradeCost = 2000,
+                        ExcitementMultiplier = 1.2f,
+                        CapacityMultiplier = 1.0f,
+                        NauseaMultiplier = 1.15f,
+                        BreakdownRateMultiplier = 0.95f
+                    },
+                    new AttractionUpgradeLevel
+                    {
+                        Level = 2,
+                        UpgradeName = "高速車両",
+                        Description = "新型車両で最高速度アップ。定員も増加。",
+                        UpgradeCost = 3500,
+                        ExcitementMultiplier = 1.15f,
+                        CapacityMultiplier = 1.2f,
+                        NauseaMultiplier = 1.0f,
+                        BreakdownRateMultiplier = 0.9f
+                    },
+                    new AttractionUpgradeLevel
+                    {
+                        Level = 3,
+                        UpgradeName = "コークスクリュー",
+                        Description = "螺旋回転を含む究極コースに改装。パーク名物に。",
+                        UpgradeCost = 6000,
+                        ExcitementMultiplier = 1.25f,
+                        CapacityMultiplier = 1.1f,
+                        NauseaMultiplier = 1.1f,
+                        BreakdownRateMultiplier = 0.85f
+                    }
+                }
+            });
+
+            // 大観覧車（縦回転）
+            // 初期から建設可能な定番観覧車。低興奮だが高定員・低嘔吐で安定収益源。
+            Register(new AttractionDefinition
+            {
+                AttractionId = "CL_FERRIS_WHEEL",
+                NameJP = "大観覧車",
+                NameEN = "Grand Ferris Wheel",
+                Description = "パークのシンボルとなる大観覧車。ゆったりと回りながらパーク全体を見渡せる。",
+                Category = AttractionCategory.VerticalRotation,
+                PrimaryThemeZone = ThemeZone.LostKingdom,
+                ExcitementRating = 3.5f,
+                NauseaFactor = 0.02f,
+                Capacity = 32,
+                RideDuration = 120f,
+                BuildCost = 4000,
+                MaintenanceCost = 150,
+                SuggestedTicketPrice = 200,
+                Size = new Vector2Int(4, 4),
+                RequiredResearchId = "",
+                BaseBreakdownRate = 0.012f,
+                UpgradePath = new List<AttractionUpgradeLevel>
+                {
+                    new AttractionUpgradeLevel
+                    {
+                        Level = 1,
+                        UpgradeName = "ゴンドラ増設",
+                        Description = "ゴンドラを追加し定員を大幅アップ。",
+                        UpgradeCost = 1500,
+                        ExcitementMultiplier = 1.05f,
+                        CapacityMultiplier = 1.3f,
+                        NauseaMultiplier = 1.0f,
+                        BreakdownRateMultiplier = 0.95f
+                    },
+                    new AttractionUpgradeLevel
+                    {
+                        Level = 2,
+                        UpgradeName = "イルミネーション",
+                        Description = "夜間イルミネーションで興奮度と集客力アップ。",
+                        UpgradeCost = 2500,
+                        ExcitementMultiplier = 1.2f,
+                        CapacityMultiplier = 1.0f,
+                        NauseaMultiplier = 1.0f,
+                        BreakdownRateMultiplier = 0.9f
+                    }
+                }
+            });
+
+            // メリーゴーラウンド（横回転）
+            // 初期から建設可能な定番回転木馬。ファミリー向けの安定収益源。
+            Register(new AttractionDefinition
+            {
+                AttractionId = "CL_MERRY_GO_ROUND",
+                NameJP = "メリーゴーラウンド",
+                NameEN = "Royal Carousel",
+                Description = "美しい装飾の回転木馬。子供から大人まで楽しめるパークの定番。",
+                Category = AttractionCategory.HorizontalRotation,
+                PrimaryThemeZone = ThemeZone.LostKingdom,
+                ExcitementRating = 3.0f,
+                NauseaFactor = 0.02f,
+                Capacity = 24,
+                RideDuration = 70f,
+                BuildCost = 3000,
+                MaintenanceCost = 120,
+                SuggestedTicketPrice = 150,
+                Size = new Vector2Int(3, 3),
+                RequiredResearchId = "",
+                BaseBreakdownRate = 0.01f,
+                UpgradePath = new List<AttractionUpgradeLevel>
+                {
+                    new AttractionUpgradeLevel
+                    {
+                        Level = 1,
+                        UpgradeName = "オルゴール演出",
+                        Description = "美しいオルゴール音楽で雰囲気アップ。",
+                        UpgradeCost = 1000,
+                        ExcitementMultiplier = 1.15f,
+                        CapacityMultiplier = 1.1f,
+                        NauseaMultiplier = 1.0f,
+                        BreakdownRateMultiplier = 0.95f
+                    },
+                    new AttractionUpgradeLevel
+                    {
+                        Level = 2,
+                        UpgradeName = "二階建て",
+                        Description = "二階建てに増築。定員と興奮度が大幅アップ。",
+                        UpgradeCost = 2000,
+                        ExcitementMultiplier = 1.2f,
+                        CapacityMultiplier = 1.4f,
+                        NauseaMultiplier = 1.05f,
+                        BreakdownRateMultiplier = 0.9f
+                    }
+                }
+            });
+
             // スターオブザーバトリー（展望系）
             // 宇宙の星々を望む巨大展望施設。
             // 高い定員と低い嘔吐率で安定した収益を生む。

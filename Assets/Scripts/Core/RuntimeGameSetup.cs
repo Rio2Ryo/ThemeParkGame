@@ -691,6 +691,9 @@ namespace ThemeParkGame.Core
                 // 給与復元
                 staff.Salary = ss.Salary;
 
+                // 経験値復元
+                staff.SetWorkExperience(ss.WorkExperience);
+
                 // パトロールエリア復元
                 if (ss.PatrolSizeX > 0f || ss.PatrolSizeZ > 0f)
                 {

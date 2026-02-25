@@ -137,6 +137,7 @@ namespace ThemeParkGame.Core
         public int SkillLevel;
         public float Fatigue;
         public float Salary;
+        public float WorkExperience;
         public float PosX, PosY, PosZ;
         // パトロールエリア
         public float PatrolCenterX, PatrolCenterY, PatrolCenterZ;
@@ -525,6 +526,7 @@ namespace ThemeParkGame.Core
                     SkillLevel = staff.SkillLevel,
                     Fatigue = staff.Fatigue,
                     Salary = staff.Salary,
+                    WorkExperience = staff.WorkExperience,
                     PosX = staff.transform.position.x,
                     PosY = staff.transform.position.y,
                     PosZ = staff.transform.position.z

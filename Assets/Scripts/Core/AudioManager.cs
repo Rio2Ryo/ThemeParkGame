@@ -61,25 +61,25 @@ namespace ThemeParkGame.Core
         public float MasterVolume
         {
             get => masterVolume;
-            set { masterVolume = Mathf.Clamp01(value); UpdateAllVolumes(); }
+            set { masterVolume = Mathf.Clamp01(value); UpdateAllVolumes(); SaveVolumePrefs(); }
         }
 
         public float BGMVolume
         {
             get => bgmVolume;
-            set { bgmVolume = Mathf.Clamp01(value); UpdateAllVolumes(); }
+            set { bgmVolume = Mathf.Clamp01(value); UpdateAllVolumes(); SaveVolumePrefs(); }
         }
 
         public float SEVolume
         {
             get => seVolume;
-            set { seVolume = Mathf.Clamp01(value); UpdateAllVolumes(); }
+            set { seVolume = Mathf.Clamp01(value); UpdateAllVolumes(); SaveVolumePrefs(); }
         }
 
         public float AmbientVolume
         {
             get => ambientVolume;
-            set { ambientVolume = Mathf.Clamp01(value); UpdateAllVolumes(); }
+            set { ambientVolume = Mathf.Clamp01(value); UpdateAllVolumes(); SaveVolumePrefs(); }
         }
 
         // ================================================================
@@ -96,6 +96,7 @@ namespace ThemeParkGame.Core
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
+            LoadVolumePrefs();
             SetupAudioSources();
             GenerateAllClips();
             SubscribeToEvents();
@@ -242,6 +243,23 @@ namespace ThemeParkGame.Core
             if (bgmSource != null) bgmSource.volume = bgmVolume * masterVolume;
             if (seSource != null) seSource.volume = seVolume * masterVolume;
             if (ambientSource != null) ambientSource.volume = ambientVolume * masterVolume;
+        }
+
+        private void LoadVolumePrefs()
+        {
+            masterVolume = PlayerPrefs.GetFloat("AUDIO_MASTER", 1f);
+            bgmVolume = PlayerPrefs.GetFloat("AUDIO_BGM", 0.5f);
+            seVolume = PlayerPrefs.GetFloat("AUDIO_SE", 0.8f);
+            ambientVolume = PlayerPrefs.GetFloat("AUDIO_AMBIENT", 0.3f);
+        }
+
+        private void SaveVolumePrefs()
+        {
+            PlayerPrefs.SetFloat("AUDIO_MASTER", masterVolume);
+            PlayerPrefs.SetFloat("AUDIO_BGM", bgmVolume);
+            PlayerPrefs.SetFloat("AUDIO_SE", seVolume);
+            PlayerPrefs.SetFloat("AUDIO_AMBIENT", ambientVolume);
+            PlayerPrefs.Save();
         }
 
         // ================================================================

@@ -141,9 +141,8 @@ namespace ThemeParkGame.Core
                            gm.EconomyManager.GetMonthlyProfit() >= obj.TargetValue;
 
                 case ObjectiveType.ParkRatingTarget:
-                    // パーク評価 = 平均満足度で代用
-                    return gm.VisitorManager != null &&
-                           gm.VisitorManager.AverageHappiness >= obj.TargetValue;
+                    return gm.ParkManager != null && gm.ParkManager.Rating != null &&
+                           gm.ParkManager.Rating.OverallRating >= obj.TargetValue;
 
                 case ObjectiveType.AttractionCountTarget:
                     return gm.AttractionManager != null &&
@@ -161,14 +160,14 @@ namespace ThemeParkGame.Core
                     return gm.GoldenTickets >= (int)obj.TargetValue;
 
                 case ObjectiveType.ObtainCertificate:
-                    // 簡易実装: 満足度70以上で認定証取得とみなす
-                    return gm.VisitorManager != null &&
-                           gm.VisitorManager.AverageHappiness >= 70f;
+                    if (gm.ParkManager == null || gm.ParkManager.Rating == null) return false;
+                    var certCat = (CertificateCategory)obj.SubParameter;
+                    return gm.ParkManager.Rating.IsCertificateAwarded(certCat);
 
                 case ObjectiveType.UnlockZone:
-                    // 簡易実装: 収益が一定以上でゾーンアンロックとみなす
-                    return gm.EconomyManager != null &&
-                           gm.EconomyManager.TotalRevenueEarned >= 100000f;
+                    if (gm.ParkManager == null) return false;
+                    var targetZone = (ThemeZone)obj.SubParameter;
+                    return gm.ParkManager.IsZoneUnlocked(targetZone);
 
                 default:
                     return false;
@@ -258,7 +257,8 @@ namespace ThemeParkGame.Core
                     return $"月間利益 ${current:N0}/${obj.TargetValue:N0}";
 
                 case ObjectiveType.ParkRatingTarget:
-                    current = gm.VisitorManager != null ? gm.VisitorManager.AverageHappiness : 0;
+                    current = gm.ParkManager != null && gm.ParkManager.Rating != null
+                        ? gm.ParkManager.Rating.OverallRating : 0;
                     return $"パーク評価 {current:F0}/{obj.TargetValue:F0}";
 
                 case ObjectiveType.AttractionCountTarget:

@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using ThemeParkGame.Staff;
 
 namespace ThemeParkGame.Core
 {
@@ -66,6 +67,10 @@ namespace ThemeParkGame.Core
         // チェックタイマー
         private float _checkTimer;
 
+        // 黒字連続日数トラッカー
+        private int _profitStreakDays;
+        private int _lastCheckedDay = -1;
+
         // 実績一覧パネル
         private GameObject _listPanel;
         private RectTransform _listContent;
@@ -113,6 +118,7 @@ namespace ThemeParkGame.Core
             Reg("visitor_50", "にぎやかなパーク", "累計来場者50人達成", AchievementCategory.Visitor, "[V]");
             Reg("visitor_200", "大人気パーク", "累計来場者200人達成", AchievementCategory.Visitor, "[V]");
             Reg("visitor_500", "伝説のテーマパーク", "累計来場者500人達成", AchievementCategory.Visitor, "[V]");
+            Reg("visitor_1000", "メガパーク", "累計来場者1000人達成", AchievementCategory.Visitor, "[V]");
             Reg("happiness_80", "笑顔あふれるパーク", "平均満足度80%以上", AchievementCategory.Visitor, "[H]");
             Reg("happiness_95", "パーフェクトパーク", "平均満足度95%以上", AchievementCategory.Visitor, "[H]");
             Reg("peak_20", "行列のできるパーク", "同時来場者20人以上", AchievementCategory.Visitor, "[P]");
@@ -125,6 +131,7 @@ namespace ThemeParkGame.Core
             Reg("revenue_1m", "億万長者", "総収益$1,000,000達成", AchievementCategory.Economy, "[$]");
             Reg("balance_100k", "貯蓄王", "資金残高$100,000達成", AchievementCategory.Economy, "[$]");
             Reg("profit_monthly", "黒字経営", "月間利益がプラス", AchievementCategory.Economy, "[$]");
+            Reg("profit_streak", "堅実経営者", "連続30日間赤字なし", AchievementCategory.Economy, "[$]");
 
             // ---- パーク建設系 ----
             Reg("attraction_1", "はじめてのアトラクション", "アトラクション1基建設", AchievementCategory.Park, "[A]");
@@ -141,6 +148,7 @@ namespace ThemeParkGame.Core
             // ---- スタッフ系 ----
             Reg("staff_5", "チームワーク", "スタッフ5人雇用", AchievementCategory.Staff, "[S]");
             Reg("staff_15", "大所帯", "スタッフ15人雇用", AchievementCategory.Staff, "[S]");
+            Reg("staff_maxlevel", "熟練の職人", "スタッフ1人がスキルLv5到達", AchievementCategory.Staff, "[S]");
 
             // ---- 特殊系 ----
             Reg("golden_1", "ゴールデンチケット", "ゴールデンチケットを初獲得", AchievementCategory.Special, "[G]");
@@ -267,6 +275,7 @@ namespace ThemeParkGame.Core
                 if (total >= 50) Unlock("visitor_50");
                 if (total >= 200) Unlock("visitor_200");
                 if (total >= 500) Unlock("visitor_500");
+                if (total >= 1000) Unlock("visitor_1000");
 
                 if (avgHappy >= 80f && gm.VisitorManager.ActiveVisitorCount >= 5) Unlock("happiness_80");
                 if (avgHappy >= 95f && gm.VisitorManager.ActiveVisitorCount >= 5) Unlock("happiness_95");
@@ -291,6 +300,21 @@ namespace ThemeParkGame.Core
 
                 if (monthlyProfit > 0f && gm.TimeManager != null && gm.TimeManager.CurrentMonth > 1)
                     Unlock("profit_monthly");
+
+                // 黒字連続日数トラッキング
+                if (gm.TimeManager != null)
+                {
+                    int day = gm.TimeManager.CurrentDay;
+                    if (day != _lastCheckedDay)
+                    {
+                        _lastCheckedDay = day;
+                        if (balance >= 0f && monthlyProfit >= 0f)
+                            _profitStreakDays++;
+                        else
+                            _profitStreakDays = 0;
+                    }
+                    if (_profitStreakDays >= 30) Unlock("profit_streak");
+                }
             }
 
             // ---- アトラクション ----
@@ -336,6 +360,15 @@ namespace ThemeParkGame.Core
                 int staffCount = gm.StaffManager.TotalStaffCount;
                 if (staffCount >= 5) Unlock("staff_5");
                 if (staffCount >= 15) Unlock("staff_15");
+
+                foreach (var staff in gm.StaffManager.GetAllStaff())
+                {
+                    if (staff != null && staff.SkillLevel >= StaffMember.MaxSkillLevel)
+                    {
+                        Unlock("staff_maxlevel");
+                        break;
+                    }
+                }
             }
 
             // ---- ゴールデンチケット ----

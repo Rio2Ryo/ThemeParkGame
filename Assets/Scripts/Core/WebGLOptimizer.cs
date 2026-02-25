@@ -33,10 +33,15 @@ namespace ThemeParkGame.Core
             QualitySettings.softParticles = false;
             QualitySettings.realtimeReflectionProbes = false;
             QualitySettings.billboardsFaceCameraPosition = false;
+            QualitySettings.lodBias = 0.7f;           // LODを早めに切替
+            QualitySettings.maximumLODLevel = 1;       // 最高精度LODをスキップ
+            QualitySettings.skinWeights = SkinWeights.TwoBones; // ボーン計算を軽量化
+            QualitySettings.asyncUploadTimeSlice = 2;  // テクスチャアップロード最小化
+            QualitySettings.asyncUploadBufferSize = 4; // アップロードバッファ4MB
 
-            // GC設定: インクリメンタルGCを推奨
-            // （PlayerSettingsで設定すべきだが念のためログ出力）
-            Debug.Log("[WebGLOptimizer] WebGL最適化設定を適用しました");
+            // GC: 閾値を低めに設定してスパイクを軽減
+            // Unity 2021+ ではインクリメンタルGCがデフォルト有効
+            Debug.Log("[WebGLOptimizer] WebGL最適化設定を適用しました (v1.3)");
 #else
             // エディタ/スタンドアロンではフレームレート60固定
             Application.targetFrameRate = 60;

@@ -93,6 +93,13 @@ namespace ThemeParkGame.Core
         private Text _resultsFinalScore;
         private Text _resultsBody;
 
+        // ---- サウンド設定パネル ----
+        private GameObject _soundPanel;
+        private Slider _sliderMaster;
+        private Slider _sliderBGM;
+        private Slider _sliderSE;
+        private Slider _sliderAmbient;
+
         // ---- シナリオ目標パネル ----
         private GameObject _scenarioPanel;
         private Text _scenarioTitle;
@@ -1903,27 +1910,35 @@ namespace ThemeParkGame.Core
             // 「続ける」ボタン
             MakeCenterButton(rt, "ResumeBtn", "続ける",
                 new Color(0.18f, 0.55f, 0.34f), new Color(0.22f, 0.65f, 0.40f), new Color(0.14f, 0.45f, 0.28f),
-                new Vector2(0f, 120f), OnResumeClicked);
+                new Vector2(0f, 150f), OnResumeClicked);
 
             // 「セーブ/ロード」ボタン
             MakeCenterButton(rt, "SaveLoadBtn", "SAVE / LOAD",
                 new Color(0.3f, 0.4f, 0.6f), new Color(0.38f, 0.5f, 0.72f), new Color(0.22f, 0.3f, 0.48f),
-                new Vector2(0f, 45f), OnSaveLoadClicked);
+                new Vector2(0f, 80f), OnSaveLoadClicked);
 
             // 「実績」ボタン
             MakeCenterButton(rt, "AchievementBtn", "ACHIEVEMENTS",
                 new Color(0.55f, 0.45f, 0.2f), new Color(0.65f, 0.55f, 0.28f), new Color(0.42f, 0.34f, 0.15f),
-                new Vector2(0f, -30f), OnAchievementClicked);
+                new Vector2(0f, 10f), OnAchievementClicked);
+
+            // 「サウンド設定」ボタン
+            MakeCenterButton(rt, "SoundBtn", "SOUND SETTINGS",
+                new Color(0.35f, 0.4f, 0.52f), new Color(0.45f, 0.5f, 0.62f), new Color(0.25f, 0.3f, 0.42f),
+                new Vector2(0f, -60f), OnSoundSettingsClicked);
 
             // 「イベントログ」ボタン
             MakeCenterButton(rt, "EventLogBtn", "EVENT LOG",
                 new Color(0.3f, 0.45f, 0.55f), new Color(0.38f, 0.55f, 0.65f), new Color(0.22f, 0.35f, 0.44f),
-                new Vector2(0f, -105f), OnEventLogClicked);
+                new Vector2(0f, -130f), OnEventLogClicked);
 
             // 「ゲーム終了」ボタン
             MakeCenterButton(rt, "EndGameBtn", "ゲーム終了",
                 new Color(0.65f, 0.2f, 0.2f), new Color(0.75f, 0.3f, 0.3f), new Color(0.5f, 0.15f, 0.15f),
-                new Vector2(0f, -180f), OnEndGameClicked);
+                new Vector2(0f, -200f), OnEndGameClicked);
+
+            // サウンド設定パネル（初期非表示）
+            BuildSoundSettingsPanel(rt);
 
             _pauseOverlay.SetActive(false);
         }
@@ -2277,6 +2292,153 @@ namespace ThemeParkGame.Core
         {
             if (NotificationSystem.Instance != null)
                 NotificationSystem.Instance.ShowLogPanel();
+        }
+
+        private void OnSoundSettingsClicked()
+        {
+            if (_soundPanel != null)
+                _soundPanel.SetActive(!_soundPanel.activeSelf);
+        }
+
+        private void BuildSoundSettingsPanel(RectTransform pauseRoot)
+        {
+            float panelW = 340f;
+            float panelH = 260f;
+
+            _soundPanel = new GameObject("SoundPanel");
+            _soundPanel.transform.SetParent(pauseRoot, false);
+            var pRt = _soundPanel.AddComponent<RectTransform>();
+            pRt.anchorMin = pRt.anchorMax = new Vector2(0.5f, 0.5f);
+            pRt.pivot = new Vector2(0.5f, 0.5f);
+            pRt.anchoredPosition = new Vector2(380f, 0f);
+            pRt.sizeDelta = new Vector2(panelW, panelH);
+
+            var bgImg = _soundPanel.AddComponent<Image>();
+            bgImg.color = new Color(0.06f, 0.08f, 0.16f, 0.96f);
+            bgImg.raycastTarget = true;
+
+            // タイトル
+            var title = MakeLabel(pRt, "SndTitle", "SOUND SETTINGS", 20,
+                new Color(0.95f, 0.88f, 0.45f), FontStyle.Bold, TextAnchor.MiddleCenter);
+            var tRt = title.rectTransform;
+            tRt.anchorMin = tRt.anchorMax = new Vector2(0.5f, 1f);
+            tRt.pivot = new Vector2(0.5f, 1f);
+            tRt.anchoredPosition = new Vector2(0f, -8f);
+            tRt.sizeDelta = new Vector2(panelW, 30f);
+
+            float y = -44f;
+            _sliderMaster = MakeSoundSlider(pRt, "Master", "MASTER", y, 1f);
+            y -= 50f;
+            _sliderBGM = MakeSoundSlider(pRt, "BGM", "BGM", y, 0.5f);
+            y -= 50f;
+            _sliderSE = MakeSoundSlider(pRt, "SE", "SE", y, 0.8f);
+            y -= 50f;
+            _sliderAmbient = MakeSoundSlider(pRt, "Ambient", "AMBIENT", y, 0.3f);
+
+            // AudioManagerから現在値を取得
+            if (AudioManager.Instance != null)
+            {
+                _sliderMaster.value = AudioManager.Instance.MasterVolume;
+                _sliderBGM.value = AudioManager.Instance.BGMVolume;
+                _sliderSE.value = AudioManager.Instance.SEVolume;
+                _sliderAmbient.value = AudioManager.Instance.AmbientVolume;
+            }
+
+            // リスナー登録
+            _sliderMaster.onValueChanged.AddListener(v => {
+                if (AudioManager.Instance != null) AudioManager.Instance.MasterVolume = v;
+            });
+            _sliderBGM.onValueChanged.AddListener(v => {
+                if (AudioManager.Instance != null) AudioManager.Instance.BGMVolume = v;
+            });
+            _sliderSE.onValueChanged.AddListener(v => {
+                if (AudioManager.Instance != null) AudioManager.Instance.SEVolume = v;
+            });
+            _sliderAmbient.onValueChanged.AddListener(v => {
+                if (AudioManager.Instance != null) AudioManager.Instance.AmbientVolume = v;
+            });
+
+            _soundPanel.SetActive(false);
+        }
+
+        private Slider MakeSoundSlider(RectTransform parent, string id, string label, float yPos, float defaultVal)
+        {
+            var row = new GameObject($"Snd_{id}");
+            row.transform.SetParent(parent, false);
+            var rowRt = row.AddComponent<RectTransform>();
+            rowRt.anchorMin = rowRt.anchorMax = new Vector2(0.5f, 1f);
+            rowRt.pivot = new Vector2(0.5f, 1f);
+            rowRt.anchoredPosition = new Vector2(0f, yPos);
+            rowRt.sizeDelta = new Vector2(300f, 44f);
+
+            // ラベル
+            var lbl = MakeLabel(rowRt, "Label", label, 14, new Color(0.8f, 0.82f, 0.9f),
+                FontStyle.Bold, TextAnchor.MiddleLeft);
+            var lblRt = lbl.rectTransform;
+            lblRt.anchorMin = lblRt.anchorMax = new Vector2(0f, 1f);
+            lblRt.pivot = new Vector2(0f, 1f);
+            lblRt.anchoredPosition = new Vector2(0f, 0f);
+            lblRt.sizeDelta = new Vector2(80f, 20f);
+
+            // スライダー
+            var sliderGo = new GameObject($"Slider_{id}");
+            sliderGo.transform.SetParent(rowRt, false);
+            var sliderRt = sliderGo.AddComponent<RectTransform>();
+            sliderRt.anchorMin = sliderRt.anchorMax = new Vector2(0.5f, 0f);
+            sliderRt.pivot = new Vector2(0.5f, 0f);
+            sliderRt.anchoredPosition = new Vector2(10f, 2f);
+            sliderRt.sizeDelta = new Vector2(290f, 20f);
+
+            // スライダー背景
+            var bgGo = MakePanel(sliderRt, "Background", 290f, 8f, new Color(0.15f, 0.18f, 0.28f));
+            var bgRtS = bgGo.GetComponent<RectTransform>();
+            bgRtS.anchorMin = new Vector2(0f, 0.5f);
+            bgRtS.anchorMax = new Vector2(1f, 0.5f);
+            bgRtS.offsetMin = new Vector2(0f, -4f);
+            bgRtS.offsetMax = new Vector2(0f, 4f);
+
+            // Fill領域
+            var fillArea = new GameObject("Fill Area");
+            fillArea.transform.SetParent(sliderRt, false);
+            var fillAreaRt = fillArea.AddComponent<RectTransform>();
+            fillAreaRt.anchorMin = new Vector2(0f, 0.25f);
+            fillAreaRt.anchorMax = new Vector2(1f, 0.75f);
+            fillAreaRt.offsetMin = new Vector2(5f, 0f);
+            fillAreaRt.offsetMax = new Vector2(-5f, 0f);
+
+            var fill = MakePanel(fillAreaRt, "Fill", 0f, 0f, new Color(0.35f, 0.65f, 0.9f));
+            var fillRt = fill.GetComponent<RectTransform>();
+            fillRt.anchorMin = Vector2.zero;
+            fillRt.anchorMax = Vector2.one;
+            fillRt.offsetMin = Vector2.zero;
+            fillRt.offsetMax = Vector2.zero;
+            fill.GetComponent<Image>().raycastTarget = false;
+
+            // ハンドル領域
+            var handleArea = new GameObject("Handle Slide Area");
+            handleArea.transform.SetParent(sliderRt, false);
+            var handleAreaRt = handleArea.AddComponent<RectTransform>();
+            handleAreaRt.anchorMin = new Vector2(0f, 0f);
+            handleAreaRt.anchorMax = new Vector2(1f, 1f);
+            handleAreaRt.offsetMin = new Vector2(5f, 0f);
+            handleAreaRt.offsetMax = new Vector2(-5f, 0f);
+
+            var handle = MakePanel(handleAreaRt, "Handle", 16f, 16f, Color.white);
+            var handleRt = handle.GetComponent<RectTransform>();
+            handleRt.sizeDelta = new Vector2(16f, 16f);
+            handle.GetComponent<Image>().raycastTarget = true;
+
+            // Sliderコンポーネント
+            var slider = sliderGo.AddComponent<Slider>();
+            slider.fillRect = fillRt;
+            slider.handleRect = handleRt;
+            slider.targetGraphic = handle.GetComponent<Image>();
+            slider.minValue = 0f;
+            slider.maxValue = 1f;
+            slider.value = defaultVal;
+            slider.wholeNumbers = false;
+
+            return slider;
         }
 
         private void OnEndGameClicked()

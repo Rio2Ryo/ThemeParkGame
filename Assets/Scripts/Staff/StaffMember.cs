@@ -163,6 +163,16 @@ namespace ThemeParkGame.Staff
         /// <summary>スキルレベルに応じた作業効率倍率 (1.0 ~ 2.0)</summary>
         public float WorkEfficiencyMultiplier => 1f + (SkillLevel - 1) * 0.25f;
 
+        /// <summary>現在の作業経験値</summary>
+        public float WorkExperience => _workExperience;
+
+        /// <summary>次のレベルアップに必要な経験値</summary>
+        public float ExperienceToNextLevel => SkillLevel >= MaxSkillLevel ? 0f : ExpPerLevelBase * SkillLevel;
+
+        /// <summary>現在レベルの経験値進捗率 (0-1)</summary>
+        public float ExperienceProgress => SkillLevel >= MaxSkillLevel ? 1f
+            : Mathf.Clamp01(_workExperience / (ExpPerLevelBase * SkillLevel));
+
         // ============================================================
         // 内部状態
         // ============================================================
@@ -172,6 +182,10 @@ namespace ThemeParkGame.Staff
         private float timeSinceLastRest;
         private float highFatigueAccumulator;
         private bool isInitialized;
+
+        // 経験値（作業時間に応じて蓄積、閾値でスキルレベル自動上昇）
+        private float _workExperience;
+        private const float ExpPerLevelBase = 300f; // Lv1→2に必要な作業秒数
 
         /// <summary>現在のタスク目標地点</summary>
         protected Vector3? currentTaskTarget;
@@ -261,6 +275,10 @@ namespace ThemeParkGame.Staff
                     float fatigueReduction = 1f - (SkillLevel - 1) * 0.1f;
                     Fatigue += BaseFatigueIncreaseRate * fatigueReduction * deltaTime;
                     timeSinceLastRest += deltaTime;
+
+                    // 作業経験値の蓄積（Working状態のみ）
+                    if (CurrentState == StaffBehaviorState.Working)
+                        AccumulateExperience(deltaTime);
                     break;
 
                 case StaffBehaviorState.Resting:
@@ -363,9 +381,39 @@ namespace ThemeParkGame.Staff
             }
 
             SkillLevel++;
+            _workExperience = 0f;
             WebGLOptimizer.LogVerbose($"[Staff] {Name} のスキルレベルが {SkillLevel} に上昇しました");
             return true;
         }
+
+        /// <summary>
+        /// 作業経験値を蓄積し、閾値に達したら自動レベルアップする。
+        /// Lv1→2: 300秒、Lv2→3: 600秒、Lv3→4: 900秒、Lv4→5: 1200秒
+        /// </summary>
+        private void AccumulateExperience(float deltaTime)
+        {
+            if (SkillLevel >= MaxSkillLevel) return;
+
+            _workExperience += deltaTime;
+
+            float threshold = ExpPerLevelBase * SkillLevel;
+            if (_workExperience >= threshold)
+            {
+                _workExperience = 0f;
+                SkillLevel++;
+                WebGLOptimizer.LogVerbose($"[Staff] {Name} が経験によりスキルLv{SkillLevel}に昇格");
+
+                if (NotificationSystem.Instance != null)
+                {
+                    NotificationSystem.Instance.Notify(
+                        $"{Name}のスキルがLv{SkillLevel}に上昇！",
+                        NotifLevel.Info);
+                }
+            }
+        }
+
+        /// <summary>セーブ用: 経験値を設定する</summary>
+        public void SetWorkExperience(float exp) { _workExperience = exp; }
 
         // ============================================================
         // AI行動ループ
