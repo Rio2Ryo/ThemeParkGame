@@ -577,8 +577,8 @@ namespace ThemeParkGame.Attraction
             var categories = new HashSet<AttractionCategory>();
             foreach (var kvp in _contexts)
             {
-                if (kvp.Value.Attraction != null)
-                    categories.Add(kvp.Value.Attraction.Category);
+                if (kvp.Value.Attraction != null && kvp.Value.Attraction.Data != null)
+                    categories.Add(kvp.Value.Attraction.Data.Category);
             }
             return categories.Count;
         }
@@ -593,13 +593,12 @@ namespace ThemeParkGame.Attraction
             foreach (var kvp in _contexts)
             {
                 var attr = kvp.Value.Attraction;
-                if (attr == null) continue;
+                if (attr == null || attr.Data == null) continue;
 
-                // 品質 = (Excitement * 0.4 + Intensity * 0.3 + Nausea_inverse * 0.3) / 10
-                float excitement = attr.Excitement;
-                float intensity = attr.Intensity;
-                float nauseaInv = Mathf.Clamp(10f - attr.Nausea, 0f, 10f);
-                float quality = (excitement * 0.4f + intensity * 0.3f + nauseaInv * 0.3f) / 10f;
+                // 品質 = (EffectiveExcitement/10 * 0.6 + NauseaInverse * 0.4)
+                float excitementNorm = attr.EffectiveExcitement / 10f;
+                float nauseaInv = 1f - attr.Data.NauseaFactor;
+                float quality = excitementNorm * 0.6f + nauseaInv * 0.4f;
                 totalQuality += Mathf.Clamp01(quality);
                 count++;
             }
