@@ -1862,7 +1862,7 @@ namespace ThemeParkGame.Visitor
                     parameters.ModifyHappiness(3f);
                     parameters.ModifyExcitement(5f);
                     if (emotionBubble != null && UnityEngine.Random.value < 0.3f)
-                        emotionBubble.ShowBubble(EmotionBubbleType.Happy, EmotionBubbleColor.Pink);
+                        emotionBubble.ShowBubble(EmotionBubbleType.LovingIt, EmotionBubbleColor.Blue);
                     break; // 1回のチェックで1人のエンターテイナーのみ
                 }
             }
