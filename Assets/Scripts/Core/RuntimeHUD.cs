@@ -15,6 +15,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using ThemeParkGame.AI;
 using ThemeParkGame.Attraction;
+using ThemeParkGame.Economy;
 using ThemeParkGame.Park;
 using ThemeParkGame.UI;
 using ThemeParkGame.Visitor;
@@ -207,6 +208,17 @@ namespace ThemeParkGame.Core
         private Button _snsToggleBtn;
         private bool _snsPanelExpanded;
 
+        // ---- 月次レポートポップアップ ----
+        private GameObject _monthlyReportPanel;
+        private Text _mrTitle;
+        private Text _mrRevenue;
+        private Text _mrExpenses;
+        private Text _mrProfit;
+        private Text _mrVisitors;
+        private Text _mrDetails;
+        private float _monthlyReportAutoClose;
+        private int _lastReportMonth = -1;
+
         // ---- データキャッシュ ----
         private float _updateTimer;
         private const float UpdateInterval = 0.3f;
@@ -251,9 +263,18 @@ namespace ThemeParkGame.Core
             GameEvents.OnVisitorSatisfactionChanged += OnVisitorSatisfactionChanged;
         }
 
+        private void Start()
+        {
+            // TimeManagerの月変更イベントを購読して月次レポートを表示
+            if (GameManager.Instance != null && GameManager.Instance.TimeManager != null)
+                GameManager.Instance.TimeManager.OnMonthChanged += ShowMonthlyReport;
+        }
+
         private void OnDestroy()
         {
             GameEvents.OnVisitorSatisfactionChanged -= OnVisitorSatisfactionChanged;
+            if (GameManager.Instance != null && GameManager.Instance.TimeManager != null)
+                GameManager.Instance.TimeManager.OnMonthChanged -= ShowMonthlyReport;
         }
 
         private void BuildCanvas()
@@ -294,6 +315,7 @@ namespace ThemeParkGame.Core
             BuildResearchPanel(_canvasRoot);
             BuildLoanPanel(_canvasRoot);
             BuildZoneBar(_canvasRoot);
+            BuildMonthlyReportPanel(_canvasRoot);
             BuildFirstPersonOverlay(_canvasRoot);
         }
 
@@ -3164,6 +3186,113 @@ namespace ThemeParkGame.Core
         }
 
         // ================================================================
+        // 月次財務レポートポップアップ
+        // ================================================================
+
+        private void BuildMonthlyReportPanel(RectTransform root)
+        {
+            float panelW = 380f, panelH = 320f;
+            _monthlyReportPanel = MakePanel(root, "MonthlyReportPanel", panelW, panelH,
+                new Color(0.05f, 0.08f, 0.18f, 0.95f));
+            var rt = _monthlyReportPanel.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
+
+            float y = panelH / 2f - 20f;
+            _mrTitle = MakeLabel(rt, "Title", "月次レポート", 24, Gold, FontStyle.Bold, TextAnchor.MiddleCenter);
+            _mrTitle.rectTransform.anchorMin = _mrTitle.rectTransform.anchorMax = new Vector2(0.5f, 1f);
+            _mrTitle.rectTransform.pivot = new Vector2(0.5f, 1f);
+            _mrTitle.rectTransform.anchoredPosition = new Vector2(0f, -10f);
+            _mrTitle.rectTransform.sizeDelta = new Vector2(panelW - 20f, 30f);
+
+            float labelX = -panelW / 2f + 20f;
+
+            _mrRevenue = MakeLabel(rt, "Revenue", "収入: ---", 20, Green, FontStyle.Normal, TextAnchor.MiddleLeft);
+            SetAnchoredTopLeft(_mrRevenue.rectTransform, 20f, 50f, panelW - 40f, 28f);
+
+            _mrExpenses = MakeLabel(rt, "Expenses", "支出: ---", 20, Red, FontStyle.Normal, TextAnchor.MiddleLeft);
+            SetAnchoredTopLeft(_mrExpenses.rectTransform, 20f, 82f, panelW - 40f, 28f);
+
+            _mrProfit = MakeLabel(rt, "Profit", "利益: ---", 22, Gold, FontStyle.Bold, TextAnchor.MiddleLeft);
+            SetAnchoredTopLeft(_mrProfit.rectTransform, 20f, 118f, panelW - 40f, 28f);
+
+            // 区切り線代わりのラベル
+            var sep = MakeLabel(rt, "Sep", "────────────────────", 12, Muted, FontStyle.Normal, TextAnchor.MiddleCenter);
+            SetAnchoredTopLeft(sep.rectTransform, 10f, 150f, panelW - 20f, 16f);
+
+            _mrVisitors = MakeLabel(rt, "Visitors", "来場者: ---", 18, Cyan, FontStyle.Normal, TextAnchor.MiddleLeft);
+            SetAnchoredTopLeft(_mrVisitors.rectTransform, 20f, 170f, panelW - 40f, 24f);
+
+            _mrDetails = MakeLabel(rt, "Details", "", 15, Muted, FontStyle.Normal, TextAnchor.UpperLeft);
+            SetAnchoredTopLeft(_mrDetails.rectTransform, 20f, 200f, panelW - 40f, 70f);
+
+            // 閉じるボタン
+            var closeGo = MakePanel(rt, "CloseBtn", 100f, 32f, new Color(0.3f, 0.35f, 0.5f, 0.9f));
+            var closeRt = closeGo.GetComponent<RectTransform>();
+            closeRt.anchorMin = closeRt.anchorMax = new Vector2(0.5f, 0f);
+            closeRt.pivot = new Vector2(0.5f, 0f);
+            closeRt.anchoredPosition = new Vector2(0f, 12f);
+            var closeBtn = closeGo.AddComponent<Button>();
+            closeBtn.targetGraphic = closeGo.GetComponent<Image>();
+            closeBtn.onClick.AddListener(() => _monthlyReportPanel.SetActive(false));
+            var closeLabel = MakeLabel(closeRt, "Label", "OK", 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(closeLabel.rectTransform);
+
+            _monthlyReportPanel.SetActive(false);
+        }
+
+        private void SetAnchoredTopLeft(RectTransform rt, float x, float y, float w, float h)
+        {
+            rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
+            rt.pivot = new Vector2(0f, 1f);
+            rt.anchoredPosition = new Vector2(x, -y);
+            rt.sizeDelta = new Vector2(w, h);
+        }
+
+        private void ShowMonthlyReport()
+        {
+            if (_monthlyReportPanel == null) return;
+            var gm = GameManager.Instance;
+            if (gm == null || gm.EconomyManager == null) return;
+            if (gm.CurrentState != GameState.Playing) return;
+
+            var report = gm.EconomyManager.GetLatestMonthlyReport();
+            if (report == null) return;
+
+            // 同じ月のレポートを二重表示しない
+            int reportKey = report.Year * 100 + report.Month;
+            if (reportKey == _lastReportMonth) return;
+            _lastReportMonth = reportKey;
+
+            _mrTitle.text = $"月次レポート  Y{report.Year} M{report.Month}";
+            _mrRevenue.text = $"収入:  ${report.Revenue.Total:N0}";
+            _mrExpenses.text = $"支出:  ${report.Expenses.Total:N0}";
+
+            float profit = report.NetProfit;
+            _mrProfit.text = $"利益:  ${profit:N0}";
+            _mrProfit.color = profit >= 0 ? Green : Red;
+
+            _mrVisitors.text = $"来場者数:  {report.TotalVisitors}名";
+
+            string details = "";
+            if (report.Revenue.EntranceFees > 0)
+                details += $"入場料: ${report.Revenue.EntranceFees:N0}\n";
+            if (report.Revenue.AttractionFees > 0)
+                details += $"アトラクション: ${report.Revenue.AttractionFees:N0}\n";
+            if (report.Revenue.ShopSales > 0)
+                details += $"ショップ: ${report.Revenue.ShopSales:N0}\n";
+            if (report.Expenses.StaffSalaries > 0)
+                details += $"人件費: -${report.Expenses.StaffSalaries:N0}\n";
+            if (report.Expenses.Maintenance > 0)
+                details += $"維持費: -${report.Expenses.Maintenance:N0}";
+            _mrDetails.text = details;
+
+            _monthlyReportPanel.SetActive(true);
+            _monthlyReportAutoClose = 15f; // 15秒後に自動で閉じる
+        }
+
+        // ================================================================
         // ファーストパーソンビューオーバーレイ
         // ================================================================
 
@@ -3346,6 +3475,14 @@ namespace ThemeParkGame.Core
             if (state != GameState.Playing) return;
 
             HandleVisitorClick();
+
+            // 月次レポート自動クローズ
+            if (_monthlyReportPanel != null && _monthlyReportPanel.activeSelf)
+            {
+                _monthlyReportAutoClose -= Time.unscaledDeltaTime;
+                if (_monthlyReportAutoClose <= 0f)
+                    _monthlyReportPanel.SetActive(false);
+            }
 
             _updateTimer -= Time.unscaledDeltaTime;
             if (_updateTimer > 0f) return;
