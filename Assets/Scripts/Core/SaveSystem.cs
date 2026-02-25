@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using ThemeParkGame.AI;
 using ThemeParkGame.Park;
 
 namespace ThemeParkGame.Core
@@ -75,6 +76,10 @@ namespace ThemeParkGame.Core
         public int LifecycleExperienceStarts;
         public int LifecycleExperienceCompletions;
         public float LifecycleEnjoymentRatio;
+
+        // SNSレピュテーション
+        public float SNSReputation;
+        public int SNSTotalPosts;
     }
 
     /// <summary>
@@ -302,6 +307,13 @@ namespace ThemeParkGame.Core
                 data.CurrentSeason = gm.WeatherSystem.CurrentSeason.ToString();
             }
 
+            // SNSレピュテーション
+            if (gm.AIManager?.SNSSystem != null)
+            {
+                data.SNSReputation = gm.AIManager.SNSSystem.Reputation;
+                data.SNSTotalPosts = gm.AIManager.SNSSystem.Feed.Count;
+            }
+
             return data;
         }
 
@@ -385,6 +397,12 @@ namespace ThemeParkGame.Core
                 }
             }
 
+            // SNSレピュテーション復元
+            if (gm.AIManager?.SNSSystem != null && data.SNSReputation > 0f)
+            {
+                gm.AIManager.SNSSystem.RestoreReputation(data.SNSReputation);
+            }
+
             // ゲーム状態をPlayingに遷移
             gm.RestorePlayingState();
 
@@ -410,9 +428,12 @@ namespace ThemeParkGame.Core
             string stars = info.RatingOverall > 0f
                 ? $"  [{Park.ParkRatingEvaluator.StarsToText(Park.ParkRatingEvaluator.ScoreToStars(info.RatingOverall))}]"
                 : "";
+            string snsRep = info.SNSReputation > 0f
+                ? $"  SNS:{info.SNSReputation:F0}"
+                : "";
             return $"Y{info.CurrentYear} M{info.CurrentMonth} D{info.CurrentDay}  " +
                    $"${info.CurrentBalance:N0}  " +
-                   $"Ticket:{info.GoldenTickets}{stars}{enjoyPct}  " +
+                   $"Ticket:{info.GoldenTickets}{stars}{enjoyPct}{snsRep}  " +
                    $"{info.SaveDate}";
         }
     }

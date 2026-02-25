@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using ThemeParkGame.AI;
 using ThemeParkGame.Attraction;
 using ThemeParkGame.Park;
 using ThemeParkGame.Visitor;
@@ -146,6 +147,17 @@ namespace ThemeParkGame.Core
         private Text _alertBarCount;
         private float _alertBarBlinkTimer;
 
+        // ---- SNSフィードパネル ----
+        private GameObject _snsPanel;
+        private Text _snsReputationText;
+        private Text _snsReputationBar;
+        private Text _snsSpawnText;
+        private Text[] _snsTrendTexts;
+        private Text[] _snsFeedTexts;
+        private Text[] _snsFeedSentiments;
+        private Button _snsToggleBtn;
+        private bool _snsPanelExpanded;
+
         // ---- データキャッシュ ----
         private float _updateTimer;
         private const float UpdateInterval = 0.3f;
@@ -227,6 +239,7 @@ namespace ThemeParkGame.Core
             BuildLifecyclePanel(_canvasRoot);
             BuildRatingPanel(_canvasRoot);
             BuildAlertBar(_canvasRoot);
+            BuildSNSPanel(_canvasRoot);
             BuildFirstPersonOverlay(_canvasRoot);
         }
 
@@ -1120,11 +1133,22 @@ namespace ThemeParkGame.Core
                 alertText = $"  Notifications: {logCount}  Active Alerts: {alertCount}\n";
             }
 
+            // SNSレピュテーション
+            string snsText = "";
+            if (gm.AIManager?.SNSSystem != null)
+            {
+                float rep = gm.AIManager.SNSSystem.Reputation;
+                int posts = gm.AIManager.SNSSystem.Feed.Count;
+                float spawn = gm.AIManager.SNSSystem.VisitorSpawnMultiplier;
+                snsText = $"  SNS Reputation: {rep:F0}/100  Posts: {posts}  Spawn: x{spawn:F2}\n";
+            }
+
             _resultsBody.text =
                 $"  Visitors: {visitors}  (Peak: {peak})\n" +
                 $"  Satisfaction: {avgSatisfaction:F0}%  Happiness: {avgHappiness:F0}%\n" +
                 ratingText +
                 lcText +
+                snsText +
                 alertText +
                 $"  Revenue: {revenue}         Expenses: {expenses}\n" +
                 $"  Final Balance: {money}\n" +
@@ -1528,6 +1552,254 @@ namespace ThemeParkGame.Core
                 {
                     var barRt = _ratingCatBars[i].rectTransform;
                     barRt.sizeDelta = new Vector2(barMaxW * Mathf.Clamp01(score / 100f), 0f);
+                }
+            }
+        }
+
+        // ================================================================
+        // SNSフィードパネル（画面左下）
+        // ================================================================
+
+        private void BuildSNSPanel(RectTransform root)
+        {
+            float panelW = 300f;
+            float panelH = 260f;
+
+            var bg = MakePanel(root, "SNSPanel", panelW, panelH, BgDark);
+            _snsPanel = bg;
+            var rt = bg.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0f, 0f);
+            rt.pivot = new Vector2(0f, 0f);
+            rt.anchoredPosition = new Vector2(10f, 50f);
+
+            // ヘッダー（クリックで展開/折りたたみ）
+            var headerBg = MakePanel(rt, "SNSHeader", panelW, 24f, new Color(0.12f, 0.14f, 0.22f));
+            var headerRt = headerBg.GetComponent<RectTransform>();
+            headerRt.anchorMin = headerRt.anchorMax = new Vector2(0f, 1f);
+            headerRt.pivot = new Vector2(0f, 1f);
+            headerRt.anchoredPosition = Vector2.zero;
+            var headerImg = headerBg.GetComponent<Image>();
+            headerImg.raycastTarget = true;
+            _snsToggleBtn = headerBg.AddComponent<Button>();
+            _snsToggleBtn.targetGraphic = headerImg;
+            var hbc = _snsToggleBtn.colors;
+            hbc.highlightedColor = new Color(0.18f, 0.2f, 0.3f);
+            hbc.pressedColor = new Color(0.08f, 0.1f, 0.18f);
+            _snsToggleBtn.colors = hbc;
+            _snsToggleBtn.onClick.AddListener(() => { _snsPanelExpanded = !_snsPanelExpanded; });
+
+            var headerLabel = MakeLabel(headerRt, "Title", "SNS FEED", 13,
+                new Color(0.5f, 0.8f, 1f), FontStyle.Bold, TextAnchor.MiddleLeft);
+            var hlRt = headerLabel.rectTransform;
+            hlRt.anchorMin = hlRt.anchorMax = new Vector2(0f, 0.5f);
+            hlRt.pivot = new Vector2(0f, 0.5f);
+            hlRt.anchoredPosition = new Vector2(8f, 0f);
+            hlRt.sizeDelta = new Vector2(120f, 20f);
+
+            // レピュテーションメーター（ヘッダー右側）
+            _snsReputationText = MakeLabel(headerRt, "Rep", "Rep: 50", 12,
+                Color.white, FontStyle.Bold, TextAnchor.MiddleRight);
+            var repRt = _snsReputationText.rectTransform;
+            repRt.anchorMin = repRt.anchorMax = new Vector2(1f, 0.5f);
+            repRt.pivot = new Vector2(1f, 0.5f);
+            repRt.anchoredPosition = new Vector2(-8f, 0f);
+            repRt.sizeDelta = new Vector2(100f, 20f);
+
+            // レピュテーションバー
+            float barY = panelH - 30f;
+            var barBg = MakePanel(rt, "RepBarBg", panelW - 16f, 6f, new Color(0.15f, 0.15f, 0.2f));
+            var barBgRt = barBg.GetComponent<RectTransform>();
+            barBgRt.anchorMin = barBgRt.anchorMax = new Vector2(0f, 1f);
+            barBgRt.pivot = new Vector2(0f, 1f);
+            barBgRt.anchoredPosition = new Vector2(8f, -26f);
+
+            _snsReputationBar = MakeLabel(rt, "RepBarFill", "", 1, Color.clear,
+                FontStyle.Normal, TextAnchor.MiddleLeft);
+            // Use image instead
+            var repFillGo = MakePanel(barBgRt, "Fill", 0f, 6f, new Color(0.3f, 0.7f, 1f));
+            var repFillRt = repFillGo.GetComponent<RectTransform>();
+            repFillRt.anchorMin = new Vector2(0f, 0f);
+            repFillRt.anchorMax = new Vector2(0f, 1f);
+            repFillRt.pivot = new Vector2(0f, 0.5f);
+            repFillRt.anchoredPosition = Vector2.zero;
+            // Store image ref via tag on text
+            _snsReputationBar.text = "repfill";
+            // We'll update width directly; store ref differently
+            // Actually, let's use the Image component
+            Destroy(_snsReputationBar.gameObject);
+            _snsReputationBar = null;
+            // Replace with a proper approach
+            var repFillImg = repFillGo.GetComponent<Image>();
+
+            // Spawn multiplier text
+            _snsSpawnText = MakeLabel(rt, "SpawnMul", "", 11,
+                Muted, FontStyle.Normal, TextAnchor.MiddleLeft);
+            var spRt = _snsSpawnText.rectTransform;
+            spRt.anchorMin = spRt.anchorMax = new Vector2(0f, 1f);
+            spRt.pivot = new Vector2(0f, 1f);
+            spRt.anchoredPosition = new Vector2(8f, -36f);
+            spRt.sizeDelta = new Vector2(panelW - 16f, 14f);
+
+            // トレンドトピック（3行）
+            var trendHeader = MakeLabel(rt, "TrendH", "TRENDING", 11,
+                new Color(0.9f, 0.78f, 0.25f), FontStyle.Bold, TextAnchor.MiddleLeft);
+            var thRt = trendHeader.rectTransform;
+            thRt.anchorMin = thRt.anchorMax = new Vector2(0f, 1f);
+            thRt.pivot = new Vector2(0f, 1f);
+            thRt.anchoredPosition = new Vector2(8f, -54f);
+            thRt.sizeDelta = new Vector2(panelW - 16f, 14f);
+
+            _snsTrendTexts = new Text[3];
+            for (int i = 0; i < 3; i++)
+            {
+                _snsTrendTexts[i] = MakeLabel(rt, $"Trend{i}", "", 11,
+                    Color.white, FontStyle.Normal, TextAnchor.MiddleLeft);
+                var tRt = _snsTrendTexts[i].rectTransform;
+                tRt.anchorMin = tRt.anchorMax = new Vector2(0f, 1f);
+                tRt.pivot = new Vector2(0f, 1f);
+                tRt.anchoredPosition = new Vector2(12f, -70f - i * 15f);
+                tRt.sizeDelta = new Vector2(panelW - 24f, 14f);
+            }
+
+            // フィード（最新5件）
+            var feedHeader = MakeLabel(rt, "FeedH", "RECENT POSTS", 11,
+                new Color(0.5f, 0.8f, 1f), FontStyle.Bold, TextAnchor.MiddleLeft);
+            var fhRt = feedHeader.rectTransform;
+            fhRt.anchorMin = fhRt.anchorMax = new Vector2(0f, 1f);
+            fhRt.pivot = new Vector2(0f, 1f);
+            fhRt.anchoredPosition = new Vector2(8f, -118f);
+            fhRt.sizeDelta = new Vector2(panelW - 16f, 14f);
+
+            _snsFeedTexts = new Text[5];
+            _snsFeedSentiments = new Text[5];
+            for (int i = 0; i < 5; i++)
+            {
+                float fy = -134f - i * 24f;
+
+                // センチメント表示
+                _snsFeedSentiments[i] = MakeLabel(rt, $"FSent{i}", "", 11,
+                    Green, FontStyle.Bold, TextAnchor.MiddleCenter);
+                var sRt = _snsFeedSentiments[i].rectTransform;
+                sRt.anchorMin = sRt.anchorMax = new Vector2(0f, 1f);
+                sRt.pivot = new Vector2(0f, 1f);
+                sRt.anchoredPosition = new Vector2(8f, fy);
+                sRt.sizeDelta = new Vector2(14f, 22f);
+
+                // 投稿テキスト
+                _snsFeedTexts[i] = MakeLabel(rt, $"FPost{i}", "", 11,
+                    Color.white, FontStyle.Normal, TextAnchor.MiddleLeft);
+                _snsFeedTexts[i].horizontalOverflow = HorizontalWrapMode.Wrap;
+                var fRt = _snsFeedTexts[i].rectTransform;
+                fRt.anchorMin = fRt.anchorMax = new Vector2(0f, 1f);
+                fRt.pivot = new Vector2(0f, 1f);
+                fRt.anchoredPosition = new Vector2(24f, fy);
+                fRt.sizeDelta = new Vector2(panelW - 36f, 22f);
+            }
+
+            // Store repFillImg reference via a trick: use _snsReputationBar as carrier
+            // Instead, store as a field
+            _snsRepFillImg = repFillImg;
+            _snsRepBarWidth = panelW - 16f;
+
+            _snsPanelExpanded = true;
+        }
+
+        private Image _snsRepFillImg;
+        private float _snsRepBarWidth;
+
+        private void UpdateSNSPanel()
+        {
+            if (_snsPanel == null) return;
+
+            var gm = GameManager.Instance;
+            if (gm == null) { _snsPanel.SetActive(false); return; }
+
+            var snsSystem = gm.AIManager?.SNSSystem;
+            if (snsSystem == null) { _snsPanel.SetActive(false); return; }
+
+            _snsPanel.SetActive(true);
+
+            // 折りたたみ時はヘッダーだけ表示
+            var panelRt = _snsPanel.GetComponent<RectTransform>();
+            if (_snsPanelExpanded)
+                panelRt.sizeDelta = new Vector2(300f, 260f);
+            else
+                panelRt.sizeDelta = new Vector2(300f, 24f);
+
+            // レピュテーション
+            float rep = snsSystem.Reputation;
+            Color repColor = rep >= 70f ? Green : rep >= 40f ? Yellow : Red;
+            _snsReputationText.text = $"Rep: {rep:F0}";
+            _snsReputationText.color = repColor;
+
+            // バー
+            if (_snsRepFillImg != null)
+            {
+                float ratio = Mathf.Clamp01(rep / 100f);
+                _snsRepFillImg.rectTransform.sizeDelta = new Vector2(_snsRepBarWidth * ratio, 0f);
+                _snsRepFillImg.color = repColor;
+            }
+
+            if (!_snsPanelExpanded) return;
+
+            // スポーン倍率
+            float spawnMul = snsSystem.VisitorSpawnMultiplier;
+            _snsSpawnText.text = $"Visitor Spawn: x{spawnMul:F2}  Posts: {snsSystem.Feed.Count}";
+
+            // トレンドトピック
+            var trends = snsSystem.TrendingTopics;
+            for (int i = 0; i < 3; i++)
+            {
+                if (i < trends.Count)
+                {
+                    var t = trends[i];
+                    string sentIcon = t.OverallSentiment == PostSentiment.Positive ? "+" :
+                                      t.OverallSentiment == PostSentiment.Negative ? "-" : "=";
+                    Color tColor = t.OverallSentiment == PostSentiment.Positive ? Green :
+                                   t.OverallSentiment == PostSentiment.Negative ? Red : Muted;
+                    _snsTrendTexts[i].text = $"#{i + 1} {t.TopicName} ({t.MentionCount}件) [{sentIcon}]";
+                    _snsTrendTexts[i].color = tColor;
+                }
+                else
+                {
+                    _snsTrendTexts[i].text = "";
+                }
+            }
+
+            // フィード
+            var feed = snsSystem.Feed;
+            for (int i = 0; i < 5; i++)
+            {
+                if (i < feed.Count)
+                {
+                    var post = feed[i];
+
+                    // テキスト（30文字でカット）
+                    string content = post.Content;
+                    if (content.Length > 30) content = content.Substring(0, 30) + "...";
+                    _snsFeedTexts[i].text = $"{post.AuthorName}: {content}";
+
+                    // センチメント
+                    switch (post.Sentiment)
+                    {
+                        case PostSentiment.Positive:
+                            _snsFeedSentiments[i].text = "+";
+                            _snsFeedSentiments[i].color = Green;
+                            break;
+                        case PostSentiment.Negative:
+                            _snsFeedSentiments[i].text = "-";
+                            _snsFeedSentiments[i].color = Red;
+                            break;
+                        default:
+                            _snsFeedSentiments[i].text = "=";
+                            _snsFeedSentiments[i].color = Muted;
+                            break;
+                    }
+                }
+                else
+                {
+                    _snsFeedTexts[i].text = "";
+                    _snsFeedSentiments[i].text = "";
                 }
             }
         }
@@ -2195,6 +2467,9 @@ namespace ThemeParkGame.Core
 
             // ---- アラートバー ----
             UpdateAlertBar();
+
+            // ---- SNSフィード ----
+            UpdateSNSPanel();
 
             // ---- ファーストパーソンビュー ----
             UpdateFirstPersonOverlay();

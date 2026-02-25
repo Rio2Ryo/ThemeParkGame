@@ -737,11 +737,20 @@ namespace ThemeParkGame.Visitor
         /// </summary>
         private float GetParkFame()
         {
+            float baseFame = 50f;
             if (GameManager.Instance != null && GameManager.Instance.ParkManager != null)
             {
-                return GameManager.Instance.ParkManager.GetOverallRating();
+                baseFame = GameManager.Instance.ParkManager.GetOverallRating();
             }
-            return 50f;
+
+            // SNSレピュテーションを知名度に反映（基本評価70%＋SNS評判30%）
+            if (GameManager.Instance?.AIManager?.SNSSystem != null)
+            {
+                float snsRep = GameManager.Instance.AIManager.SNSSystem.Reputation;
+                return baseFame * 0.7f + snsRep * 0.3f;
+            }
+
+            return baseFame;
         }
 
         /// <summary>

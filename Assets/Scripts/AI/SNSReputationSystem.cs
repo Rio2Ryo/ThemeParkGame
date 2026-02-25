@@ -141,6 +141,10 @@ namespace ThemeParkGame.AI
 
             // Listen for visitors leaving the park
             GameEvents.OnVisitorLeavePark += HandleVisitorLeaving;
+
+            // Listen for day changes to apply reputation decay
+            if (GameManager.Instance?.TimeManager != null)
+                GameManager.Instance.TimeManager.OnDayChanged += HandleDayChanged;
         }
 
         private void Update()
@@ -647,12 +651,36 @@ namespace ThemeParkGame.AI
         };
 
         // ================================================================
+        // Time Integration
+        // ================================================================
+
+        /// <summary>日替わりでレピュテーション減衰を適用する</summary>
+        private void HandleDayChanged()
+        {
+            // 1日 = 約14時間のパーク営業時間分の減衰を適用
+            ApplyReputationDecay(14f);
+        }
+
+        // ================================================================
+        // Save/Load
+        // ================================================================
+
+        /// <summary>セーブデータからレピュテーションを復元する</summary>
+        public void RestoreReputation(float reputation)
+        {
+            _currentReputation = Mathf.Clamp(reputation, 0f, 100f);
+            _targetReputation = _currentReputation;
+        }
+
+        // ================================================================
         // Cleanup
         // ================================================================
 
         private void OnDestroy()
         {
             GameEvents.OnVisitorLeavePark -= HandleVisitorLeaving;
+            if (GameManager.Instance?.TimeManager != null)
+                GameManager.Instance.TimeManager.OnDayChanged -= HandleDayChanged;
         }
     }
 }

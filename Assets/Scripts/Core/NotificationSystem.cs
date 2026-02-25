@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using ThemeParkGame.AI;
 
 namespace ThemeParkGame.Core
 {
@@ -212,6 +213,7 @@ namespace ThemeParkGame.Core
             GameEvents.OnParkEventStarted += OnParkEventStarted;
             GameEvents.OnParkEventEnded += OnParkEventEnded;
             GameEvents.OnPathwayCongestionChanged += OnPathwayCongestion;
+            GameEvents.OnSNSPostGenerated += OnSNSPost;
         }
 
         private void UnsubscribeFromEvents()
@@ -242,6 +244,7 @@ namespace ThemeParkGame.Core
             GameEvents.OnParkEventStarted -= OnParkEventStarted;
             GameEvents.OnParkEventEnded -= OnParkEventEnded;
             GameEvents.OnPathwayCongestionChanged -= OnPathwayCongestion;
+            GameEvents.OnSNSPostGenerated -= OnSNSPost;
         }
 
         // イベントハンドラ - アトラクション
@@ -319,6 +322,37 @@ namespace ThemeParkGame.Core
         {
             if (avg > 0.8f)
                 NotifyThrottled("congestion", $"通路が非常に混雑しています (混雑度{avg * 100f:F0}%)", NotifLevel.Warning);
+        }
+
+        // イベントハンドラ - SNS投稿
+        private int _snsPostCount;
+        private float _lastReputationMilestone;
+        private void OnSNSPost(int visitorId, string content)
+        {
+            _snsPostCount++;
+
+            // 10投稿ごとに通知
+            if (_snsPostCount % 10 == 0)
+                Notify($"SNS投稿が{_snsPostCount}件に到達", NotifLevel.Info);
+
+            // レピュテーションマイルストーン
+            var snsSystem = GameManager.Instance?.AIManager?.SNSSystem;
+            if (snsSystem != null)
+            {
+                float rep = snsSystem.Reputation;
+                // 10ポイント刻みのマイルストーン
+                float milestone = Mathf.Floor(rep / 10f) * 10f;
+                if (milestone != _lastReputationMilestone && milestone > 0f)
+                {
+                    if (milestone > _lastReputationMilestone)
+                        NotifyThrottled("sns_rep_up",
+                            $"SNS評判が{milestone:F0}ポイントに上昇！", NotifLevel.Success);
+                    else
+                        NotifyThrottled("sns_rep_down",
+                            $"SNS評判が{milestone:F0}ポイントに低下...", NotifLevel.Warning);
+                    _lastReputationMilestone = milestone;
+                }
+            }
         }
 
         // ================================================================
