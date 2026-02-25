@@ -1904,38 +1904,48 @@ namespace ThemeParkGame.Core
             var title = MakeLabel(rt, "PauseTitle", "PAUSED", 56, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
             var titleRt = title.rectTransform;
             titleRt.anchorMin = titleRt.anchorMax = new Vector2(0.5f, 0.5f);
-            titleRt.anchoredPosition = new Vector2(0f, 120f);
+            titleRt.anchoredPosition = new Vector2(0f, 240f);
             titleRt.sizeDelta = new Vector2(400f, 70f);
 
             // 「続ける」ボタン
             MakeCenterButton(rt, "ResumeBtn", "続ける",
                 new Color(0.18f, 0.55f, 0.34f), new Color(0.22f, 0.65f, 0.40f), new Color(0.14f, 0.45f, 0.28f),
-                new Vector2(0f, 150f), OnResumeClicked);
+                new Vector2(0f, 170f), OnResumeClicked);
 
             // 「セーブ/ロード」ボタン
             MakeCenterButton(rt, "SaveLoadBtn", "SAVE / LOAD",
                 new Color(0.3f, 0.4f, 0.6f), new Color(0.38f, 0.5f, 0.72f), new Color(0.22f, 0.3f, 0.48f),
-                new Vector2(0f, 80f), OnSaveLoadClicked);
+                new Vector2(0f, 105f), OnSaveLoadClicked);
+
+            // 「クラウドセーブ」ボタン
+            MakeCenterButton(rt, "CloudSaveBtn", "CLOUD SAVE",
+                new Color(0.2f, 0.4f, 0.6f), new Color(0.28f, 0.5f, 0.72f), new Color(0.15f, 0.3f, 0.48f),
+                new Vector2(0f, 40f), OnCloudSaveClicked);
+
+            // 「リーダーボード」ボタン
+            MakeCenterButton(rt, "LeaderboardBtn", "LEADERBOARD",
+                new Color(0.55f, 0.45f, 0.15f), new Color(0.65f, 0.55f, 0.22f), new Color(0.42f, 0.34f, 0.1f),
+                new Vector2(0f, -25f), OnLeaderboardClicked);
 
             // 「実績」ボタン
             MakeCenterButton(rt, "AchievementBtn", "ACHIEVEMENTS",
                 new Color(0.55f, 0.45f, 0.2f), new Color(0.65f, 0.55f, 0.28f), new Color(0.42f, 0.34f, 0.15f),
-                new Vector2(0f, 10f), OnAchievementClicked);
+                new Vector2(0f, -90f), OnAchievementClicked);
 
             // 「サウンド設定」ボタン
             MakeCenterButton(rt, "SoundBtn", "SOUND SETTINGS",
                 new Color(0.35f, 0.4f, 0.52f), new Color(0.45f, 0.5f, 0.62f), new Color(0.25f, 0.3f, 0.42f),
-                new Vector2(0f, -60f), OnSoundSettingsClicked);
+                new Vector2(0f, -155f), OnSoundSettingsClicked);
 
             // 「イベントログ」ボタン
             MakeCenterButton(rt, "EventLogBtn", "EVENT LOG",
                 new Color(0.3f, 0.45f, 0.55f), new Color(0.38f, 0.55f, 0.65f), new Color(0.22f, 0.35f, 0.44f),
-                new Vector2(0f, -130f), OnEventLogClicked);
+                new Vector2(0f, -220f), OnEventLogClicked);
 
             // 「ゲーム終了」ボタン
             MakeCenterButton(rt, "EndGameBtn", "ゲーム終了",
                 new Color(0.65f, 0.2f, 0.2f), new Color(0.75f, 0.3f, 0.3f), new Color(0.5f, 0.15f, 0.15f),
-                new Vector2(0f, -200f), OnEndGameClicked);
+                new Vector2(0f, -285f), OnEndGameClicked);
 
             // サウンド設定パネル（初期非表示）
             BuildSoundSettingsPanel(rt);
@@ -2293,6 +2303,18 @@ namespace ThemeParkGame.Core
         {
             if (NotificationSystem.Instance != null)
                 NotificationSystem.Instance.ShowLogPanel();
+        }
+
+        private void OnLeaderboardClicked()
+        {
+            if (LeaderboardManager.Instance != null)
+                LeaderboardManager.Instance.FetchAndShowLeaderboard();
+        }
+
+        private void OnCloudSaveClicked()
+        {
+            if (CloudSaveManager.Instance != null)
+                CloudSaveManager.Instance.ShowCloudSaveUI();
         }
 
         private void OnSoundSettingsClicked()

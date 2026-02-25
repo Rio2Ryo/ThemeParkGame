@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using ThemeParkGame.UI;
+using ThemeParkGame.Visitor;
 
 namespace ThemeParkGame.Core
 {
@@ -27,6 +28,16 @@ namespace ThemeParkGame.Core
             EnsureMainCamera();
             EnsureDirectionalLight();
             EnsureGround();
+
+            // オンラインサービス
+            EnsureLeaderboardManager();
+            EnsureCloudSaveManager();
+
+            // VIPシステム
+            EnsureVIPVisitorSystem();
+
+            // チュートリアル
+            EnsureTutorialSystem();
 
             // ランタイムゲームセットアップ（ゲーム開始後にワールドを構築）
             EnsureRuntimeGameSetup();
@@ -146,6 +157,42 @@ namespace ThemeParkGame.Core
 
             go.isStatic = true;
             WebGLOptimizer.LogVerbose("[GameBootstrapper] Ground を生成");
+        }
+
+        // ================================================================
+        // オンラインサービス・追加システム
+        // ================================================================
+
+        private static void EnsureLeaderboardManager()
+        {
+            if (LeaderboardManager.Instance != null) return;
+            var go = new GameObject("LeaderboardManager");
+            go.AddComponent<LeaderboardManager>();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] LeaderboardManager を生成");
+        }
+
+        private static void EnsureCloudSaveManager()
+        {
+            if (CloudSaveManager.Instance != null) return;
+            var go = new GameObject("CloudSaveManager");
+            go.AddComponent<CloudSaveManager>();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] CloudSaveManager を生成");
+        }
+
+        private static void EnsureVIPVisitorSystem()
+        {
+            if (VIPVisitorSystem.Instance != null) return;
+            var go = new GameObject("VIPVisitorSystem");
+            go.AddComponent<VIPVisitorSystem>();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] VIPVisitorSystem を生成");
+        }
+
+        private static void EnsureTutorialSystem()
+        {
+            if (TutorialSystem.Instance != null) return;
+            var go = new GameObject("TutorialSystem");
+            go.AddComponent<TutorialSystem>();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] TutorialSystem を生成");
         }
 
         // ================================================================
@@ -366,7 +413,7 @@ namespace ThemeParkGame.Core
             // ---- バージョン表示 ----
             var ver = CreateUIElement("Version", canvasGo.transform);
             var verText = ver.AddComponent<Text>();
-            verText.text = "v1.4 - WebGL Build";
+            verText.text = "v1.5 - WebGL Build";
             verText.font = GetBuiltinFont();
             verText.fontSize = 18;
             verText.alignment = TextAnchor.LowerRight;

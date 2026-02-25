@@ -888,6 +888,148 @@ namespace ThemeParkGame.Attraction
                     }
                 }
             });
+
+            // ============================================================
+            // 未来都市 (FutureCity) - SFテーマエリア
+            // ============================================================
+
+            Register(new AttractionDefinition
+            {
+                AttractionId = "FC_QUANTUM_COASTER",
+                NameJP = "クォンタムコースター",
+                NameEN = "Quantum Coaster",
+                Description = "量子テレポート演出を駆使した超高速磁気浮上コースター。重力を無視したコースレイアウトで未知のGを体験。",
+                Category = AttractionCategory.GForce,
+                PrimaryThemeZone = ThemeZone.FutureCity,
+                CrossZoneCompatible = true,
+                ExcitementRating = 8.0f,
+                NauseaFactor = 0.22f,
+                Capacity = 16,
+                RideDuration = 90f,
+                BuildCost = 12000,
+                MaintenanceCost = 500,
+                SuggestedTicketPrice = 600,
+                Size = new Vector2Int(5, 3),
+                RequiredResearchId = "RES_FC_QUANTUM",
+                BaseBreakdownRate = 0.04f,
+                UpgradePath = new List<AttractionUpgradeLevel>
+                {
+                    new AttractionUpgradeLevel
+                    {
+                        Level = 1,
+                        UpgradeName = "次元シフト演出",
+                        Description = "走行中に異次元空間を再現するホログラム演出を追加。",
+                        UpgradeCost = 5000,
+                        ExcitementMultiplier = 1.3f,
+                        CapacityMultiplier = 1.0f,
+                        NauseaMultiplier = 1.1f,
+                        BreakdownRateMultiplier = 0.9f
+                    },
+                    new AttractionUpgradeLevel
+                    {
+                        Level = 2,
+                        UpgradeName = "反重力ループ",
+                        Description = "磁気制御による無重力体験区間を追加。",
+                        UpgradeCost = 8000,
+                        ExcitementMultiplier = 1.25f,
+                        CapacityMultiplier = 1.1f,
+                        NauseaMultiplier = 1.15f,
+                        BreakdownRateMultiplier = 0.85f
+                    }
+                }
+            });
+
+            Register(new AttractionDefinition
+            {
+                AttractionId = "FC_HOLOGRAM_THEATER",
+                NameJP = "ホログラムシアター",
+                NameEN = "Hologram Theater",
+                Description = "360度全方位ホログラム投影による没入型シアター。AIが観客の反応に合わせてリアルタイムにストーリーを変化させる。",
+                Category = AttractionCategory.ShowAttraction,
+                PrimaryThemeZone = ThemeZone.FutureCity,
+                CrossZoneCompatible = true,
+                ExcitementRating = 5.5f,
+                NauseaFactor = 0.03f,
+                Capacity = 60,
+                RideDuration = 120f,
+                BuildCost = 9000,
+                MaintenanceCost = 350,
+                SuggestedTicketPrice = 400,
+                Size = new Vector2Int(4, 4),
+                RequiredResearchId = "RES_FC_HOLOGRAM",
+                BaseBreakdownRate = 0.02f,
+                UpgradePath = new List<AttractionUpgradeLevel>
+                {
+                    new AttractionUpgradeLevel
+                    {
+                        Level = 1,
+                        UpgradeName = "触覚フィードバック",
+                        Description = "座席に振動・風・温度変化を追加し五感を刺激。",
+                        UpgradeCost = 4000,
+                        ExcitementMultiplier = 1.2f,
+                        CapacityMultiplier = 1.0f,
+                        NauseaMultiplier = 1.05f,
+                        BreakdownRateMultiplier = 0.95f
+                    },
+                    new AttractionUpgradeLevel
+                    {
+                        Level = 2,
+                        UpgradeName = "マルチシナリオAI",
+                        Description = "AIが毎回異なるストーリーを生成。リピーター率が大幅上昇。",
+                        UpgradeCost = 6000,
+                        ExcitementMultiplier = 1.3f,
+                        CapacityMultiplier = 1.15f,
+                        NauseaMultiplier = 1.0f,
+                        BreakdownRateMultiplier = 0.9f
+                    }
+                }
+            });
+
+            Register(new AttractionDefinition
+            {
+                AttractionId = "FC_GRAVITY_TOWER",
+                NameJP = "グラビティタワー",
+                NameEN = "Gravity Tower",
+                Description = "高さ80mの透明チューブを磁気カプセルで急上昇・自由落下。頂上では未来都市のパノラマビューが広がる。",
+                Category = AttractionCategory.VerticalRotation,
+                PrimaryThemeZone = ThemeZone.FutureCity,
+                CrossZoneCompatible = true,
+                ExcitementRating = 7.0f,
+                NauseaFactor = 0.15f,
+                Capacity = 20,
+                RideDuration = 60f,
+                BuildCost = 10000,
+                MaintenanceCost = 400,
+                SuggestedTicketPrice = 500,
+                Size = new Vector2Int(3, 3),
+                RequiredResearchId = "RES_FC_GRAVITY",
+                BaseBreakdownRate = 0.03f,
+                UpgradePath = new List<AttractionUpgradeLevel>
+                {
+                    new AttractionUpgradeLevel
+                    {
+                        Level = 1,
+                        UpgradeName = "スカイウォーク展望台",
+                        Description = "頂上にガラス張りの展望デッキを追加。滞在時間が延長。",
+                        UpgradeCost = 4500,
+                        ExcitementMultiplier = 1.15f,
+                        CapacityMultiplier = 1.2f,
+                        NauseaMultiplier = 0.95f,
+                        BreakdownRateMultiplier = 0.9f
+                    },
+                    new AttractionUpgradeLevel
+                    {
+                        Level = 2,
+                        UpgradeName = "ツインタワー化",
+                        Description = "2基目のタワーを増設し同時運転。スループット倍増。",
+                        UpgradeCost = 7000,
+                        ExcitementMultiplier = 1.2f,
+                        CapacityMultiplier = 1.5f,
+                        NauseaMultiplier = 1.0f,
+                        BreakdownRateMultiplier = 0.85f
+                    }
+                }
+            });
         }
 
         // ---- 登録ヘルパー ----

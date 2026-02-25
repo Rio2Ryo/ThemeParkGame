@@ -528,6 +528,61 @@ namespace ThemeParkGame.Core
             return CreateClip("WeatherChangeSE", data, duration);
         }
 
+        /// <summary>未来都市エリアBGM（シンセウェーブ風16秒ループ）</summary>
+        public static AudioClip GenerateFutureCityBGM()
+        {
+            float duration = 16f;
+            int samples = (int)(SampleRate * duration);
+            float[] data = new float[samples];
+
+            // SFコード進行: Am -> Dm -> Em -> Am
+            float[][] chords = new float[][]
+            {
+                new float[] { 220.00f, 261.63f, 329.63f },  // Am
+                new float[] { 146.83f, 174.61f, 220.00f },  // Dm
+                new float[] { 164.81f, 196.00f, 246.94f },  // Em
+                new float[] { 220.00f, 261.63f, 329.63f },  // Am
+            };
+
+            for (int i = 0; i < samples; i++)
+            {
+                float t = (float)i / SampleRate;
+                int chordIndex = Mathf.FloorToInt(t / 4f) % chords.Length;
+                float[] chord = chords[chordIndex];
+
+                float val = 0f;
+
+                // シンセベース（オクーブ下のパルス波）
+                float bassFreq = chord[0] * 0.5f;
+                float pulse = Mathf.Sin(2f * Mathf.PI * bassFreq * t) > 0f ? 0.08f : -0.08f;
+                val += pulse * 0.5f;
+
+                // アルペジオ（16分音符風）
+                float arpT = (t * 4f) % 1f;
+                int arpNote = Mathf.FloorToInt(arpT * 4f) % 3;
+                float arpFreq = chord[arpNote] * 2f;
+                float arpEnv = Mathf.Exp(-((arpT * 4f) % 1f) * 6f);
+                val += Mathf.Sin(2f * Mathf.PI * arpFreq * t) * arpEnv * 0.1f;
+
+                // パッド（LFO付きコード）
+                float lfo = 1f + 0.3f * Mathf.Sin(2f * Mathf.PI * 0.25f * t);
+                for (int n = 0; n < chord.Length; n++)
+                {
+                    val += Mathf.Sin(2f * Mathf.PI * chord[n] * lfo * t) * 0.04f;
+                }
+
+                // ハイハット風リズム
+                float beat16 = (t * 8f) % 1f;
+                if (beat16 < 0.02f)
+                    val += PseudoNoise(i) * 0.05f;
+
+                data[i] = Mathf.Clamp(val, -1f, 1f);
+            }
+
+            CrossFade(data, SampleRate / 2);
+            return CreateClip("FutureCityBGM", data, duration);
+        }
+
         // ================================================================
         // ヘルパー
         // ================================================================

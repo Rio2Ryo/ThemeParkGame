@@ -32,6 +32,7 @@ namespace ThemeParkGame.Core
         private AudioClip clipMenuBGM;
         private AudioClip clipGameplayBGM;
         private AudioClip clipGameOverBGM;
+        private AudioClip clipFutureCityBGM;
         private AudioClip clipCrowdAmbient;
         private AudioClip clipRainAmbient;
         private AudioClip clipCheer;
@@ -159,6 +160,7 @@ namespace ThemeParkGame.Core
             clipMenuBGM = ProceduralAudioLibrary.GenerateMenuBGM();
             clipGameplayBGM = ProceduralAudioLibrary.GenerateGameplayBGM();
             clipGameOverBGM = ProceduralAudioLibrary.GenerateGameOverBGM();
+            clipFutureCityBGM = ProceduralAudioLibrary.GenerateFutureCityBGM();
 
             // 環境音
             clipCrowdAmbient = ProceduralAudioLibrary.GenerateCrowdAmbient();
@@ -213,6 +215,20 @@ namespace ThemeParkGame.Core
         public void PlayClickSE()
         {
             PlaySE(clipClick);
+        }
+
+        /// <summary>テーマゾーンに応じたBGMに切り替える</summary>
+        public void PlayZoneBGM(ThemeZone zone)
+        {
+            switch (zone)
+            {
+                case ThemeZone.FutureCity:
+                    PlayBGM(clipFutureCityBGM);
+                    break;
+                default:
+                    PlayBGM(clipGameplayBGM);
+                    break;
+            }
         }
 
         /// <summary>環境音を再生する</summary>

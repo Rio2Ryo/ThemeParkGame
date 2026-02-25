@@ -446,6 +446,19 @@ namespace ThemeParkGame.Park
         // データ参照
         // ================================================================
 
+        /// <summary>
+        /// 外部システムからカテゴリ評価に直接ボーナスを加算する。
+        /// VIPシステムやイベントシステムから呼び出される。
+        /// </summary>
+        public void ApplyExternalBonus(CertificateCategory category, float amount)
+        {
+            if (_ratings.TryGetValue(category, out CategoryRating rating))
+            {
+                rating.Score = Mathf.Clamp(rating.Score + amount, 0f, 100f);
+                RecalculateOverallRating();
+            }
+        }
+
         /// <summary>指定カテゴリの評価スコアを取得する</summary>
         public float GetCategoryScore(CertificateCategory category)
         {

@@ -11,7 +11,8 @@ namespace ThemeParkGame.Core
         LostKingdom,      // ロストキングダム
         HalloweenWorld,   // ハロウィーンワールド
         Wonderland,       // ワンダーランド
-        SpaceZone         // スペースゾーン
+        SpaceZone,        // スペースゾーン
+        FutureCity        // 未来都市
     }
 
     /// <summary>ゲーム状態</summary>
