@@ -143,6 +143,18 @@ namespace ThemeParkGame.Core
         private GameObject _buildBtn;
         private GameObject _staffBtn;
 
+        // ---- 施設詳細パネル ----
+        private GameObject _facilityInfoPanel;
+        private Text _fiName;
+        private Text _fiType;
+        private Text _fiStatus;
+        private Text _fiPrice;
+        private Text _fiQueue;
+        private Text _fiStats;
+        private Button _fiPriceUp;
+        private Button _fiPriceDown;
+        private FacilityBase _selectedFacility;
+
         // ---- アラートバー ----
         private GameObject _alertBar;
         private Image _alertBarBg;
@@ -235,6 +247,7 @@ namespace ThemeParkGame.Core
             BuildVisitorPanel(_canvasRoot);
             BuildAttractionPanel(_canvasRoot);
             BuildVisitorInfoPanel(_canvasRoot);
+            BuildFacilityInfoPanel(_canvasRoot);
             BuildMenuButton(_canvasRoot);
             BuildActionButtons(_canvasRoot);
             BuildPauseOverlay(_canvasRoot);
@@ -586,6 +599,227 @@ namespace ThemeParkGame.Core
             PlaceInParent(t.rectTransform, x, y, w, h, new Vector2(0f, 1f));
             y -= h;
             return t;
+        }
+
+        // ================================================================
+        // 施設詳細パネル（画面中央右 280x280）
+        // ================================================================
+
+        private void BuildFacilityInfoPanel(RectTransform root)
+        {
+            float panelW = 280f;
+            float panelH = 290f;
+
+            _facilityInfoPanel = MakePanel(root, "FacilityInfo", panelW, panelH, BgDark);
+            var rt = _facilityInfoPanel.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0.7f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
+
+            float y = -8f;
+            _fiName = MakeLabel(rt, "FIName", "", 18, Gold, FontStyle.Bold, TextAnchor.MiddleLeft);
+            PlaceInParent(_fiName.rectTransform, 10f, y, panelW - 20f, 24f, new Vector2(0f, 1f));
+            y -= 26f;
+
+            _fiType = MakeLabel(rt, "FIType", "", 13, Muted, FontStyle.Normal, TextAnchor.MiddleLeft);
+            PlaceInParent(_fiType.rectTransform, 10f, y, panelW - 20f, 18f, new Vector2(0f, 1f));
+            y -= 22f;
+
+            // 区切り線
+            var line = MakePanel(rt, "Line", panelW - 20f, 1f, new Color(0.3f, 0.35f, 0.4f));
+            PlaceInParent(line.GetComponent<RectTransform>(), 10f, y, panelW - 20f, 1f, new Vector2(0f, 1f));
+            y -= 6f;
+
+            _fiStatus = MakeLabel(rt, "FIStatus", "", 14, Green, FontStyle.Normal, TextAnchor.MiddleLeft);
+            PlaceInParent(_fiStatus.rectTransform, 10f, y, panelW - 20f, 20f, new Vector2(0f, 1f));
+            y -= 22f;
+
+            _fiQueue = MakeLabel(rt, "FIQueue", "", 14, Cyan, FontStyle.Normal, TextAnchor.MiddleLeft);
+            PlaceInParent(_fiQueue.rectTransform, 10f, y, panelW - 20f, 20f, new Vector2(0f, 1f));
+            y -= 24f;
+
+            _fiStats = MakeLabel(rt, "FIStats", "", 13, new Color(0.85f, 0.85f, 0.9f),
+                FontStyle.Normal, TextAnchor.UpperLeft);
+            _fiStats.horizontalOverflow = HorizontalWrapMode.Wrap;
+            PlaceInParent(_fiStats.rectTransform, 10f, y, panelW - 20f, 70f, new Vector2(0f, 1f));
+            y -= 74f;
+
+            // 価格調整
+            _fiPrice = MakeLabel(rt, "FIPrice", "", 16, Gold, FontStyle.Bold, TextAnchor.MiddleCenter);
+            PlaceInParent(_fiPrice.rectTransform, 10f, y, panelW - 20f, 22f, new Vector2(0f, 1f));
+            y -= 28f;
+
+            // -5 ボタン
+            var downGo = MakePanel(rt, "PriceDown", 80f, 30f, new Color(0.7f, 0.25f, 0.25f, 0.9f));
+            var downRt = downGo.GetComponent<RectTransform>();
+            downRt.anchorMin = downRt.anchorMax = new Vector2(0f, 0f);
+            downRt.pivot = new Vector2(0f, 0f);
+            downRt.anchoredPosition = new Vector2(30f, 10f);
+            var downImg = downGo.GetComponent<Image>();
+            downImg.raycastTarget = true;
+            _fiPriceDown = downGo.AddComponent<Button>();
+            _fiPriceDown.targetGraphic = downImg;
+            _fiPriceDown.onClick.AddListener(OnFacilityPriceDown);
+            var downLabel = MakeLabel(downRt, "L", "-$5", 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(downLabel.rectTransform);
+
+            // +5 ボタン
+            var upGo = MakePanel(rt, "PriceUp", 80f, 30f, new Color(0.25f, 0.6f, 0.25f, 0.9f));
+            var upRt = upGo.GetComponent<RectTransform>();
+            upRt.anchorMin = upRt.anchorMax = new Vector2(1f, 0f);
+            upRt.pivot = new Vector2(1f, 0f);
+            upRt.anchoredPosition = new Vector2(-30f, 10f);
+            var upImg = upGo.GetComponent<Image>();
+            upImg.raycastTarget = true;
+            _fiPriceUp = upGo.AddComponent<Button>();
+            _fiPriceUp.targetGraphic = upImg;
+            _fiPriceUp.onClick.AddListener(OnFacilityPriceUp);
+            var upLabel = MakeLabel(upRt, "L", "+$5", 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(upLabel.rectTransform);
+
+            // 閉じるボタン
+            var closeGo = MakePanel(rt, "CloseBtn", 24f, 24f, new Color(0.8f, 0.2f, 0.2f, 0.9f));
+            var closeRt = closeGo.GetComponent<RectTransform>();
+            closeRt.anchorMin = closeRt.anchorMax = new Vector2(1f, 1f);
+            closeRt.pivot = new Vector2(1f, 1f);
+            closeRt.anchoredPosition = new Vector2(-4f, -4f);
+            var closeImg = closeGo.GetComponent<Image>();
+            closeImg.raycastTarget = true;
+            var closeBtn = closeGo.AddComponent<Button>();
+            closeBtn.targetGraphic = closeImg;
+            closeBtn.onClick.AddListener(HideFacilityInfo);
+            var closeLabel = MakeLabel(closeRt, "X", "X", 14, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(closeLabel.rectTransform);
+
+            _facilityInfoPanel.SetActive(false);
+        }
+
+        private void ShowFacilityInfo(FacilityBase facility)
+        {
+            _selectedFacility = facility;
+            _facilityInfoPanel.SetActive(true);
+            RefreshFacilityInfo();
+        }
+
+        private void HideFacilityInfo()
+        {
+            _selectedFacility = null;
+            _facilityInfoPanel.SetActive(false);
+        }
+
+        private void RefreshFacilityInfo()
+        {
+            if (_selectedFacility == null)
+            {
+                HideFacilityInfo();
+                return;
+            }
+
+            var attraction = _selectedFacility as Attraction.Attraction;
+            var shop = _selectedFacility as Shop;
+
+            _fiName.text = _selectedFacility.gameObject.name;
+
+            if (attraction != null)
+            {
+                _fiType.text = attraction.Data != null
+                    ? $"アトラクション [{attraction.Data.Category}]"
+                    : "アトラクション";
+
+                string cycleStr = CycleLabel(attraction.CurrentCycleState);
+                _fiStatus.text = $"状態: {cycleStr}";
+                _fiStatus.color = attraction.CurrentCycleState == RideCycleState.BrokenDown
+                    ? Red : Green;
+
+                _fiQueue.text = $"待ち行列: {attraction.QueueLength}/{attraction.MaxQueueLength}人";
+
+                string stats = "";
+                if (attraction.Data != null)
+                {
+                    stats += $"興奮度: {attraction.Data.ExcitementRating:F1}/10\n";
+                    stats += $"酔い度: {attraction.Data.NauseaFactor:F2}\n";
+                    stats += $"定員: {attraction.Data.Capacity}人\n";
+                    stats += $"総搭乗数: {attraction.TotalRiderCount}";
+                }
+                _fiStats.text = stats;
+
+                _fiPrice.text = $"チケット: ${attraction.TicketPrice}";
+                _fiPriceUp.gameObject.SetActive(true);
+                _fiPriceDown.gameObject.SetActive(true);
+            }
+            else if (shop != null)
+            {
+                string shopTypeName;
+                switch (shop.ShopType)
+                {
+                    case ShopType.FoodShop: shopTypeName = "フード"; break;
+                    case ShopType.DrinkShop: shopTypeName = "ドリンク"; break;
+                    case ShopType.SouvenirShop: shopTypeName = "おみやげ"; break;
+                    default: shopTypeName = shop.ShopType.ToString(); break;
+                }
+                _fiType.text = $"ショップ [{shopTypeName}]";
+                _fiStatus.text = "営業中";
+                _fiStatus.color = Green;
+                _fiQueue.text = $"在庫: {shop.CurrentStock}/{shop.MaxStock}";
+
+                string stats = $"売価: ${shop.SellingPrice}\n";
+                stats += $"総売上: ${shop.TotalRevenue:N0}";
+                _fiStats.text = stats;
+
+                _fiPrice.text = $"販売価格: ${shop.SellingPrice}";
+                _fiPriceUp.gameObject.SetActive(true);
+                _fiPriceDown.gameObject.SetActive(true);
+            }
+            else
+            {
+                _fiType.text = "施設";
+                _fiStatus.text = "";
+                _fiQueue.text = "";
+                _fiStats.text = "";
+                _fiPrice.text = "";
+                _fiPriceUp.gameObject.SetActive(false);
+                _fiPriceDown.gameObject.SetActive(false);
+            }
+        }
+
+        private void OnFacilityPriceUp()
+        {
+            if (_selectedFacility == null) return;
+
+            var attraction = _selectedFacility as Attraction.Attraction;
+            if (attraction != null)
+            {
+                attraction.TicketPrice = Mathf.Min(attraction.TicketPrice + 5, 500);
+                RefreshFacilityInfo();
+                return;
+            }
+
+            var shop = _selectedFacility as Shop;
+            if (shop != null)
+            {
+                shop.SellingPrice += 5;
+                RefreshFacilityInfo();
+            }
+        }
+
+        private void OnFacilityPriceDown()
+        {
+            if (_selectedFacility == null) return;
+
+            var attraction = _selectedFacility as Attraction.Attraction;
+            if (attraction != null)
+            {
+                attraction.TicketPrice = Mathf.Max(attraction.TicketPrice - 5, 0);
+                RefreshFacilityInfo();
+                return;
+            }
+
+            var shop = _selectedFacility as Shop;
+            if (shop != null)
+            {
+                shop.SellingPrice = Mathf.Max(shop.SellingPrice - 5, 0);
+                RefreshFacilityInfo();
+            }
         }
 
         // ================================================================
@@ -2191,6 +2425,11 @@ namespace ThemeParkGame.Core
                 RefreshVisitorInfo();
             }
 
+            if (_selectedFacility != null && _facilityInfoPanel.activeSelf)
+            {
+                RefreshFacilityInfo();
+            }
+
             UpdateFloatingScores();
         }
 
@@ -2211,15 +2450,27 @@ namespace ThemeParkGame.Core
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out RaycastHit hit, 500f))
             {
+                // 来場者クリック
                 var visitor = hit.collider.GetComponent<VisitorAI>();
                 if (visitor != null && visitor.IsActive)
                 {
+                    HideFacilityInfo();
                     ShowVisitorInfo(visitor);
+                    return;
+                }
+
+                // 施設クリック
+                var facility = hit.collider.GetComponent<FacilityBase>();
+                if (facility != null)
+                {
+                    HideVisitorInfo();
+                    ShowFacilityInfo(facility);
                     return;
                 }
             }
 
             HideVisitorInfo();
+            HideFacilityInfo();
         }
 
         private void ShowVisitorInfo(VisitorAI visitor)
