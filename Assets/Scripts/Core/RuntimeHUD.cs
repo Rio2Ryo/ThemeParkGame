@@ -139,9 +139,22 @@ namespace ThemeParkGame.Core
         private GameObject _notifBadge;
         private Text _notifBadgeText;
 
-        // ---- 建設/スタッフボタン ----
+        // ---- 建設/スタッフ/研究ボタン ----
         private GameObject _buildBtn;
         private GameObject _staffBtn;
+        private GameObject _researchBtn;
+
+        // ---- 研究パネル ----
+        private GameObject _researchPanel;
+        private Text _researchTitle;
+        private Text _researchScientistInfo;
+        private Text _researchCurrentText;
+        private Image _researchProgressFill;
+        private Text _researchProgressText;
+        private readonly List<GameObject> _researchItemRows = new List<GameObject>();
+        private readonly List<Text> _researchItemTexts = new List<Text>();
+        private readonly List<Button> _researchItemButtons = new List<Button>();
+        private RectTransform _researchListContainer;
 
         // ---- 施設詳細パネル ----
         private GameObject _facilityInfoPanel;
@@ -260,6 +273,7 @@ namespace ThemeParkGame.Core
             BuildRatingPanel(_canvasRoot);
             BuildAlertBar(_canvasRoot);
             BuildSNSPanel(_canvasRoot);
+            BuildResearchPanel(_canvasRoot);
             BuildFirstPersonOverlay(_canvasRoot);
         }
 
@@ -958,6 +972,26 @@ namespace ThemeParkGame.Core
 
             var sLabel = MakeLabel(srt, "Label", "STAFF", 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(sLabel.rectTransform);
+
+            // RESEARCH ボタン（STAFFの右隣）
+            _researchBtn = MakePanel(root, "ResearchBtn", 100f, 36f, new Color(0.55f, 0.45f, 0.2f, 0.9f));
+            var rrt = _researchBtn.GetComponent<RectTransform>();
+            rrt.anchorMin = rrt.anchorMax = new Vector2(0f, 1f);
+            rrt.pivot = new Vector2(0f, 1f);
+            rrt.anchoredPosition = new Vector2(310f, -10f);
+
+            var rImg = _researchBtn.GetComponent<Image>();
+            rImg.raycastTarget = true;
+            var rBtn = _researchBtn.AddComponent<Button>();
+            rBtn.targetGraphic = rImg;
+            var rc = rBtn.colors;
+            rc.highlightedColor = new Color(0.65f, 0.55f, 0.3f);
+            rc.pressedColor = new Color(0.4f, 0.32f, 0.15f);
+            rBtn.colors = rc;
+            rBtn.onClick.AddListener(OnResearchClicked);
+
+            var rLabel = MakeLabel(rrt, "Label", "RESEARCH", 14, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(rLabel.rectTransform);
         }
 
         private void OnBuildClicked()
@@ -980,6 +1014,249 @@ namespace ThemeParkGame.Core
                 sp = gameObject.AddComponent<RuntimeStaffPanel>();
             }
             sp.Toggle();
+        }
+
+        private void OnResearchClicked()
+        {
+            if (_researchPanel == null) return;
+            bool show = !_researchPanel.activeSelf;
+            _researchPanel.SetActive(show);
+            if (show) RefreshResearchPanel();
+        }
+
+        // ================================================================
+        // 研究パネル
+        // ================================================================
+
+        private void BuildResearchPanel(RectTransform root)
+        {
+            float panelW = 480f;
+            float panelH = 520f;
+
+            _researchPanel = new GameObject("ResearchPanel");
+            _researchPanel.transform.SetParent(root, false);
+            var rt = _researchPanel.AddComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(panelW, panelH);
+
+            var bgImg = _researchPanel.AddComponent<Image>();
+            bgImg.color = new Color(0.06f, 0.08f, 0.14f, 0.97f);
+            bgImg.raycastTarget = true;
+
+            // タイトル
+            _researchTitle = MakeLabel(rt, "Title", "RESEARCH LAB", 26, Gold,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            var titleRt = _researchTitle.rectTransform;
+            titleRt.anchorMin = titleRt.anchorMax = new Vector2(0.5f, 1f);
+            titleRt.pivot = new Vector2(0.5f, 1f);
+            titleRt.anchoredPosition = new Vector2(0f, -8f);
+            titleRt.sizeDelta = new Vector2(panelW, 32f);
+
+            // サイエンティスト情報
+            _researchScientistInfo = MakeLabel(rt, "SciInfo", "Scientist: 0  Skill: --", 14, Muted,
+                FontStyle.Normal, TextAnchor.MiddleCenter);
+            var sciRt = _researchScientistInfo.rectTransform;
+            sciRt.anchorMin = sciRt.anchorMax = new Vector2(0.5f, 1f);
+            sciRt.pivot = new Vector2(0.5f, 1f);
+            sciRt.anchoredPosition = new Vector2(0f, -42f);
+            sciRt.sizeDelta = new Vector2(panelW - 20f, 20f);
+
+            // 現在の研究表示
+            var curBg = MakePanel(rt, "CurrentBg", panelW - 20f, 60f, new Color(0.1f, 0.12f, 0.2f, 0.9f));
+            var curRt = curBg.GetComponent<RectTransform>();
+            curRt.anchorMin = curRt.anchorMax = new Vector2(0.5f, 1f);
+            curRt.pivot = new Vector2(0.5f, 1f);
+            curRt.anchoredPosition = new Vector2(0f, -66f);
+
+            _researchCurrentText = MakeLabel(curRt, "CurText", "研究中: なし", 15, Color.white,
+                FontStyle.Bold, TextAnchor.MiddleLeft);
+            PlaceInParent(_researchCurrentText.rectTransform, 10f, 58f, panelW - 40f, 24f, new Vector2(0f, 1f));
+
+            // プログレスバー
+            var barBg = MakePanel(curRt, "BarBg", panelW - 40f, 14f, new Color(0.15f, 0.17f, 0.25f));
+            var barBgRt = barBg.GetComponent<RectTransform>();
+            barBgRt.anchorMin = barBgRt.anchorMax = new Vector2(0.5f, 0f);
+            barBgRt.pivot = new Vector2(0.5f, 0f);
+            barBgRt.anchoredPosition = new Vector2(0f, 6f);
+
+            var fillGo = MakePanel(barBgRt, "Fill", 0f, 14f, new Color(0.45f, 0.75f, 0.3f));
+            _researchProgressFill = fillGo.GetComponent<Image>();
+            var fillRt = _researchProgressFill.rectTransform;
+            fillRt.anchorMin = new Vector2(0f, 0f);
+            fillRt.anchorMax = new Vector2(0f, 1f);
+            fillRt.pivot = new Vector2(0f, 0.5f);
+            fillRt.anchoredPosition = Vector2.zero;
+            fillRt.sizeDelta = new Vector2(0f, 0f);
+
+            _researchProgressText = MakeLabel(curRt, "ProgText", "", 12, Muted,
+                FontStyle.Normal, TextAnchor.MiddleRight);
+            PlaceInParent(_researchProgressText.rectTransform, panelW - 110f, 58f, 90f, 24f, new Vector2(0f, 1f));
+
+            // 区切り線
+            var sepLabel = MakeLabel(rt, "SepLabel", "Available Research", 13, Muted,
+                FontStyle.Bold, TextAnchor.MiddleLeft);
+            var sepLabelRt = sepLabel.rectTransform;
+            sepLabelRt.anchorMin = sepLabelRt.anchorMax = new Vector2(0f, 1f);
+            sepLabelRt.pivot = new Vector2(0f, 1f);
+            sepLabelRt.anchoredPosition = new Vector2(12f, -132f);
+            sepLabelRt.sizeDelta = new Vector2(panelW - 24f, 20f);
+
+            // 研究リストコンテナ
+            var listGo = new GameObject("ResearchList");
+            listGo.transform.SetParent(rt, false);
+            _researchListContainer = listGo.AddComponent<RectTransform>();
+            _researchListContainer.anchorMin = new Vector2(0f, 0f);
+            _researchListContainer.anchorMax = new Vector2(1f, 1f);
+            _researchListContainer.offsetMin = new Vector2(10f, 46f);
+            _researchListContainer.offsetMax = new Vector2(-10f, -156f);
+
+            // 閉じるボタン
+            var closeGo = MakePanel(rt, "CloseBtn", 120f, 34f, new Color(0.4f, 0.42f, 0.5f));
+            var closeGoRt = closeGo.GetComponent<RectTransform>();
+            closeGoRt.anchorMin = closeGoRt.anchorMax = new Vector2(0.5f, 0f);
+            closeGoRt.pivot = new Vector2(0.5f, 0f);
+            closeGoRt.anchoredPosition = new Vector2(0f, 8f);
+            var closeImg2 = closeGo.GetComponent<Image>();
+            closeImg2.raycastTarget = true;
+            var closeBtn2 = closeGo.AddComponent<Button>();
+            closeBtn2.targetGraphic = closeImg2;
+            closeBtn2.onClick.AddListener(() => _researchPanel.SetActive(false));
+            var closeLbl = MakeLabel(closeGoRt, "Label", "CLOSE", 16, Color.white,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(closeLbl.rectTransform);
+
+            _researchPanel.SetActive(false);
+        }
+
+        private void RefreshResearchPanel()
+        {
+            var gm = GameManager.Instance;
+            if (gm == null || gm.ResearchManager == null) return;
+            var rm = gm.ResearchManager;
+
+            // サイエンティスト情報
+            int sciCount = rm.ScientistCount;
+            float avgSkill = rm.AverageScientistSkill;
+            _researchScientistInfo.text = sciCount > 0
+                ? $"Scientist: {sciCount}   Avg Skill: {avgSkill:P0}"
+                : "Scientist: 0  (雇用するとスタッフで研究が進みます)";
+
+            // 現在の研究
+            if (rm.IsResearching)
+            {
+                var cur = rm.CurrentResearch;
+                _researchCurrentText.text = $"研究中: {cur.NameJP}";
+                _researchProgressText.text = $"{cur.ProgressRatio:P0}";
+
+                // プログレスバー
+                float barW = 440f;
+                _researchProgressFill.rectTransform.sizeDelta = new Vector2(barW * cur.ProgressRatio, 0f);
+            }
+            else
+            {
+                _researchCurrentText.text = "研究中: なし";
+                _researchProgressText.text = "";
+                _researchProgressFill.rectTransform.sizeDelta = new Vector2(0f, 0f);
+            }
+
+            // 研究リストの再構築
+            foreach (var row in _researchItemRows)
+                Destroy(row);
+            _researchItemRows.Clear();
+            _researchItemTexts.Clear();
+            _researchItemButtons.Clear();
+
+            var available = rm.GetAvailableResearch();
+            float rowH = 50f;
+            float listW = _researchListContainer.rect.width;
+            if (listW <= 0f) listW = 450f;
+
+            for (int i = 0; i < available.Count && i < 7; i++)
+            {
+                var item = available[i];
+                float y = -i * (rowH + 4f);
+
+                var rowGo = MakePanel(_researchListContainer, $"Row{i}", listW, rowH,
+                    new Color(0.1f, 0.12f, 0.2f, 0.85f));
+                var rowRt = rowGo.GetComponent<RectTransform>();
+                rowRt.anchorMin = rowRt.anchorMax = new Vector2(0f, 1f);
+                rowRt.pivot = new Vector2(0f, 1f);
+                rowRt.anchoredPosition = new Vector2(0f, y);
+
+                // 研究名
+                var nameText = MakeLabel(rowRt, "Name", item.NameJP, 14, Color.white,
+                    FontStyle.Bold, TextAnchor.MiddleLeft);
+                PlaceInParent(nameText.rectTransform, 8f, rowH - 2f, listW - 120f, 22f, new Vector2(0f, 1f));
+
+                // コスト + カテゴリ
+                string catLabel = item.Category == ResearchCategory.Attractions ? "Attraction"
+                    : item.Category == ResearchCategory.Shops ? "Shop"
+                    : item.Category == ResearchCategory.Upgrades ? "Upgrade" : "Facility";
+                var descText = MakeLabel(rowRt, "Desc", $"${item.ResearchCost:N0}  [{catLabel}]  {item.BaseResearchTime:F0}s",
+                    11, Muted, FontStyle.Normal, TextAnchor.MiddleLeft);
+                PlaceInParent(descText.rectTransform, 8f, rowH - 24f, listW - 120f, 18f, new Vector2(0f, 1f));
+
+                // 開始ボタン
+                bool canStart = !rm.IsResearching;
+                bool canAfford = gm.EconomyManager != null && gm.EconomyManager.CanAfford(item.ResearchCost);
+                bool enabled = canStart && canAfford && sciCount > 0;
+
+                var btnGo = MakePanel(rowRt, "StartBtn", 80f, 30f,
+                    enabled ? new Color(0.2f, 0.5f, 0.35f) : new Color(0.25f, 0.27f, 0.32f));
+                var btnRt = btnGo.GetComponent<RectTransform>();
+                btnRt.anchorMin = btnRt.anchorMax = new Vector2(1f, 0.5f);
+                btnRt.pivot = new Vector2(1f, 0.5f);
+                btnRt.anchoredPosition = new Vector2(-6f, 0f);
+                var btnImg = btnGo.GetComponent<Image>();
+                btnImg.raycastTarget = true;
+                var btn = btnGo.AddComponent<Button>();
+                btn.targetGraphic = btnImg;
+                btn.interactable = enabled;
+
+                string resId = item.ResearchId;
+                btn.onClick.AddListener(() =>
+                {
+                    if (gm.ResearchManager != null)
+                    {
+                        gm.ResearchManager.StartResearch(resId);
+                        RefreshResearchPanel();
+                    }
+                });
+
+                string btnLabel = !canStart ? "研究中" : sciCount <= 0 ? "人員不足" : !canAfford ? "資金不足" : "開始";
+                var btnText = MakeLabel(btnRt, "BtnLabel", btnLabel, 13,
+                    enabled ? Color.white : Muted, FontStyle.Bold, TextAnchor.MiddleCenter);
+                StretchFill(btnText.rectTransform);
+
+                _researchItemRows.Add(rowGo);
+                _researchItemTexts.Add(nameText);
+                _researchItemButtons.Add(btn);
+            }
+
+            // 完了済み研究の概要
+            int completedCount = rm.CompletedResearchCount;
+            int totalCount = rm.AllResearch.Count;
+            if (completedCount > 0 || available.Count == 0)
+            {
+                float y = -(available.Count) * (rowH + 4f) - 8f;
+                var summaryText = MakeLabel(_researchListContainer, "Summary",
+                    $"完了: {completedCount}/{totalCount}  投資額: ${rm.TotalResearchSpending:N0}",
+                    12, new Color(0.5f, 0.7f, 0.5f), FontStyle.Normal, TextAnchor.MiddleLeft);
+                var sumRt = summaryText.rectTransform;
+                sumRt.anchorMin = sumRt.anchorMax = new Vector2(0f, 1f);
+                sumRt.pivot = new Vector2(0f, 1f);
+                sumRt.anchoredPosition = new Vector2(4f, y);
+                sumRt.sizeDelta = new Vector2(listW, 20f);
+                _researchItemRows.Add(summaryText.gameObject);
+            }
+        }
+
+        private void UpdateResearchPanel()
+        {
+            if (_researchPanel == null || !_researchPanel.activeSelf) return;
+            RefreshResearchPanel();
         }
 
         // ================================================================
@@ -2455,6 +2732,7 @@ namespace ThemeParkGame.Core
             if (_menuBtn != null) _menuBtn.SetActive(isPlaying);
             if (_buildBtn != null) _buildBtn.SetActive(isPlaying);
             if (_staffBtn != null) _staffBtn.SetActive(isPlaying);
+            if (_researchBtn != null) _researchBtn.SetActive(isPlaying);
 
             // GameOver表示
             if (state == GameState.GameOver)
@@ -2851,6 +3129,9 @@ namespace ThemeParkGame.Core
 
             // ---- SNSフィード ----
             UpdateSNSPanel();
+
+            // ---- 研究パネル ----
+            UpdateResearchPanel();
 
             // ---- ファーストパーソンビュー ----
             UpdateFirstPersonOverlay();

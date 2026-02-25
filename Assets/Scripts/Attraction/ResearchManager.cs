@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using ThemeParkGame.Core;
+using ThemeParkGame.Economy;
 
 namespace ThemeParkGame.Attraction
 {
@@ -109,6 +110,47 @@ namespace ThemeParkGame.Attraction
         /// <summary>研究に投じた累計費用</summary>
         public float TotalResearchSpending { get; private set; }
 
+        // ---- イベント購読 ----
+
+        private void OnEnable()
+        {
+            GameEvents.OnStaffHired += OnStaffChanged;
+            GameEvents.OnStaffFired += OnStaffChanged;
+        }
+
+        private void OnDisable()
+        {
+            GameEvents.OnStaffHired -= OnStaffChanged;
+            GameEvents.OnStaffFired -= OnStaffChanged;
+        }
+
+        private void OnStaffChanged(int staffId, StaffType type)
+        {
+            if (type == StaffType.Scientist)
+            {
+                RefreshScientistInfo();
+            }
+        }
+
+        /// <summary>StaffManagerからサイエンティスト情報を取得して更新する</summary>
+        private void RefreshScientistInfo()
+        {
+            if (GameManager.Instance?.StaffManager == null) return;
+            var sm = GameManager.Instance.StaffManager;
+            int count = sm.GetStaffCountByType(StaffType.Scientist);
+            float avgSkill = 0.5f;
+            var scientists = sm.GetStaffByType(StaffType.Scientist);
+            if (scientists.Count > 0)
+            {
+                float totalSkill = 0f;
+                foreach (var s in scientists)
+                    totalSkill += (float)(s.SkillLevel - ThemeParkGame.Staff.StaffMember.MinSkillLevel)
+                                  / (ThemeParkGame.Staff.StaffMember.MaxSkillLevel - ThemeParkGame.Staff.StaffMember.MinSkillLevel);
+                avgSkill = totalSkill / scientists.Count;
+            }
+            UpdateScientistInfo(count, avgSkill);
+        }
+
         // ---- 初期化 ----
 
         /// <summary>
@@ -124,6 +166,7 @@ namespace ThemeParkGame.Attraction
 
             RegisterAllResearchItems();
             UpdateResearchAvailability();
+            RefreshScientistInfo();
 
             Debug.Log($"[ResearchManager] 初期化完了: {_allResearch.Count}件の研究項目を登録");
         }
@@ -475,10 +518,23 @@ namespace ThemeParkGame.Attraction
                 return false;
             }
 
-            // 研究費用の支払いはEconomyManagerに委譲
-            // ここではResearchCostを記録
+            // 研究費用の支払い
             TotalResearchSpending += item.ResearchCost;
-            GameEvents.FireExpensePaid(item.ResearchCost);
+            if (GameManager.Instance?.EconomyManager != null)
+            {
+                if (!GameManager.Instance.EconomyManager.CanAfford(item.ResearchCost))
+                {
+                    Debug.LogWarning($"[ResearchManager] 研究資金不足: {item.ResearchCost}");
+                    TotalResearchSpending -= item.ResearchCost;
+                    return false;
+                }
+                GameManager.Instance.EconomyManager.PayExpense(
+                    item.ResearchCost, Economy.ExpenseCategory.Research);
+            }
+            else
+            {
+                GameEvents.FireExpensePaid(item.ResearchCost);
+            }
 
             item.StartResearch();
             _currentResearch = item;
@@ -657,10 +713,12 @@ namespace ThemeParkGame.Attraction
 
         // ---- デバッグ ----
 
-        /// <summary>指定研究を即座に完了させる（デバッグ用）</summary>
+        /// <summary>
+        /// 指定研究を即座に完了させる。
+        /// セーブデータ復元時にも使用されるため、ランタイムでも動作する。
+        /// </summary>
         public void DebugCompleteResearch(string researchId)
         {
-#if UNITY_EDITOR
             if (!_allResearch.TryGetValue(researchId, out var item)) return;
 
             item.CurrentState = ResearchState.Completed;
@@ -671,22 +729,19 @@ namespace ThemeParkGame.Attraction
 
             UpdateResearchAvailability();
             GameEvents.FireResearchCompleted(researchId);
-            Debug.Log($"[ResearchManager] デバッグ完了: {item.NameJP}");
-#endif
+            Debug.Log($"[ResearchManager] 研究完了: {item.NameJP}");
         }
 
         /// <summary>全研究を即座に完了させる（デバッグ用）</summary>
         public void DebugCompleteAllResearch()
         {
-#if UNITY_EDITOR
             foreach (var kvp in _allResearch)
             {
                 kvp.Value.CurrentState = ResearchState.Completed;
                 kvp.Value.CurrentProgress = kvp.Value.BaseResearchTime;
             }
             _currentResearch = null;
-            Debug.Log("[ResearchManager] デバッグ: 全研究完了");
-#endif
+            Debug.Log("[ResearchManager] 全研究完了");
         }
     }
 }
