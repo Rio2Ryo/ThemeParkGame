@@ -10,6 +10,8 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using ThemeParkGame.UI;
 using ThemeParkGame.Visitor;
+using ThemeParkGame.Park;
+using ThemeParkGame.Economy;
 
 namespace ThemeParkGame.Core
 {
@@ -38,6 +40,12 @@ namespace ThemeParkGame.Core
 
             // チュートリアル
             EnsureTutorialSystem();
+
+            // Phase 8 システム
+            EnsureChallengeSystem();
+            EnsureParkExpansionSystem();
+            EnsureLoanInvestmentUI();
+            EnsureCoopManager();
 
             // ランタイムゲームセットアップ（ゲーム開始後にワールドを構築）
             EnsureRuntimeGameSetup();
@@ -193,6 +201,39 @@ namespace ThemeParkGame.Core
             var go = new GameObject("TutorialSystem");
             go.AddComponent<TutorialSystem>();
             WebGLOptimizer.LogVerbose("[GameBootstrapper] TutorialSystem を生成");
+        }
+
+        private static void EnsureChallengeSystem()
+        {
+            if (ChallengeSystem.Instance != null) return;
+            var go = new GameObject("ChallengeSystem");
+            go.AddComponent<ChallengeSystem>();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] ChallengeSystem を生成");
+        }
+
+        private static void EnsureParkExpansionSystem()
+        {
+            if (ParkExpansionSystem.Instance != null) return;
+            var go = new GameObject("ParkExpansionSystem");
+            var sys = go.AddComponent<ParkExpansionSystem>();
+            sys.Initialize();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] ParkExpansionSystem を生成");
+        }
+
+        private static void EnsureLoanInvestmentUI()
+        {
+            if (LoanInvestmentUI.Instance != null) return;
+            var go = new GameObject("LoanInvestmentUI");
+            go.AddComponent<LoanInvestmentUI>();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] LoanInvestmentUI を生成");
+        }
+
+        private static void EnsureCoopManager()
+        {
+            if (CoopManager.Instance != null) return;
+            var go = new GameObject("CoopManager");
+            go.AddComponent<CoopManager>();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] CoopManager を生成");
         }
 
         // ================================================================
@@ -413,7 +454,7 @@ namespace ThemeParkGame.Core
             // ---- バージョン表示 ----
             var ver = CreateUIElement("Version", canvasGo.transform);
             var verText = ver.AddComponent<Text>();
-            verText.text = "v1.5 - WebGL Build";
+            verText.text = "v1.6 - WebGL Build";
             verText.font = GetBuiltinFont();
             verText.fontSize = 18;
             verText.alignment = TextAnchor.LowerRight;

@@ -47,7 +47,10 @@ namespace ThemeParkGame.Staff
             { StaffType.Cleaner, 500f },
             { StaffType.Entertainer, 600f },
             { StaffType.Guard, 700f },
-            { StaffType.Scientist, 1000f }
+            { StaffType.Scientist, 1000f },
+            { StaffType.Doctor, 900f },
+            { StaffType.Vendor, 550f },
+            { StaffType.Gardener, 450f }
         };
 
         /// <summary>
@@ -60,7 +63,10 @@ namespace ThemeParkGame.Staff
             { StaffType.Cleaner, 300f },
             { StaffType.Entertainer, 350f },
             { StaffType.Guard, 350f },
-            { StaffType.Scientist, 500f }
+            { StaffType.Scientist, 500f },
+            { StaffType.Doctor, 450f },
+            { StaffType.Vendor, 280f },
+            { StaffType.Gardener, 250f }
         };
 
         // ============================================================
@@ -73,6 +79,9 @@ namespace ThemeParkGame.Staff
         [SerializeField] private GameObject entertainerPrefab;
         [SerializeField] private GameObject guardPrefab;
         [SerializeField] private GameObject scientistPrefab;
+        [SerializeField] private GameObject doctorPrefab;
+        [SerializeField] private GameObject vendorPrefab;
+        [SerializeField] private GameObject gardenerPrefab;
 
         [Header("Staff Room")]
         [SerializeField] private List<Transform> staffRooms = new List<Transform>();
@@ -831,13 +840,17 @@ namespace ThemeParkGame.Staff
         /// </summary>
         public void ConfigureRuntimePrefabs(
             GameObject mechanic, GameObject cleaner,
-            GameObject entertainer, GameObject guard, GameObject scientist)
+            GameObject entertainer, GameObject guard, GameObject scientist,
+            GameObject doctor = null, GameObject vendor = null, GameObject gardener = null)
         {
             mechanicPrefab = mechanic;
             cleanerPrefab = cleaner;
             entertainerPrefab = entertainer;
             guardPrefab = guard;
             scientistPrefab = scientist;
+            doctorPrefab = doctor;
+            vendorPrefab = vendor;
+            gardenerPrefab = gardener;
         }
 
         /// <summary>スタッフ種別に対応するプレハブを取得する</summary>
@@ -850,6 +863,9 @@ namespace ThemeParkGame.Staff
                 StaffType.Entertainer => entertainerPrefab,
                 StaffType.Guard => guardPrefab,
                 StaffType.Scientist => scientistPrefab,
+                StaffType.Doctor => doctorPrefab,
+                StaffType.Vendor => vendorPrefab,
+                StaffType.Gardener => gardenerPrefab,
                 _ => null
             };
         }
@@ -886,6 +902,9 @@ namespace ThemeParkGame.Staff
                 StaffType.Entertainer => "Entertainer",
                 StaffType.Guard => "Guard",
                 StaffType.Scientist => "Scientist",
+                StaffType.Doctor => "Doctor",
+                StaffType.Vendor => "Vendor",
+                StaffType.Gardener => "Gardener",
                 _ => "Staff"
             };
 

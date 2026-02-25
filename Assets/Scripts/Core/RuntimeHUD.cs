@@ -1910,42 +1910,62 @@ namespace ThemeParkGame.Core
             // 「続ける」ボタン
             MakeCenterButton(rt, "ResumeBtn", "続ける",
                 new Color(0.18f, 0.55f, 0.34f), new Color(0.22f, 0.65f, 0.40f), new Color(0.14f, 0.45f, 0.28f),
-                new Vector2(0f, 170f), OnResumeClicked);
+                new Vector2(0f, 270f), OnResumeClicked);
 
             // 「セーブ/ロード」ボタン
             MakeCenterButton(rt, "SaveLoadBtn", "SAVE / LOAD",
                 new Color(0.3f, 0.4f, 0.6f), new Color(0.38f, 0.5f, 0.72f), new Color(0.22f, 0.3f, 0.48f),
-                new Vector2(0f, 105f), OnSaveLoadClicked);
+                new Vector2(0f, 215f), OnSaveLoadClicked);
 
             // 「クラウドセーブ」ボタン
             MakeCenterButton(rt, "CloudSaveBtn", "CLOUD SAVE",
                 new Color(0.2f, 0.4f, 0.6f), new Color(0.28f, 0.5f, 0.72f), new Color(0.15f, 0.3f, 0.48f),
-                new Vector2(0f, 40f), OnCloudSaveClicked);
+                new Vector2(0f, 160f), OnCloudSaveClicked);
 
             // 「リーダーボード」ボタン
             MakeCenterButton(rt, "LeaderboardBtn", "LEADERBOARD",
                 new Color(0.55f, 0.45f, 0.15f), new Color(0.65f, 0.55f, 0.22f), new Color(0.42f, 0.34f, 0.1f),
-                new Vector2(0f, -25f), OnLeaderboardClicked);
+                new Vector2(0f, 105f), OnLeaderboardClicked);
+
+            // 「チャレンジ」ボタン
+            MakeCenterButton(rt, "ChallengeBtn", "CHALLENGES",
+                new Color(0.6f, 0.35f, 0.15f), new Color(0.72f, 0.45f, 0.22f), new Color(0.48f, 0.28f, 0.1f),
+                new Vector2(0f, 50f), OnChallengeClicked);
+
+            // 「パーク拡張」ボタン
+            MakeCenterButton(rt, "ExpansionBtn", "PARK EXPANSION",
+                new Color(0.2f, 0.5f, 0.3f), new Color(0.28f, 0.6f, 0.38f), new Color(0.15f, 0.4f, 0.22f),
+                new Vector2(0f, -5f), OnExpansionClicked);
+
+            // 「融資/投資」ボタン
+            MakeCenterButton(rt, "FinanceBtn", "FINANCE",
+                new Color(0.45f, 0.4f, 0.2f), new Color(0.55f, 0.5f, 0.28f), new Color(0.35f, 0.3f, 0.15f),
+                new Vector2(0f, -60f), OnFinanceClicked);
+
+            // 「Co-op」ボタン
+            MakeCenterButton(rt, "CoopBtn", "CO-OP",
+                new Color(0.35f, 0.2f, 0.55f), new Color(0.45f, 0.28f, 0.65f), new Color(0.25f, 0.15f, 0.42f),
+                new Vector2(0f, -115f), OnCoopClicked);
 
             // 「実績」ボタン
             MakeCenterButton(rt, "AchievementBtn", "ACHIEVEMENTS",
                 new Color(0.55f, 0.45f, 0.2f), new Color(0.65f, 0.55f, 0.28f), new Color(0.42f, 0.34f, 0.15f),
-                new Vector2(0f, -90f), OnAchievementClicked);
+                new Vector2(0f, -170f), OnAchievementClicked);
 
             // 「サウンド設定」ボタン
             MakeCenterButton(rt, "SoundBtn", "SOUND SETTINGS",
                 new Color(0.35f, 0.4f, 0.52f), new Color(0.45f, 0.5f, 0.62f), new Color(0.25f, 0.3f, 0.42f),
-                new Vector2(0f, -155f), OnSoundSettingsClicked);
+                new Vector2(0f, -225f), OnSoundSettingsClicked);
 
             // 「イベントログ」ボタン
             MakeCenterButton(rt, "EventLogBtn", "EVENT LOG",
                 new Color(0.3f, 0.45f, 0.55f), new Color(0.38f, 0.55f, 0.65f), new Color(0.22f, 0.35f, 0.44f),
-                new Vector2(0f, -220f), OnEventLogClicked);
+                new Vector2(0f, -280f), OnEventLogClicked);
 
             // 「ゲーム終了」ボタン
             MakeCenterButton(rt, "EndGameBtn", "ゲーム終了",
                 new Color(0.65f, 0.2f, 0.2f), new Color(0.75f, 0.3f, 0.3f), new Color(0.5f, 0.15f, 0.15f),
-                new Vector2(0f, -285f), OnEndGameClicked);
+                new Vector2(0f, -335f), OnEndGameClicked);
 
             // サウンド設定パネル（初期非表示）
             BuildSoundSettingsPanel(rt);
@@ -2315,6 +2335,30 @@ namespace ThemeParkGame.Core
         {
             if (CloudSaveManager.Instance != null)
                 CloudSaveManager.Instance.ShowCloudSaveUI();
+        }
+
+        private void OnChallengeClicked()
+        {
+            if (ChallengeSystem.Instance != null)
+                ChallengeSystem.Instance.ToggleUI();
+        }
+
+        private void OnExpansionClicked()
+        {
+            if (Park.ParkExpansionSystem.Instance != null)
+                Park.ParkExpansionSystem.Instance.ToggleUI();
+        }
+
+        private void OnFinanceClicked()
+        {
+            if (Economy.LoanInvestmentUI.Instance != null)
+                Economy.LoanInvestmentUI.Instance.ToggleUI();
+        }
+
+        private void OnCoopClicked()
+        {
+            if (CoopManager.Instance != null)
+                CoopManager.Instance.ToggleUI();
         }
 
         private void OnSoundSettingsClicked()

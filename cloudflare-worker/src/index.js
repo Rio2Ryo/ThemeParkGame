@@ -73,12 +73,32 @@ export default {
         return await handleCloudSaveList(request, env);
       }
 
+      // ---- Co-op Room API ----
+      if (path === '/api/coop/create' && request.method === 'POST') {
+        return await handleCoopCreate(request, env, ctx);
+      }
+      if (path === '/api/coop/join' && request.method === 'POST') {
+        return await handleCoopJoin(request, env, ctx);
+      }
+      if (path === '/api/coop/state' && request.method === 'POST') {
+        return await handleCoopState(request, env, ctx);
+      }
+      if (path === '/api/coop/sync' && request.method === 'POST') {
+        return await handleCoopSync(request, env, ctx);
+      }
+      if (path === '/api/coop/leave' && request.method === 'POST') {
+        return await handleCoopLeave(request, env, ctx);
+      }
+      if (path === '/api/coop/list') {
+        return await handleCoopList(env);
+      }
+
       // ---- Health Check ----
       if (path === '/api/health') {
         return jsonResponse({
           status: 'ok',
           service: 'themeparkgame-api',
-          version: '1.0',
+          version: '1.1',
           storage: env.GAME_KV ? 'kv' : 'cache',
         });
       }
@@ -197,4 +217,214 @@ async function handleCloudSaveList(request, env) {
   const index = (await kvGet(env, indexKey)) || {};
 
   return jsonResponse({ success: true, slots: index });
+}
+
+// ================================================================
+// Co-op Rooms
+// ================================================================
+
+function generateRoomCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
+async function handleCoopCreate(request, env, ctx) {
+  const body = await request.json();
+  const { playerId, playerName, parkData } = body;
+
+  if (!playerId || !playerName) {
+    return jsonResponse({ error: 'playerId and playerName are required' }, 400);
+  }
+
+  const roomCode = generateRoomCode();
+  const room = {
+    roomCode,
+    hostId: String(playerId).substring(0, 32),
+    hostName: String(playerName).substring(0, 20),
+    players: [
+      { id: String(playerId).substring(0, 32), name: String(playerName).substring(0, 20), joinedAt: Date.now() },
+    ],
+    maxPlayers: 4,
+    createdAt: Date.now(),
+    lastActivity: Date.now(),
+    parkState: parkData || null,
+    actions: [],
+  };
+
+  await kvPut(env, `coop:${roomCode}`, room, ctx);
+
+  // Add to room index
+  const index = (await kvGet(env, 'coop-rooms')) || {};
+  index[roomCode] = { hostName: room.hostName, playerCount: 1, createdAt: room.createdAt };
+  await kvPut(env, 'coop-rooms', index, ctx);
+
+  return jsonResponse({ success: true, roomCode, room });
+}
+
+async function handleCoopJoin(request, env, ctx) {
+  const body = await request.json();
+  const { roomCode, playerId, playerName } = body;
+
+  if (!roomCode || !playerId || !playerName) {
+    return jsonResponse({ error: 'roomCode, playerId, and playerName are required' }, 400);
+  }
+
+  const room = await kvGet(env, `coop:${roomCode}`);
+  if (!room) {
+    return jsonResponse({ error: 'Room not found' }, 404);
+  }
+
+  if (room.players.length >= room.maxPlayers) {
+    return jsonResponse({ error: 'Room is full' }, 400);
+  }
+
+  // Check if already in room
+  const pid = String(playerId).substring(0, 32);
+  if (!room.players.find((p) => p.id === pid)) {
+    room.players.push({
+      id: pid,
+      name: String(playerName).substring(0, 20),
+      joinedAt: Date.now(),
+    });
+  }
+
+  room.lastActivity = Date.now();
+  await kvPut(env, `coop:${roomCode}`, room, ctx);
+
+  // Update index
+  const index = (await kvGet(env, 'coop-rooms')) || {};
+  if (index[roomCode]) {
+    index[roomCode].playerCount = room.players.length;
+  }
+  await kvPut(env, 'coop-rooms', index, ctx);
+
+  return jsonResponse({ success: true, room });
+}
+
+async function handleCoopState(request, env, ctx) {
+  const body = await request.json();
+  const { roomCode, since } = body;
+
+  if (!roomCode) {
+    return jsonResponse({ error: 'roomCode is required' }, 400);
+  }
+
+  const room = await kvGet(env, `coop:${roomCode}`);
+  if (!room) {
+    return jsonResponse({ error: 'Room not found' }, 404);
+  }
+
+  // Filter actions since timestamp
+  const sinceTs = Number(since) || 0;
+  const newActions = (room.actions || []).filter((a) => a.timestamp > sinceTs);
+
+  return jsonResponse({
+    success: true,
+    players: room.players,
+    parkState: room.parkState,
+    actions: newActions,
+    lastActivity: room.lastActivity,
+  });
+}
+
+async function handleCoopSync(request, env, ctx) {
+  const body = await request.json();
+  const { roomCode, playerId, action, parkState } = body;
+
+  if (!roomCode || !playerId) {
+    return jsonResponse({ error: 'roomCode and playerId are required' }, 400);
+  }
+
+  const room = await kvGet(env, `coop:${roomCode}`);
+  if (!room) {
+    return jsonResponse({ error: 'Room not found' }, 404);
+  }
+
+  // Add action if provided
+  if (action) {
+    if (!room.actions) room.actions = [];
+    room.actions.push({
+      playerId: String(playerId).substring(0, 32),
+      type: action.type || 'unknown',
+      data: action.data || {},
+      timestamp: Date.now(),
+    });
+    // Keep only last 200 actions
+    if (room.actions.length > 200) {
+      room.actions = room.actions.slice(-200);
+    }
+  }
+
+  // Update park state if host
+  if (parkState && String(playerId).substring(0, 32) === room.hostId) {
+    room.parkState = parkState;
+  }
+
+  room.lastActivity = Date.now();
+  await kvPut(env, `coop:${roomCode}`, room, ctx);
+
+  return jsonResponse({ success: true, actionCount: (room.actions || []).length });
+}
+
+async function handleCoopLeave(request, env, ctx) {
+  const body = await request.json();
+  const { roomCode, playerId } = body;
+
+  if (!roomCode || !playerId) {
+    return jsonResponse({ error: 'roomCode and playerId are required' }, 400);
+  }
+
+  const room = await kvGet(env, `coop:${roomCode}`);
+  if (!room) {
+    return jsonResponse({ error: 'Room not found' }, 404);
+  }
+
+  const pid = String(playerId).substring(0, 32);
+  room.players = room.players.filter((p) => p.id !== pid);
+  room.lastActivity = Date.now();
+
+  if (room.players.length === 0) {
+    // Delete empty room
+    await kvPut(env, `coop:${roomCode}`, null, ctx);
+    const index = (await kvGet(env, 'coop-rooms')) || {};
+    delete index[roomCode];
+    await kvPut(env, 'coop-rooms', index, ctx);
+    return jsonResponse({ success: true, roomDeleted: true });
+  }
+
+  // Transfer host if host left
+  if (pid === room.hostId && room.players.length > 0) {
+    room.hostId = room.players[0].id;
+    room.hostName = room.players[0].name;
+  }
+
+  await kvPut(env, `coop:${roomCode}`, room, ctx);
+
+  const index = (await kvGet(env, 'coop-rooms')) || {};
+  if (index[roomCode]) {
+    index[roomCode].playerCount = room.players.length;
+    index[roomCode].hostName = room.hostName;
+  }
+  await kvPut(env, 'coop-rooms', index, ctx);
+
+  return jsonResponse({ success: true, room });
+}
+
+async function handleCoopList(env) {
+  const index = (await kvGet(env, 'coop-rooms')) || {};
+
+  // Filter out stale rooms (older than 2 hours)
+  const cutoff = Date.now() - 2 * 60 * 60 * 1000;
+  const rooms = [];
+  for (const [code, info] of Object.entries(index)) {
+    if (info.createdAt > cutoff) {
+      rooms.push({ roomCode: code, ...info });
+    }
+  }
+
+  return jsonResponse({ success: true, rooms });
 }

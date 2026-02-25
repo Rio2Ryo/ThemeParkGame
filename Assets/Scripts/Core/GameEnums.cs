@@ -114,7 +114,10 @@ namespace ThemeParkGame.Core
         Cleaner,       // スイーパー - 清掃
         Entertainer,   // エンターテイナー - 楽しませる
         Guard,         // ガードマン - 治安維持
-        Scientist      // サイエンティスト - 研究開発
+        Scientist,     // サイエンティスト - 研究開発
+        Doctor,        // ドクター - 体調不良の来場者を治療
+        Vendor,        // 移動販売員 - 園内を巡回して飲食を販売
+        Gardener       // 園芸師 - パークの美観・ムード評価を向上
     }
 
     /// <summary>スタッフの行動状態</summary>

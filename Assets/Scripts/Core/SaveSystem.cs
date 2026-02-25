@@ -19,7 +19,7 @@ namespace ThemeParkGame.Core
     [Serializable]
     public class SaveData
     {
-        public string SaveVersion = "2.2";
+        public string SaveVersion = "2.3";
         public string SaveDate;
 
         // ゲーム時間
@@ -97,6 +97,9 @@ namespace ThemeParkGame.Core
 
         // スタッフ
         public List<SavedStaff> StaffMembers = new List<SavedStaff>();
+
+        // パーク拡張（購入済み区画ID）
+        public List<string> PurchasedLandPlots = new List<string>();
     }
 
     /// <summary>配置済み建物のセーブ用データ構造</summary>
@@ -544,6 +547,12 @@ namespace ThemeParkGame.Core
                 data.StaffMembers.Add(ss);
             }
             WebGLOptimizer.LogVerbose($"[SaveSystem] スタッフデータ収集: {data.StaffMembers.Count}名");
+
+            // パーク拡張データ
+            if (Park.ParkExpansionSystem.Instance != null)
+            {
+                data.PurchasedLandPlots = Park.ParkExpansionSystem.Instance.GetPurchasedPlotIds();
+            }
         }
 
         /// <summary>
@@ -677,6 +686,15 @@ namespace ThemeParkGame.Core
             else
             {
                 PendingStaffToRestore = null;
+            }
+
+            // パーク拡張データを復元
+            if (data.PurchasedLandPlots != null && data.PurchasedLandPlots.Count > 0)
+            {
+                if (Park.ParkExpansionSystem.Instance != null)
+                {
+                    Park.ParkExpansionSystem.Instance.RestorePurchasedPlots(data.PurchasedLandPlots);
+                }
             }
 
             // ゲーム状態をPlayingに遷移

@@ -624,9 +624,13 @@ namespace ThemeParkGame.Core
             var entertainerPrefab = CreateStaffPrefab<EntertainerStaff>("EntertainerPrefab", new Color(0.9f, 0.2f, 0.9f));
             var guardPrefab = CreateStaffPrefab<GuardStaff>("GuardPrefab", new Color(0.2f, 0.2f, 0.8f));
             var scientistPrefab = CreateStaffPrefab<ScientistStaff>("ScientistPrefab", new Color(1f, 1f, 0.3f));
+            var doctorPrefab = CreateStaffPrefab<DoctorStaff>("DoctorPrefab", new Color(1f, 1f, 1f));
+            var vendorPrefab = CreateStaffPrefab<VendorStaff>("VendorPrefab", new Color(0.9f, 0.6f, 0.2f));
+            var gardenerPrefab = CreateStaffPrefab<GardenerStaff>("GardenerPrefab", new Color(0.3f, 0.7f, 0.3f));
 
             sm.ConfigureRuntimePrefabs(mechanicPrefab, cleanerPrefab,
-                entertainerPrefab, guardPrefab, scientistPrefab);
+                entertainerPrefab, guardPrefab, scientistPrefab,
+                doctorPrefab, vendorPrefab, gardenerPrefab);
 
             // セーブデータからスタッフを復元するか、デフォルト配置するか
             if (SaveSystem.PendingStaffToRestore != null &&
