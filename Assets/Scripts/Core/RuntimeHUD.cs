@@ -139,10 +139,25 @@ namespace ThemeParkGame.Core
         private GameObject _notifBadge;
         private Text _notifBadgeText;
 
-        // ---- 建設/スタッフ/研究ボタン ----
+        // ---- 建設/スタッフ/研究/ローンボタン ----
         private GameObject _buildBtn;
         private GameObject _staffBtn;
         private GameObject _researchBtn;
+        private GameObject _loanBtn;
+
+        // ---- ローンパネル ----
+        private GameObject _loanPanel;
+        private Text _loanBalanceText;
+        private Text _loanCountText;
+        private Text _loanDetailText;
+        private Text _loanBorrowAmountText;
+        private float _loanBorrowAmount = 10000f;
+        private string _lastLoanState;
+
+        // ---- ゾーンパネル ----
+        private GameObject _zoneBar;
+        private readonly Button[] _zoneButtons = new Button[4];
+        private readonly Text[] _zoneLabels = new Text[4];
 
         // ---- 研究パネル ----
         private GameObject _researchPanel;
@@ -167,6 +182,8 @@ namespace ThemeParkGame.Core
         private Button _fiPriceUp;
         private Button _fiPriceDown;
         private Button _fiDemolishBtn;
+        private Button _fiUpgradeBtn;
+        private Text _fiUpgradeText;
         private FacilityBase _selectedFacility;
 
         // ---- アラートバー ----
@@ -274,6 +291,8 @@ namespace ThemeParkGame.Core
             BuildAlertBar(_canvasRoot);
             BuildSNSPanel(_canvasRoot);
             BuildResearchPanel(_canvasRoot);
+            BuildLoanPanel(_canvasRoot);
+            BuildZoneBar(_canvasRoot);
             BuildFirstPersonOverlay(_canvasRoot);
         }
 
@@ -708,6 +727,24 @@ namespace ThemeParkGame.Core
             var upLabel = MakeLabel(upRt, "L", "+$5", 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(upLabel.rectTransform);
 
+            // アップグレードボタン
+            var upgradeGo = MakePanel(rt, "UpgradeBtn", panelW - 60f, 30f, new Color(0.2f, 0.5f, 0.65f, 0.95f));
+            var upgradeRt = upgradeGo.GetComponent<RectTransform>();
+            upgradeRt.anchorMin = upgradeRt.anchorMax = new Vector2(0.5f, 0f);
+            upgradeRt.pivot = new Vector2(0.5f, 0f);
+            upgradeRt.anchoredPosition = new Vector2(0f, 84f);
+            var upgradeImg = upgradeGo.GetComponent<Image>();
+            upgradeImg.raycastTarget = true;
+            _fiUpgradeBtn = upgradeGo.AddComponent<Button>();
+            _fiUpgradeBtn.targetGraphic = upgradeImg;
+            var upgradeColors = _fiUpgradeBtn.colors;
+            upgradeColors.highlightedColor = new Color(0.3f, 0.6f, 0.75f);
+            upgradeColors.pressedColor = new Color(0.15f, 0.38f, 0.5f);
+            _fiUpgradeBtn.colors = upgradeColors;
+            _fiUpgradeBtn.onClick.AddListener(OnFacilityUpgrade);
+            _fiUpgradeText = MakeLabel(upgradeRt, "L", "UPGRADE", 14, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(_fiUpgradeText.rectTransform);
+
             // 撤去ボタン
             var demolishGo = MakePanel(rt, "DemolishBtn", panelW - 60f, 30f, new Color(0.7f, 0.15f, 0.15f, 0.95f));
             var demolishRt = demolishGo.GetComponent<RectTransform>();
@@ -768,7 +805,7 @@ namespace ThemeParkGame.Core
             if (attraction != null)
             {
                 _fiType.text = attraction.Data != null
-                    ? $"アトラクション [{attraction.Data.Category}]"
+                    ? $"アトラクション [{attraction.Data.Category}] Lv.{attraction.UpgradeLevel}"
                     : "アトラクション";
 
                 string cycleStr = CycleLabel(attraction.CurrentCycleState);
@@ -781,9 +818,9 @@ namespace ThemeParkGame.Core
                 string stats = "";
                 if (attraction.Data != null)
                 {
-                    stats += $"興奮度: {attraction.Data.ExcitementRating:F1}/10\n";
+                    stats += $"興奮度: {attraction.EffectiveExcitement:F1}/10\n";
                     stats += $"酔い度: {attraction.Data.NauseaFactor:F2}\n";
-                    stats += $"定員: {attraction.Data.Capacity}人\n";
+                    stats += $"定員: {attraction.EffectiveCapacity}人\n";
                     stats += $"総搭乗数: {attraction.TotalRiderCount}";
                 }
                 _fiStats.text = stats;
@@ -791,6 +828,29 @@ namespace ThemeParkGame.Core
                 _fiPrice.text = $"チケット: ${attraction.TicketPrice}";
                 _fiPriceUp.gameObject.SetActive(true);
                 _fiPriceDown.gameObject.SetActive(true);
+
+                // アップグレードボタン
+                int upgradeCost = attraction.GetNextUpgradeCost();
+                if (upgradeCost > 0)
+                {
+                    _fiUpgradeBtn.gameObject.SetActive(true);
+                    float money = GameManager.Instance?.EconomyManager?.CurrentBalance ?? 0f;
+                    bool canAfford = money >= upgradeCost;
+                    _fiUpgradeBtn.interactable = canAfford;
+                    _fiUpgradeText.text = canAfford
+                        ? $"UPGRADE (${upgradeCost:N0})"
+                        : $"UPGRADE (${upgradeCost:N0}) - 資金不足";
+                    _fiUpgradeBtn.GetComponent<Image>().color = canAfford
+                        ? new Color(0.2f, 0.5f, 0.65f, 0.95f)
+                        : new Color(0.3f, 0.3f, 0.3f, 0.8f);
+                }
+                else
+                {
+                    _fiUpgradeBtn.gameObject.SetActive(true);
+                    _fiUpgradeBtn.interactable = false;
+                    _fiUpgradeText.text = "MAX LEVEL";
+                    _fiUpgradeBtn.GetComponent<Image>().color = new Color(0.3f, 0.3f, 0.3f, 0.8f);
+                }
             }
             else if (shop != null)
             {
@@ -814,6 +874,7 @@ namespace ThemeParkGame.Core
                 _fiPrice.text = $"販売価格: ${shop.SellingPrice}";
                 _fiPriceUp.gameObject.SetActive(true);
                 _fiPriceDown.gameObject.SetActive(true);
+                _fiUpgradeBtn.gameObject.SetActive(false);
             }
             else
             {
@@ -824,6 +885,7 @@ namespace ThemeParkGame.Core
                 _fiPrice.text = "";
                 _fiPriceUp.gameObject.SetActive(false);
                 _fiPriceDown.gameObject.SetActive(false);
+                _fiUpgradeBtn.gameObject.SetActive(false);
             }
         }
 
@@ -903,6 +965,30 @@ namespace ThemeParkGame.Core
 
             // パネルを閉じる
             HideFacilityInfo();
+        }
+
+        private void OnFacilityUpgrade()
+        {
+            if (_selectedFacility == null) return;
+
+            var attraction = _selectedFacility as Attraction.Attraction;
+            if (attraction == null) return;
+
+            int cost = attraction.GetNextUpgradeCost();
+            if (cost <= 0) return;
+
+            var em = GameManager.Instance?.EconomyManager;
+            if (em == null || !em.CanAfford(cost)) return;
+
+            em.PayExpense(cost, ThemeParkGame.Economy.ExpenseCategory.Construction, attraction.FacilityId);
+
+            if (attraction.TryUpgrade())
+            {
+                NotificationSystem.Instance?.Notify(
+                    $"{attraction.DisplayName} をLv.{attraction.UpgradeLevel}にアップグレード！ (-${cost:N0})",
+                    NotifLevel.Success);
+                RefreshFacilityInfo();
+            }
         }
 
         // ================================================================
@@ -1008,6 +1094,26 @@ namespace ThemeParkGame.Core
 
             var rLabel = MakeLabel(rrt, "Label", "RESEARCH", 14, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(rLabel.rectTransform);
+
+            // LOAN ボタン（RESEARCHの右隣）
+            _loanBtn = MakePanel(root, "LoanBtn", 80f, 36f, new Color(0.2f, 0.45f, 0.55f, 0.9f));
+            var lrt = _loanBtn.GetComponent<RectTransform>();
+            lrt.anchorMin = lrt.anchorMax = new Vector2(0f, 1f);
+            lrt.pivot = new Vector2(0f, 1f);
+            lrt.anchoredPosition = new Vector2(420f, -10f);
+
+            var lImg = _loanBtn.GetComponent<Image>();
+            lImg.raycastTarget = true;
+            var lBtn = _loanBtn.AddComponent<Button>();
+            lBtn.targetGraphic = lImg;
+            var lc = lBtn.colors;
+            lc.highlightedColor = new Color(0.3f, 0.55f, 0.65f);
+            lc.pressedColor = new Color(0.15f, 0.32f, 0.4f);
+            lBtn.colors = lc;
+            lBtn.onClick.AddListener(OnLoanClicked);
+
+            var lLabel = MakeLabel(lrt, "Label", "LOAN", 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(lLabel.rectTransform);
         }
 
         private void OnBuildClicked()
@@ -1038,6 +1144,14 @@ namespace ThemeParkGame.Core
             bool show = !_researchPanel.activeSelf;
             _researchPanel.SetActive(show);
             if (show) RefreshResearchPanel();
+        }
+
+        private void OnLoanClicked()
+        {
+            if (_loanPanel == null) return;
+            bool show = !_loanPanel.activeSelf;
+            _loanPanel.SetActive(show);
+            if (show) RefreshLoanPanel();
         }
 
         // ================================================================
@@ -1294,6 +1408,385 @@ namespace ThemeParkGame.Core
             {
                 _lastResearchState = stateKey;
                 RefreshResearchPanel();
+            }
+        }
+
+        // ================================================================
+        // ローンパネル
+        // ================================================================
+
+        private void BuildLoanPanel(RectTransform root)
+        {
+            float panelW = 420f;
+            float panelH = 400f;
+
+            _loanPanel = new GameObject("LoanPanel");
+            _loanPanel.transform.SetParent(root, false);
+            var rt = _loanPanel.AddComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(panelW, panelH);
+
+            var bgImg = _loanPanel.AddComponent<Image>();
+            bgImg.color = new Color(0.06f, 0.08f, 0.14f, 0.97f);
+            bgImg.raycastTarget = true;
+
+            // タイトル
+            var title = MakeLabel(rt, "Title", "LOAN MANAGEMENT", 24, Gold,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            var titleRt = title.rectTransform;
+            titleRt.anchorMin = titleRt.anchorMax = new Vector2(0.5f, 1f);
+            titleRt.pivot = new Vector2(0.5f, 1f);
+            titleRt.anchoredPosition = new Vector2(0f, -10f);
+            titleRt.sizeDelta = new Vector2(panelW, 30f);
+
+            // 現在の残高・ローン状況
+            _loanBalanceText = MakeLabel(rt, "Balance", "", 16, Cyan,
+                FontStyle.Normal, TextAnchor.MiddleLeft);
+            var balRt = _loanBalanceText.rectTransform;
+            balRt.anchorMin = balRt.anchorMax = new Vector2(0f, 1f);
+            balRt.pivot = new Vector2(0f, 1f);
+            balRt.anchoredPosition = new Vector2(15f, -48f);
+            balRt.sizeDelta = new Vector2(panelW - 30f, 22f);
+
+            _loanCountText = MakeLabel(rt, "LoanCount", "", 14, Muted,
+                FontStyle.Normal, TextAnchor.MiddleLeft);
+            var lcRt = _loanCountText.rectTransform;
+            lcRt.anchorMin = lcRt.anchorMax = new Vector2(0f, 1f);
+            lcRt.pivot = new Vector2(0f, 1f);
+            lcRt.anchoredPosition = new Vector2(15f, -72f);
+            lcRt.sizeDelta = new Vector2(panelW - 30f, 20f);
+
+            // ローン詳細リスト
+            _loanDetailText = MakeLabel(rt, "LoanDetail", "", 13, Color.white,
+                FontStyle.Normal, TextAnchor.UpperLeft);
+            _loanDetailText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _loanDetailText.verticalOverflow = VerticalWrapMode.Truncate;
+            var ldRt = _loanDetailText.rectTransform;
+            ldRt.anchorMin = ldRt.anchorMax = new Vector2(0f, 1f);
+            ldRt.pivot = new Vector2(0f, 1f);
+            ldRt.anchoredPosition = new Vector2(15f, -100f);
+            ldRt.sizeDelta = new Vector2(panelW - 30f, 120f);
+
+            // ---- 借入セクション ----
+            var borrowLabel = MakeLabel(rt, "BorrowLabel", "--- 新規借入 ---", 15, Gold,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            var blRt = borrowLabel.rectTransform;
+            blRt.anchorMin = blRt.anchorMax = new Vector2(0.5f, 1f);
+            blRt.pivot = new Vector2(0.5f, 1f);
+            blRt.anchoredPosition = new Vector2(0f, -228f);
+            blRt.sizeDelta = new Vector2(panelW, 22f);
+
+            // 金額表示
+            _loanBorrowAmountText = MakeLabel(rt, "BorrowAmount", "$10,000", 20, Color.white,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            var baRt = _loanBorrowAmountText.rectTransform;
+            baRt.anchorMin = baRt.anchorMax = new Vector2(0.5f, 1f);
+            baRt.pivot = new Vector2(0.5f, 1f);
+            baRt.anchoredPosition = new Vector2(0f, -256f);
+            baRt.sizeDelta = new Vector2(200f, 28f);
+
+            // - ボタン
+            var minusGo = MakePanel(rt, "MinusBtn", 40f, 28f, new Color(0.5f, 0.3f, 0.3f));
+            var minusRt2 = minusGo.GetComponent<RectTransform>();
+            minusRt2.anchorMin = minusRt2.anchorMax = new Vector2(0.5f, 1f);
+            minusRt2.pivot = new Vector2(0.5f, 1f);
+            minusRt2.anchoredPosition = new Vector2(-120f, -256f);
+            var minusImg = minusGo.GetComponent<Image>();
+            minusImg.raycastTarget = true;
+            var minusBtn = minusGo.AddComponent<Button>();
+            minusBtn.targetGraphic = minusImg;
+            minusBtn.onClick.AddListener(() =>
+            {
+                _loanBorrowAmount = Mathf.Max(10000f, _loanBorrowAmount - 10000f);
+                _loanBorrowAmountText.text = $"${_loanBorrowAmount:N0}";
+            });
+            var minusLbl = MakeLabel(minusRt2, "L", "-", 20, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(minusLbl.rectTransform);
+
+            // + ボタン
+            var plusGo = MakePanel(rt, "PlusBtn", 40f, 28f, new Color(0.3f, 0.5f, 0.3f));
+            var plusRt2 = plusGo.GetComponent<RectTransform>();
+            plusRt2.anchorMin = plusRt2.anchorMax = new Vector2(0.5f, 1f);
+            plusRt2.pivot = new Vector2(0.5f, 1f);
+            plusRt2.anchoredPosition = new Vector2(120f, -256f);
+            var plusImg = plusGo.GetComponent<Image>();
+            plusImg.raycastTarget = true;
+            var plusBtn = plusGo.AddComponent<Button>();
+            plusBtn.targetGraphic = plusImg;
+            plusBtn.onClick.AddListener(() =>
+            {
+                _loanBorrowAmount = Mathf.Min(200000f, _loanBorrowAmount + 10000f);
+                _loanBorrowAmountText.text = $"${_loanBorrowAmount:N0}";
+            });
+            var plusLbl = MakeLabel(plusRt2, "L", "+", 20, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(plusLbl.rectTransform);
+
+            // 借入ボタン
+            var borrowBtnGo = MakePanel(rt, "BorrowBtn", 180f, 36f, new Color(0.2f, 0.55f, 0.3f));
+            var borrowBtnRt = borrowBtnGo.GetComponent<RectTransform>();
+            borrowBtnRt.anchorMin = borrowBtnRt.anchorMax = new Vector2(0.5f, 1f);
+            borrowBtnRt.pivot = new Vector2(0.5f, 1f);
+            borrowBtnRt.anchoredPosition = new Vector2(-55f, -296f);
+            var borrowBtnImg = borrowBtnGo.GetComponent<Image>();
+            borrowBtnImg.raycastTarget = true;
+            var borrowButton = borrowBtnGo.AddComponent<Button>();
+            borrowButton.targetGraphic = borrowBtnImg;
+            var borrowC = borrowButton.colors;
+            borrowC.highlightedColor = new Color(0.3f, 0.65f, 0.4f);
+            borrowC.pressedColor = new Color(0.15f, 0.4f, 0.2f);
+            borrowButton.colors = borrowC;
+            borrowButton.onClick.AddListener(OnBorrowClicked);
+            var borrowBtnLbl = MakeLabel(borrowBtnRt, "L", "借入する", 16, Color.white,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(borrowBtnLbl.rectTransform);
+
+            // 繰り上げ返済ボタン
+            var repayBtnGo = MakePanel(rt, "RepayBtn", 180f, 36f, new Color(0.5f, 0.35f, 0.2f));
+            var repayBtnRt = repayBtnGo.GetComponent<RectTransform>();
+            repayBtnRt.anchorMin = repayBtnRt.anchorMax = new Vector2(0.5f, 1f);
+            repayBtnRt.pivot = new Vector2(0.5f, 1f);
+            repayBtnRt.anchoredPosition = new Vector2(55f, -296f);
+            var repayBtnImg = repayBtnGo.GetComponent<Image>();
+            repayBtnImg.raycastTarget = true;
+            var repayButton = repayBtnGo.AddComponent<Button>();
+            repayButton.targetGraphic = repayBtnImg;
+            var repayC = repayButton.colors;
+            repayC.highlightedColor = new Color(0.6f, 0.45f, 0.3f);
+            repayC.pressedColor = new Color(0.38f, 0.25f, 0.15f);
+            repayButton.colors = repayC;
+            repayButton.onClick.AddListener(OnRepayClicked);
+            var repayBtnLbl = MakeLabel(repayBtnRt, "L", "繰り上げ返済", 14, Color.white,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(repayBtnLbl.rectTransform);
+
+            // ヒントテキスト
+            var hint = MakeLabel(rt, "Hint", "年利8% | 最大3件 | 上限$200,000", 12, Muted,
+                FontStyle.Normal, TextAnchor.MiddleCenter);
+            var hintRt = hint.rectTransform;
+            hintRt.anchorMin = hintRt.anchorMax = new Vector2(0.5f, 1f);
+            hintRt.pivot = new Vector2(0.5f, 1f);
+            hintRt.anchoredPosition = new Vector2(0f, -340f);
+            hintRt.sizeDelta = new Vector2(panelW - 20f, 18f);
+
+            // 閉じるボタン
+            var closeGo = MakePanel(rt, "CloseBtn", 90f, 30f, new Color(0.5f, 0.2f, 0.2f));
+            var closeRt = closeGo.GetComponent<RectTransform>();
+            closeRt.anchorMin = closeRt.anchorMax = new Vector2(0.5f, 0f);
+            closeRt.pivot = new Vector2(0.5f, 0f);
+            closeRt.anchoredPosition = new Vector2(0f, 8f);
+            var closeImg = closeGo.GetComponent<Image>();
+            closeImg.raycastTarget = true;
+            var closeBtn = closeGo.AddComponent<Button>();
+            closeBtn.targetGraphic = closeImg;
+            closeBtn.onClick.AddListener(() => _loanPanel.SetActive(false));
+            var closeLbl = MakeLabel(closeRt, "L", "CLOSE", 14, Color.white,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(closeLbl.rectTransform);
+
+            _loanPanel.SetActive(false);
+        }
+
+        private void OnBorrowClicked()
+        {
+            var em = GameManager.Instance?.EconomyManager;
+            if (em == null) return;
+
+            var loan = em.TakeLoan(_loanBorrowAmount);
+            if (loan != null)
+            {
+                NotificationSystem.Instance?.Notify(
+                    $"ローン借入: ${_loanBorrowAmount:N0} (月額返済: ${loan.MonthlyPayment:N0})",
+                    NotifLevel.Info);
+                RefreshLoanPanel();
+            }
+            else
+            {
+                NotificationSystem.Instance?.Notify("ローンの借入に失敗しました", NotifLevel.Warning);
+            }
+        }
+
+        private void OnRepayClicked()
+        {
+            var em = GameManager.Instance?.EconomyManager;
+            if (em == null) return;
+
+            var loans = em.GetActiveLoans();
+            if (loans.Count == 0) return;
+
+            // 最初のアクティブローンに対して繰り上げ返済（借入額分）
+            var target = loans[0];
+            float repayAmount = Mathf.Min(_loanBorrowAmount, target.RemainingBalance);
+            if (em.RepayLoanEarly(target.LoanId, repayAmount))
+            {
+                NotificationSystem.Instance?.Notify(
+                    $"ローン#{target.LoanId} 繰り上げ返済: ${repayAmount:N0}",
+                    NotifLevel.Success);
+                RefreshLoanPanel();
+            }
+            else
+            {
+                NotificationSystem.Instance?.Notify("返済に失敗しました（資金不足）", NotifLevel.Warning);
+            }
+        }
+
+        private void RefreshLoanPanel()
+        {
+            var em = GameManager.Instance?.EconomyManager;
+            if (em == null) return;
+
+            _loanBalanceText.text = $"所持金: ${em.CurrentBalance:N0}  |  総借入残高: ${em.TotalLoanBalance:N0}";
+            _loanCountText.text = $"アクティブローン: {em.ActiveLoanCount} / 3";
+
+            var loans = em.GetActiveLoans();
+            if (loans.Count == 0)
+            {
+                _loanDetailText.text = "現在、アクティブなローンはありません。\n\n資金が不足した場合は新規借入を検討してください。";
+            }
+            else
+            {
+                var sb = new System.Text.StringBuilder();
+                foreach (var loan in loans)
+                {
+                    sb.AppendLine($"[ローン #{loan.LoanId}]");
+                    sb.AppendLine($"  元本: ${loan.Principal:N0}  残高: ${loan.RemainingBalance:N0}");
+                    sb.AppendLine($"  月額返済: ${loan.MonthlyPayment:N0}  経過: {loan.ElapsedMonths}/{loan.TermMonths}ヶ月");
+                    sb.AppendLine();
+                }
+                _loanDetailText.text = sb.ToString();
+            }
+        }
+
+        private void UpdateLoanPanel()
+        {
+            if (_loanPanel == null || !_loanPanel.activeSelf) return;
+            var em = GameManager.Instance?.EconomyManager;
+            if (em == null) return;
+
+            string stateKey = $"{em.ActiveLoanCount}_{em.TotalLoanBalance:F0}_{em.CurrentBalance:F0}";
+            if (stateKey != _lastLoanState)
+            {
+                _lastLoanState = stateKey;
+                RefreshLoanPanel();
+            }
+        }
+
+        // ================================================================
+        // ゾーンバー（アクションボタンの下に配置）
+        // ================================================================
+
+        private void BuildZoneBar(RectTransform root)
+        {
+            _zoneBar = new GameObject("ZoneBar");
+            _zoneBar.transform.SetParent(root, false);
+            var rt = _zoneBar.AddComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
+            rt.pivot = new Vector2(0f, 1f);
+            rt.anchoredPosition = new Vector2(10f, -52f);
+            rt.sizeDelta = new Vector2(490f, 28f);
+
+            var bgImg = _zoneBar.AddComponent<Image>();
+            bgImg.color = new Color(0.05f, 0.07f, 0.12f, 0.85f);
+            bgImg.raycastTarget = false;
+
+            string[] zoneNames = { "Lost Kingdom", "Halloween", "Wonderland", "Space Zone" };
+            ThemeZone[] zones = { ThemeZone.LostKingdom, ThemeZone.HalloweenWorld,
+                                  ThemeZone.Wonderland, ThemeZone.SpaceZone };
+
+            for (int i = 0; i < 4; i++)
+            {
+                float x = 4f + i * 122f;
+                var btnGo = MakePanel(rt, $"Zone{i}", 118f, 22f, new Color(0.2f, 0.2f, 0.2f, 0.8f));
+                var btnRt = btnGo.GetComponent<RectTransform>();
+                btnRt.anchorMin = btnRt.anchorMax = new Vector2(0f, 0.5f);
+                btnRt.pivot = new Vector2(0f, 0.5f);
+                btnRt.anchoredPosition = new Vector2(x, 0f);
+
+                var btnImg = btnGo.GetComponent<Image>();
+                btnImg.raycastTarget = true;
+                _zoneButtons[i] = btnGo.AddComponent<Button>();
+                _zoneButtons[i].targetGraphic = btnImg;
+
+                int idx = i;
+                ThemeZone zoneCapture = zones[i];
+                _zoneButtons[i].onClick.AddListener(() => OnZoneButtonClicked(zoneCapture));
+
+                _zoneLabels[i] = MakeLabel(btnRt, "L", zoneNames[i], 11,
+                    Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+                StretchFill(_zoneLabels[i].rectTransform);
+            }
+        }
+
+        private void OnZoneButtonClicked(ThemeZone zone)
+        {
+            var pm = GameManager.Instance?.ParkManager;
+            if (pm == null) return;
+
+            if (pm.IsZoneUnlocked(zone))
+            {
+                NotificationSystem.Instance?.Notify($"{ZoneNameJa(zone)} は既にアンロック済みです", NotifLevel.Info);
+                return;
+            }
+
+            int cost = pm.GetZoneUnlockCost(zone);
+            int tickets = GameManager.Instance.GoldenTickets;
+            if (tickets < cost)
+            {
+                NotificationSystem.Instance?.Notify(
+                    $"{ZoneNameJa(zone)} のアンロックにはゴールデンチケット{cost}枚が必要です (現在: {tickets}枚)",
+                    NotifLevel.Warning);
+                return;
+            }
+
+            if (pm.UnlockZone(zone))
+            {
+                NotificationSystem.Instance?.Notify(
+                    $"{ZoneNameJa(zone)} をアンロックしました！", NotifLevel.Success);
+            }
+        }
+
+        private void UpdateZoneBar()
+        {
+            if (_zoneBar == null) return;
+            var pm = GameManager.Instance?.ParkManager;
+            if (pm == null) return;
+
+            ThemeZone[] zones = { ThemeZone.LostKingdom, ThemeZone.HalloweenWorld,
+                                  ThemeZone.Wonderland, ThemeZone.SpaceZone };
+            Color unlocked = new Color(0.15f, 0.45f, 0.25f, 0.9f);
+            Color locked = new Color(0.3f, 0.2f, 0.15f, 0.85f);
+
+            for (int i = 0; i < 4; i++)
+            {
+                bool isUnlocked = pm.IsZoneUnlocked(zones[i]);
+                var img = _zoneButtons[i].GetComponent<Image>();
+                img.color = isUnlocked ? unlocked : locked;
+
+                if (!isUnlocked)
+                {
+                    int cost = pm.GetZoneUnlockCost(zones[i]);
+                    _zoneLabels[i].text = $"[LOCKED] x{cost}";
+                    _zoneLabels[i].color = new Color(0.7f, 0.5f, 0.3f);
+                }
+                else
+                {
+                    string[] shortNames = { "Lost Kingdom", "Halloween", "Wonderland", "Space Zone" };
+                    _zoneLabels[i].text = shortNames[i];
+                    _zoneLabels[i].color = Color.white;
+                }
+            }
+        }
+
+        private static string ZoneNameJa(ThemeZone zone)
+        {
+            switch (zone)
+            {
+                case ThemeZone.LostKingdom: return "ロストキングダム";
+                case ThemeZone.HalloweenWorld: return "ハロウィーンワールド";
+                case ThemeZone.Wonderland: return "ワンダーランド";
+                case ThemeZone.SpaceZone: return "スペースゾーン";
+                default: return zone.ToString();
             }
         }
 
@@ -2778,6 +3271,8 @@ namespace ThemeParkGame.Core
             if (_buildBtn != null) _buildBtn.SetActive(isPlaying);
             if (_staffBtn != null) _staffBtn.SetActive(isPlaying);
             if (_researchBtn != null) _researchBtn.SetActive(isPlaying);
+            if (_loanBtn != null) _loanBtn.SetActive(isPlaying);
+            if (_zoneBar != null) _zoneBar.SetActive(isPlaying);
 
             // GameOver表示
             if (state == GameState.GameOver)
@@ -3177,6 +3672,12 @@ namespace ThemeParkGame.Core
 
             // ---- 研究パネル ----
             UpdateResearchPanel();
+
+            // ---- ローンパネル ----
+            UpdateLoanPanel();
+
+            // ---- ゾーンバー ----
+            UpdateZoneBar();
 
             // ---- ファーストパーソンビュー ----
             UpdateFirstPersonOverlay();

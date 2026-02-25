@@ -144,6 +144,7 @@ namespace ThemeParkGame.UI
             public int buildCost;
             public int wholesalePrice;
             public int suggestedRetailPrice;
+            public string requiredResearchId;
             public string description;
         }
 
@@ -159,6 +160,7 @@ namespace ThemeParkGame.UI
             public int gridWidth;
             public int gridHeight;
             public int capacity;
+            public string requiredResearchId;
             public string description;
         }
 
@@ -293,7 +295,8 @@ namespace ThemeParkGame.UI
                                 ThemeZone = s.themeZone,
                                 BuildCost = s.buildCost,
                                 WholesalePrice = s.wholesalePrice,
-                                SuggestedPrice = s.suggestedRetailPrice
+                                SuggestedPrice = s.suggestedRetailPrice,
+                                RequiredResearchId = s.requiredResearchId
                             });
                         }
                     }
@@ -326,7 +329,8 @@ namespace ThemeParkGame.UI
                                 MaintenanceCost = f.maintenanceCostPerMonth,
                                 Capacity = f.capacity,
                                 GridWidth = f.gridWidth,
-                                GridHeight = f.gridHeight
+                                GridHeight = f.gridHeight,
+                                RequiredResearchId = f.requiredResearchId
                             });
                         }
                     }
@@ -436,7 +440,6 @@ namespace ThemeParkGame.UI
         {
             float tabW = 140f;
             float tabH = 28f;
-            float startY = -44f; // ヘッダーの下
 
             var tabArea = MakePanel(parent, "TabArea", tabW, 336f, new Color(0.08f, 0.1f, 0.16f, 0.9f));
             var tarRt = tabArea.GetComponent<RectTransform>();

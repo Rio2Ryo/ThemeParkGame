@@ -46,6 +46,7 @@
       "wholesalePrice": 100,
       "suggestedRetailPrice": 300,
       "servingTimeSeconds": 12,
+      "requiredResearchId": "RES_SHOP_GOURMET",
       "description": "古代のかまどで焼いた風のパン。ピラミッド型のメロンパンが子供に人気。"
     },
     {
@@ -94,6 +95,7 @@
       "wholesalePrice": 110,
       "suggestedRetailPrice": 320,
       "servingTimeSeconds": 12,
+      "requiredResearchId": "RES_SHOP_GOURMET",
       "description": "かぼちゃを使ったスイーツ専門店。かぼちゃプリンとパンプキンパイが絶品。"
     },
     {
@@ -142,6 +144,7 @@
       "wholesalePrice": 140,
       "suggestedRetailPrice": 400,
       "servingTimeSeconds": 20,
+      "requiredResearchId": "RES_SHOP_GOURMET",
       "description": "マッドハッターのティーパーティをテーマにしたカフェ。巨大カップケーキとお茶セットが人気。"
     },
     {
@@ -190,6 +193,7 @@
       "wholesalePrice": 140,
       "suggestedRetailPrice": 400,
       "servingTimeSeconds": 14,
+      "requiredResearchId": "RES_SHOP_GOURMET",
       "description": "緑色のバンズを使ったエイリアンバーガー。宇宙船型のフライドポテトがセットで付く。"
     }
   ]

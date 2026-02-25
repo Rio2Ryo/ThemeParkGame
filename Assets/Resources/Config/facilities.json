@@ -94,6 +94,7 @@
       "gridWidth": 1,
       "gridHeight": 1,
       "capacity": 1,
+      "requiredResearchId": "RES_FACILITY_INFO_BOARD",
       "description": "待ち時間やイベント情報をリアルタイム表示する電子ボード。広い範囲の迷子率を大幅に低下。"
     },
     {
@@ -190,6 +191,7 @@
       "gridWidth": 4,
       "gridHeight": 3,
       "capacity": 16,
+      "requiredResearchId": "RES_FACILITY_STAFF_ROOM",
       "description": "大人数対応のスタッフ休憩施設。回復速度が通常の1.5倍。"
     },
     {
@@ -214,6 +216,7 @@
       "gridWidth": 5,
       "gridHeight": 4,
       "capacity": 8,
+      "requiredResearchId": "RES_FACILITY_STAFF_ROOM",
       "description": "最先端の設備を備えた研究所。研究速度が通常の2倍。Tier3の研究にはこちらが必要。"
     }
   ]
