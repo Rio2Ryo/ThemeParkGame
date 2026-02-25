@@ -1269,10 +1269,32 @@ namespace ThemeParkGame.Core
             }
         }
 
+        private string _lastResearchState;
         private void UpdateResearchPanel()
         {
             if (_researchPanel == null || !_researchPanel.activeSelf) return;
-            RefreshResearchPanel();
+
+            // Only do progress bar update, not full rebuild
+            var gm = GameManager.Instance;
+            if (gm?.ResearchManager == null) return;
+            var rm = gm.ResearchManager;
+
+            // Quick progress bar update
+            if (rm.IsResearching)
+            {
+                var cur = rm.CurrentResearch;
+                _researchProgressText.text = $"{cur.ProgressRatio:P0}";
+                float barW = 440f;
+                _researchProgressFill.rectTransform.sizeDelta = new Vector2(barW * cur.ProgressRatio, 0f);
+            }
+
+            // Full rebuild only when state changes
+            string stateKey = $"{rm.IsResearching}_{rm.CompletedResearchCount}_{rm.ScientistCount}";
+            if (stateKey != _lastResearchState)
+            {
+                _lastResearchState = stateKey;
+                RefreshResearchPanel();
+            }
         }
 
         // ================================================================
