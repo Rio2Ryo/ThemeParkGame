@@ -61,6 +61,8 @@ namespace ThemeParkGame.AI
     /// </summary>
     public class SNSReputationSystem : MonoBehaviour
     {
+        public static SNSReputationSystem Instance { get; private set; }
+
         [Header("Reputation Settings")]
         [SerializeField] private float initialReputation = 50f;
         [SerializeField] private float reputationDecayRate = 0.1f;       // Per in-game hour
@@ -123,6 +125,11 @@ namespace ThemeParkGame.AI
         // ================================================================
         // Initialization
         // ================================================================
+
+        private void Awake()
+        {
+            Instance = this;
+        }
 
         public void Initialize()
         {
@@ -693,6 +700,7 @@ namespace ThemeParkGame.AI
 
         private void OnDestroy()
         {
+            if (Instance == this) Instance = null;
             GameEvents.OnVisitorLeavePark -= HandleVisitorLeaving;
             if (GameManager.Instance?.TimeManager != null)
                 GameManager.Instance.TimeManager.OnDayChanged -= HandleDayChanged;

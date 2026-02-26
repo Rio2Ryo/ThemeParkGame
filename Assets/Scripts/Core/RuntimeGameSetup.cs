@@ -538,7 +538,7 @@ namespace ThemeParkGame.Core
                     Color color = category switch
                     {
                         AttractionCategory.VerticalRotation => new Color(0.9f, 0.4f, 0.1f),
-                        AttractionCategory.TransportRide => new Color(0.2f, 0.7f, 0.9f),
+                        AttractionCategory.RideAttraction => new Color(0.2f, 0.7f, 0.9f),
                         _ => new Color(0.5f, 0.2f, 0.8f)
                     };
                     ProceduralMeshGenerator.ApplyMaterial(visual, color, 0.1f, 0.4f);

@@ -398,7 +398,7 @@ namespace ThemeParkGame.Core
                 Weather.Cloudy => WeatherCloudy,
                 Weather.Rainy => WeatherRainy,
                 Weather.Snowy => WeatherSnowy,
-                Weather.HeatWave => WeatherHeatWave,
+                Weather.Hot => WeatherHeatWave,
                 _ => weather.ToString()
             };
         }
