@@ -722,8 +722,13 @@ namespace ThemeParkGame.Staff
             }
 
             WebGLOptimizer.LogVerbose($"[StaffManager] パトロールエリア指定モード開始: {staff.Name} (ID:{staffId})");
-            // TODO: InputManagerやCameraControllerと連携して
-            // ゲームフィールド上でのエリア選択UIを表示する
+
+            // スタッフの現在位置を中心にパトロールエリアを自動設定
+            Vector3 pos = staff.transform.position;
+            float patrolRadius = 15f;
+            staff.SetPatrolArea(new Bounds(pos, new Vector3(patrolRadius * 2f, 5f, patrolRadius * 2f)));
+            GameManager.Instance?.ShowNotification(
+                $"{staff.Name} のパトロールエリアを現在地付近に設定しました", NotifLevel.Info);
         }
 
         /// <summary>

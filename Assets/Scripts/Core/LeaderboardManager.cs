@@ -362,8 +362,7 @@ namespace ThemeParkGame.Core
 
         private static Font GetBuiltinFont()
         {
-            var f = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            return f ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            return FontManager.Regular;
         }
 
         // ================================================================

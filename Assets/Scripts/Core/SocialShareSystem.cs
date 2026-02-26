@@ -190,9 +190,9 @@ namespace ThemeParkGame.Core
             _previewImage = previewObj.AddComponent<RawImage>();
             _previewImage.color = new Color(0.15f, 0.15f, 0.2f);
 
-            MakeText(previewObj.transform, "PlaceHolder",
+            MakeText(previewObj.transform, "PreviewLabel",
                 Vector2.zero, Vector2.one,
-                "[ Screenshot Preview ]", 16, FontStyle.Normal, new Color(0.5f, 0.5f, 0.6f))
+                "[ スクリーンショット プレビュー ]", 16, FontStyle.Normal, new Color(0.5f, 0.5f, 0.6f))
                 .GetComponent<Text>().alignment = TextAnchor.MiddleCenter;
 
             // シェアテキスト
@@ -242,7 +242,7 @@ namespace ThemeParkGame.Core
             r.offsetMax = new Vector2(-5f, 0f);
             var t = obj.AddComponent<Text>();
             t.text = content;
-            t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            t.font = FontManager.Regular;
             t.fontSize = size;
             t.fontStyle = style;
             t.color = color;
@@ -268,7 +268,7 @@ namespace ThemeParkGame.Core
             var tr = txt.GetComponent<RectTransform>();
             tr.anchorMin = Vector2.zero; tr.anchorMax = Vector2.one;
             tr.offsetMin = Vector2.zero; tr.offsetMax = Vector2.zero;
-            txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txt.font = FontManager.Regular;
             txt.fontSize = 14; txt.color = Color.white;
             txt.alignment = TextAnchor.MiddleCenter;
             txt.text = text;

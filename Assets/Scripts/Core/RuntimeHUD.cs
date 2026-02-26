@@ -3989,7 +3989,7 @@ namespace ThemeParkGame.Core
             rt.sizeDelta = new Vector2(120f, 30f);
 
             var label = go.AddComponent<Text>();
-            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            label.font = FontManager.Regular;
             label.fontSize = 18;
             label.fontStyle = FontStyle.Bold;
             label.alignment = TextAnchor.MiddleCenter;
@@ -4394,15 +4394,9 @@ namespace ThemeParkGame.Core
         // UI構築ヘルパー
         // ================================================================
 
-        private static Font _font;
-
         private static Font CachedFont()
         {
-            if (_font != null) return _font;
-            _font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            if (_font == null)
-                _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            return _font;
+            return FontManager.Regular;
         }
 
         private static GameObject MakePanel(RectTransform parent, string name, float w, float h, Color bg)

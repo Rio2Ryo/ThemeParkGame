@@ -327,7 +327,7 @@ namespace ThemeParkGame.Park
             titleRect.offsetMax = new Vector2(-60f, -5f);
             _titleText = titleObj.AddComponent<Text>();
             _titleText.text = "パーク拡張 - 土地購入";
-            _titleText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            _titleText.font = FontManager.Regular;
             _titleText.fontSize = 22;
             _titleText.color = Color.white;
             _titleText.alignment = TextAnchor.MiddleCenter;
@@ -354,7 +354,7 @@ namespace ThemeParkGame.Park
             closeTxtRect.offsetMin = Vector2.zero;
             closeTxtRect.offsetMax = Vector2.zero;
             closeTxt.text = "X";
-            closeTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            closeTxt.font = FontManager.Regular;
             closeTxt.fontSize = 20;
             closeTxt.color = Color.white;
             closeTxt.alignment = TextAnchor.MiddleCenter;
@@ -368,7 +368,7 @@ namespace ThemeParkGame.Park
             areaRect.offsetMin = new Vector2(10f, 0f);
             areaRect.offsetMax = new Vector2(-10f, 0f);
             _totalAreaText = areaObj.AddComponent<Text>();
-            _totalAreaText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            _totalAreaText.font = FontManager.Regular;
             _totalAreaText.fontSize = 16;
             _totalAreaText.color = new Color(0.7f, 0.9f, 1f);
             _totalAreaText.alignment = TextAnchor.MiddleCenter;
@@ -470,7 +470,7 @@ namespace ThemeParkGame.Park
             textRect.offsetMin = new Vector2(10f, 0f);
             textRect.offsetMax = Vector2.zero;
             var text = textObj.AddComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.font = FontManager.Regular;
             text.fontSize = 14;
             text.color = Color.white;
             text.alignment = TextAnchor.MiddleLeft;
@@ -511,7 +511,7 @@ namespace ThemeParkGame.Park
                 btnTxtRect.offsetMin = Vector2.zero;
                 btnTxtRect.offsetMax = Vector2.zero;
                 btnTxt.text = canBuy ? "購入" : "不可";
-                btnTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                btnTxt.font = FontManager.Regular;
                 btnTxt.fontSize = 14;
                 btnTxt.color = Color.white;
                 btnTxt.alignment = TextAnchor.MiddleCenter;

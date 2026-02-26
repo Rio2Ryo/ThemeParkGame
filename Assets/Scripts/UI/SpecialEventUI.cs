@@ -410,7 +410,7 @@ namespace ThemeParkGame.UI
             r.offsetMax = new Vector2(-8f, -2f);
             var t = obj.AddComponent<Text>();
             t.text = content;
-            t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            t.font = FontManager.Regular;
             t.fontSize = fontSize;
             t.fontStyle = style;
             t.color = color;
@@ -441,7 +441,7 @@ namespace ThemeParkGame.UI
             tr.anchorMax = Vector2.one;
             tr.offsetMin = Vector2.zero;
             tr.offsetMax = Vector2.zero;
-            txtObj.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txtObj.font = FontManager.Regular;
             txtObj.fontSize = 12;
             txtObj.color = Color.white;
             txtObj.alignment = TextAnchor.MiddleCenter;

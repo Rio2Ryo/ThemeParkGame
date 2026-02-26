@@ -215,7 +215,7 @@ namespace ThemeParkGame.UI
             r.offsetMax = new Vector2(-5f, 0f);
             var t = obj.AddComponent<Text>();
             t.text = content;
-            t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            t.font = FontManager.Regular;
             t.fontSize = fontSize;
             t.fontStyle = style;
             t.color = color;

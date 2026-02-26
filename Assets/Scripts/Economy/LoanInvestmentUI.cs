@@ -471,7 +471,7 @@ namespace ThemeParkGame.Economy
             txtRect.offsetMax = new Vector2(-5f, -2f);
             var txt = txtObj.AddComponent<Text>();
             txt.text = text;
-            txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txt.font = FontManager.Regular;
             txt.fontSize = 13;
             txt.color = Color.white;
             txt.alignment = TextAnchor.MiddleLeft;
@@ -492,7 +492,7 @@ namespace ThemeParkGame.Economy
             rect.offsetMax = new Vector2(-10f, 0f);
             var txt = obj.AddComponent<Text>();
             txt.text = text;
-            txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txt.font = FontManager.Regular;
             txt.fontSize = fontSize;
             txt.fontStyle = style;
             txt.color = Color.white;
@@ -528,7 +528,7 @@ namespace ThemeParkGame.Economy
             txtRect.offsetMax = new Vector2(-2f, 0f);
             var txt = txtObj.AddComponent<Text>();
             txt.text = text;
-            txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txt.font = FontManager.Regular;
             txt.fontSize = 12;
             txt.color = Color.white;
             txt.alignment = TextAnchor.MiddleCenter;

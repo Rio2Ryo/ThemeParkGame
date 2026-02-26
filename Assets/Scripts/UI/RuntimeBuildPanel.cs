@@ -1253,14 +1253,9 @@ namespace ThemeParkGame.UI
 
         // ---- UI構築ヘルパー（RuntimeHUDと同パターン） ----
 
-        private static Font _font;
         private static Font CachedFont()
         {
-            if (_font != null) return _font;
-            _font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            if (_font == null)
-                _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            return _font;
+            return FontManager.Regular;
         }
 
         private static GameObject MakePanel(RectTransform parent, string name, float w, float h, Color bg)
