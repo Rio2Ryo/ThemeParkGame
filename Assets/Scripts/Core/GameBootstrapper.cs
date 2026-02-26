@@ -527,7 +527,7 @@ namespace ThemeParkGame.Core
             // ---- 操作ヒント ----
             var hint = CreateUIElement("Hint", canvasGo.transform);
             var hintText = hint.AddComponent<Text>();
-            hintText.text = "来場者をクリックで詳細  |  メニューで一時停止  |  速度: ||  x.5  x1  x2  x5";
+            hintText.text = "来場者をクリックで詳細  |  メニューで一時停止  |  速度: ⏸  ½  ▶  ▶▶  ▶▶▶";
             hintText.font = GetBuiltinFont();
             hintText.fontSize = 16;
             hintText.alignment = TextAnchor.MiddleCenter;
@@ -552,7 +552,7 @@ namespace ThemeParkGame.Core
             // ---- コピーライト ----
             var cr = CreateUIElement("Copyright", canvasGo.transform);
             var crText = cr.AddComponent<Text>();
-            crText.text = "Theme Park Game Project";
+            crText.text = "テーマパークゲーム プロジェクト";
             crText.font = GetBuiltinFont();
             crText.fontSize = 16;
             crText.alignment = TextAnchor.LowerLeft;

@@ -56,26 +56,26 @@ namespace ThemeParkGame.Visitor
 
         // ---- ティックごとの増減レート（1秒あたり） ----
 
-        /// <summary>空腹の自然増加レート（毎秒）</summary>
-        private const float HungerIncreaseRate = 0.8f;
+        /// <summary>空腹の自然増加レート（毎秒）。1ゲーム時間=5秒なので0.55/s≈2.75/hで約18h(90秒)で60到達</summary>
+        private const float HungerIncreaseRate = 0.55f;
 
-        /// <summary>喉の渇きの自然増加レート（毎秒）</summary>
-        private const float ThirstIncreaseRate = 0.7f;
+        /// <summary>喉の渇きの自然増加レート（毎秒）。空腹よりやや遅い</summary>
+        private const float ThirstIncreaseRate = 0.5f;
 
         /// <summary>暑い天候での喉の渇き倍率</summary>
         private const float HotWeatherThirstMultiplier = 1.5f;
 
-        /// <summary>トイレ欲求の自然増加レート（毎秒）</summary>
-        private const float ToiletNeedIncreaseRate = 0.6f;
+        /// <summary>トイレ欲求の自然増加レート（毎秒）。飲食後に加速するので基本は控えめ</summary>
+        private const float ToiletNeedIncreaseRate = 0.4f;
 
-        /// <summary>吐き気の自然回復レート（毎秒）</summary>
-        private const float NauseaDecayRate = 0.5f;
+        /// <summary>吐き気の自然回復レート（毎秒）。乗り物酔いからの回復を早めに</summary>
+        private const float NauseaDecayRate = 0.8f;
 
         /// <summary>興奮度の自然減衰レート（毎秒）</summary>
-        private const float ExcitementDecayRate = 0.3f;
+        private const float ExcitementDecayRate = 0.25f;
 
-        /// <summary>幸福度が不快要因で減少するレート（毎秒）。0.12に緩和して長時間プレイを促進。</summary>
-        private const float HappinessDecayFromDiscomfort = 0.12f;
+        /// <summary>幸福度が不快要因で減少するレート（毎秒）。緩やかに減少して長時間プレイ促進</summary>
+        private const float HappinessDecayFromDiscomfort = 0.08f;
 
         // ---- パラメータフィールド ----
 
@@ -311,12 +311,15 @@ namespace ThemeParkGame.Visitor
         /// <param name="visitorType">来場者タイプ（タイプ別補正）</param>
         public void Tick(float deltaTime, Weather currentWeather, VisitorType visitorType)
         {
+            // 難易度に応じた忍耐度補正（Easyはパラメータ増加が遅い、Hardは速い）
+            float patienceMultiplier = GetDifficultyPatienceMultiplier();
+
             // 空腹: 自然増加
-            float hungerRate = HungerIncreaseRate * GetHungerMultiplier(visitorType);
+            float hungerRate = HungerIncreaseRate * GetHungerMultiplier(visitorType) * patienceMultiplier;
             Hunger += hungerRate * deltaTime;
 
             // 喉の渇き: 自然増加（暑い天候で加速）
-            float thirstRate = ThirstIncreaseRate;
+            float thirstRate = ThirstIncreaseRate * patienceMultiplier;
             if (currentWeather == Weather.Hot)
             {
                 thirstRate *= HotWeatherThirstMultiplier;
@@ -324,7 +327,7 @@ namespace ThemeParkGame.Visitor
             Thirst += thirstRate * deltaTime;
 
             // トイレ欲求: 自然増加（シニアは加速）
-            float toiletRate = ToiletNeedIncreaseRate * GetToiletMultiplier(visitorType);
+            float toiletRate = ToiletNeedIncreaseRate * GetToiletMultiplier(visitorType) * patienceMultiplier;
             ToiletNeed += toiletRate * deltaTime;
 
             // 吐き気: 自然回復（安静時）
@@ -603,6 +606,22 @@ namespace ThemeParkGame.Visitor
                 case VisitorType.Senior: return 1.4f;  // トイレが近い
                 case VisitorType.VIP:    return 1.0f;
                 default: return 1.0f;
+            }
+        }
+
+        /// <summary>
+        /// 難易度に応じた来場者忍耐度倍率を返す。
+        /// Easy: 不快パラメータの増加が遅い（プレイヤーに余裕）
+        /// Hard: 不快パラメータの増加が速い（頻繁なケアが必要）
+        /// </summary>
+        private static float GetDifficultyPatienceMultiplier()
+        {
+            if (GameManager.Instance == null) return 1f;
+            switch (GameManager.Instance.CurrentDifficulty)
+            {
+                case GameDifficulty.Easy: return 0.75f;
+                case GameDifficulty.Hard: return 1.3f;
+                default: return 1f;
             }
         }
     }

@@ -84,9 +84,9 @@ namespace ThemeParkGame.Park
         }
 
         private static readonly string[] RivalNames = {
-            "FunWorld", "DreamLand", "Adventure Kingdom", "Star Park",
-            "Wonder World", "Fantasy Island", "Mega Park", "Joy Land",
-            "Thrill City", "Magic Gardens"
+            "ファンワールド", "ドリームランド", "アドベンチャーキングダム", "スターパーク",
+            "ワンダーワールド", "ファンタジーアイランド", "メガパーク", "ジョイランド",
+            "スリルシティ", "マジックガーデン"
         };
 
         private void Awake()

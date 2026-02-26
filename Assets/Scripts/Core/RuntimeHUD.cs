@@ -44,7 +44,7 @@ namespace ThemeParkGame.Core
         // ---- 速度ボタン ----
         private Image[] _speedBtnBgs;
         private readonly float[] _speedScales = { 0f, 0.5f, 1f, 2f, 5f };
-        private readonly string[] _speedLabels = { "||", "x.5", "x1", "x2", "x5" };
+        private readonly string[] _speedLabels = { "⏸", "½", "▶", "▶▶", "▶▶▶" };
 
         // ---- 来場者状態パネル ----
         private Text[] _visitorStatTexts;
@@ -269,6 +269,10 @@ namespace ThemeParkGame.Core
         {
             BuildCanvas();
             GameEvents.OnVisitorSatisfactionChanged += OnVisitorSatisfactionChanged;
+
+            // ツールチップシステムの初期化
+            if (ThemeParkGame.UI.TooltipSystem.Instance == null)
+                gameObject.AddComponent<ThemeParkGame.UI.TooltipSystem>();
         }
 
         private void Start()
@@ -3583,7 +3587,7 @@ namespace ThemeParkGame.Core
             if (reportKey == _lastReportMonth) return;
             _lastReportMonth = reportKey;
 
-            _mrTitle.text = $"月次レポート  Y{report.Year} M{report.Month}";
+            _mrTitle.text = $"月次レポート  {report.Year}年 {report.Month}月";
             _mrRevenue.text = $"収入:  ${report.Revenue.Total:N0}";
             _mrExpenses.text = $"支出:  ${report.Expenses.Total:N0}";
 

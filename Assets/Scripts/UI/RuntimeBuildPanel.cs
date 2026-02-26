@@ -66,6 +66,11 @@ namespace ThemeParkGame.UI
         private Text _placementHint;
         private GameObject _placementHintGo;
 
+        // ---- スナップグリッド ----
+        private GameObject _gridOverlay;
+        private const float GridCellSize = 2f;
+        private const int GridCells = 30; // 30x30 = 60m x 60m
+
         // ---- データ ----
         private List<BuildableItem> _allItems;
 
@@ -812,6 +817,9 @@ namespace ThemeParkGame.UI
 
             _placementHint.text = $"{item.NameJa} を配置中 | クリックで確定 | 右クリック/ESCでキャンセル";
 
+            // スナップグリッド表示
+            ShowSnapGrid();
+
             // プレビューオブジェクト作成
             float sizeX = Mathf.Max(item.GridWidth, 2f);
             float sizeZ = Mathf.Max(item.GridHeight, 2f);
@@ -955,12 +963,71 @@ namespace ThemeParkGame.UI
                 Destroy(_placementPreview);
                 _placementPreview = null;
             }
+            HideSnapGrid();
             _isPlacing = false;
             _placementValid = false;
             _placementHintGo?.SetActive(false);
 
             if (_isOpen && _panelRoot != null)
                 _panelRoot.SetActive(true);
+        }
+
+        // ================================================================
+        // スナップグリッド表示
+        // ================================================================
+
+        private void ShowSnapGrid()
+        {
+            HideSnapGrid();
+
+            _gridOverlay = new GameObject("SnapGrid");
+            float totalSize = GridCells * GridCellSize;
+            float half = totalSize * 0.5f;
+            int lineCount = GridCells + 1;
+
+            // LineRendererでグリッド線を描画
+            for (int i = 0; i < lineCount; i++)
+            {
+                float offset = i * GridCellSize - half;
+
+                // 縦線
+                var vLine = new GameObject($"VLine_{i}");
+                vLine.transform.SetParent(_gridOverlay.transform, false);
+                var vlr = vLine.AddComponent<LineRenderer>();
+                SetupGridLine(vlr);
+                vlr.positionCount = 2;
+                vlr.SetPosition(0, new Vector3(offset, 0.02f, -half));
+                vlr.SetPosition(1, new Vector3(offset, 0.02f, half));
+
+                // 横線
+                var hLine = new GameObject($"HLine_{i}");
+                hLine.transform.SetParent(_gridOverlay.transform, false);
+                var hlr = hLine.AddComponent<LineRenderer>();
+                SetupGridLine(hlr);
+                hlr.positionCount = 2;
+                hlr.SetPosition(0, new Vector3(-half, 0.02f, offset));
+                hlr.SetPosition(1, new Vector3(half, 0.02f, offset));
+            }
+        }
+
+        private void SetupGridLine(LineRenderer lr)
+        {
+            lr.startWidth = 0.03f;
+            lr.endWidth = 0.03f;
+            lr.useWorldSpace = true;
+            lr.material = new Material(Shader.Find("Sprites/Default") ?? Shader.Find("UI/Default"));
+            lr.startColor = new Color(0.4f, 0.7f, 1f, 0.2f);
+            lr.endColor = new Color(0.4f, 0.7f, 1f, 0.2f);
+            lr.sortingOrder = 1;
+        }
+
+        private void HideSnapGrid()
+        {
+            if (_gridOverlay != null)
+            {
+                Destroy(_gridOverlay);
+                _gridOverlay = null;
+            }
         }
 
         // ================================================================

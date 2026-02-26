@@ -425,13 +425,25 @@ namespace ThemeParkGame.Economy
         {
             float totalMaintenance = 0f;
 
+            // 難易度に応じた維持費倍率（Easy: 0.8, Normal: 1.0, Hard: 1.3）
+            float difficultyMult = 1f;
+            if (GameManager.Instance != null)
+            {
+                difficultyMult = GameManager.Instance.CurrentDifficulty switch
+                {
+                    GameDifficulty.Easy => 0.8f,
+                    GameDifficulty.Hard => 1.3f,
+                    _ => 1f
+                };
+            }
+
             // アトラクションの維持費
             var attractions = UnityEngine.Object.FindObjectsOfType<Attraction.Attraction>();
             foreach (var attr in attractions)
             {
                 if (attr.Data != null && attr.IsActive)
                 {
-                    float cost = attr.Data.MaintenanceCost;
+                    float cost = attr.Data.MaintenanceCost * difficultyMult;
                     if (cost > 0f)
                     {
                         PayExpense(cost, ExpenseCategory.Maintenance, attr.FacilityId);
@@ -446,13 +458,13 @@ namespace ThemeParkGame.Economy
             {
                 if (shop.IsActive)
                 {
-                    float cost = shop.ShopType switch
+                    float cost = (shop.ShopType switch
                     {
                         ShopType.FoodShop => 40f,
                         ShopType.DrinkShop => 30f,
                         ShopType.SouvenirShop => 60f,
                         _ => 50f
-                    };
+                    }) * difficultyMult;
                     PayExpense(cost, ExpenseCategory.Maintenance, shop.FacilityId);
                     totalMaintenance += cost;
                 }
