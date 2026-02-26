@@ -47,7 +47,7 @@ namespace ThemeParkGame.Core
             // 名前ベースで親オブジェクトを検索して破棄
             string[] rootNames = {
                 "--- Attractions ---", "--- Shops ---", "--- Facilities ---",
-                "SpawnPoint", "ExitPoint", "PathwaySystem",
+                "--- Landscape ---", "SpawnPoint", "ExitPoint", "PathwaySystem",
                 "WeatherEffectController", "ParkEffectsManager"
             };
             foreach (var name in rootNames)
@@ -100,6 +100,9 @@ namespace ThemeParkGame.Core
                 // サンプルトイレ・ベンチ・スタッフルーム
                 CreateSampleFacilities();
             }
+
+            // ランドスケープ要素生成（木、街灯、花壇、噴水、ゴミ箱、パークゲート）
+            CreateLandscapeElements(spawnPoint.position);
 
             // 通路ネットワーク生成（NavMesh Bake前に配置）
             CreatePathwayNetwork(spawnPoint.position);
@@ -226,6 +229,108 @@ namespace ThemeParkGame.Core
             }
 
             WebGLOptimizer.LogVerbose($"[RuntimeGameSetup] セーブデータから復元: アトラクション{attrCount}, ショップ{shopCount}, 施設{facCount}");
+        }
+
+        // ================================================================
+        // ランドスケープ要素（木・街灯・花壇・噴水・ゴミ箱・ゲート）
+        // ================================================================
+
+        private void CreateLandscapeElements(Vector3 entrancePos)
+        {
+            var parent = new GameObject("--- Landscape ---").transform;
+
+            // === パークゲート（入口アーチ） ===
+            var gate = ProceduralMeshGenerator.CreateParkGate("パークゲート");
+            gate.transform.SetParent(parent);
+            gate.transform.position = entrancePos + new Vector3(0f, 0f, 2f);
+
+            // === 中央噴水 ===
+            var fountain = ProceduralMeshGenerator.CreateFountain("中央噴水");
+            fountain.transform.SetParent(parent);
+            fountain.transform.position = new Vector3(0f, 0f, 5f);
+
+            // === 広葉樹（パーク外周に配置） ===
+            Vector3[] treePositions = {
+                new Vector3(25f, 0f, 25f), new Vector3(-25f, 0f, 25f),
+                new Vector3(25f, 0f, -25f), new Vector3(-25f, 0f, -25f),
+                new Vector3(30f, 0f, 0f), new Vector3(-30f, 0f, 0f),
+                new Vector3(0f, 0f, 30f), new Vector3(10f, 0f, 30f),
+                new Vector3(-10f, 0f, 30f), new Vector3(20f, 0f, 20f),
+                new Vector3(-20f, 0f, 20f),
+            };
+            for (int i = 0; i < treePositions.Length; i++)
+            {
+                float h = 4f + (i % 3) * 1.5f;
+                float r = 2f + (i % 2) * 0.8f;
+                var tree = ProceduralMeshGenerator.CreateTree($"広葉樹_{i}", h, r);
+                tree.transform.SetParent(parent);
+                tree.transform.position = treePositions[i];
+            }
+
+            // === 針葉樹（パーク境界付近） ===
+            Vector3[] pinePositions = {
+                new Vector3(35f, 0f, 10f), new Vector3(35f, 0f, -10f),
+                new Vector3(-35f, 0f, 10f), new Vector3(-35f, 0f, -10f),
+                new Vector3(28f, 0f, -30f), new Vector3(-28f, 0f, -30f),
+            };
+            for (int i = 0; i < pinePositions.Length; i++)
+            {
+                float h = 5f + (i % 2) * 2f;
+                var pine = ProceduralMeshGenerator.CreatePineTree($"針葉樹_{i}", h);
+                pine.transform.SetParent(parent);
+                pine.transform.position = pinePositions[i];
+            }
+
+            // === 街灯（通路沿いに配置） ===
+            float lampRadius = 15f;
+            int lampCount = 10;
+            for (int i = 0; i < lampCount; i++)
+            {
+                float angle = (float)i / lampCount * Mathf.PI * 2f;
+                Vector3 pos = new Vector3(
+                    Mathf.Cos(angle) * lampRadius,
+                    0f,
+                    Mathf.Sin(angle) * lampRadius
+                );
+                var lamp = ProceduralMeshGenerator.CreateLampPost($"街灯_{i}", 3.5f);
+                lamp.transform.SetParent(parent);
+                lamp.transform.position = pos;
+            }
+            // 入口通路の街灯
+            var lampL = ProceduralMeshGenerator.CreateLampPost("街灯_入口L", 3.5f);
+            lampL.transform.SetParent(parent);
+            lampL.transform.position = entrancePos + new Vector3(-3f, 0f, 1f);
+            var lampR = ProceduralMeshGenerator.CreateLampPost("街灯_入口R", 3.5f);
+            lampR.transform.SetParent(parent);
+            lampR.transform.position = entrancePos + new Vector3(3f, 0f, 1f);
+
+            // === 花壇（主要エリアの装飾） ===
+            Vector3[] flowerPositions = {
+                new Vector3(5f, 0f, 10f), new Vector3(-5f, 0f, 10f),
+                new Vector3(12f, 0f, 5f), new Vector3(-12f, 0f, 5f),
+            };
+            for (int i = 0; i < flowerPositions.Length; i++)
+            {
+                float r = 1.2f + (i % 2) * 0.5f;
+                var bed = ProceduralMeshGenerator.CreateFlowerBed($"花壇_{i}", r);
+                bed.transform.SetParent(parent);
+                bed.transform.position = flowerPositions[i];
+            }
+
+            // === ゴミ箱（ベンチやショップ近くに配置） ===
+            Vector3[] trashPositions = {
+                new Vector3(9f, 0f, 1f), new Vector3(-9f, 0f, 1f),
+                new Vector3(1f, 0f, -3f), new Vector3(21f, 0f, 1f),
+                new Vector3(-21f, 0f, 1f), new Vector3(0f, 0f, 20f),
+            };
+            for (int i = 0; i < trashPositions.Length; i++)
+            {
+                var trash = ProceduralMeshGenerator.CreateTrashCan($"ゴミ箱_{i}");
+                trash.transform.SetParent(parent);
+                trash.transform.position = trashPositions[i];
+            }
+
+            WebGLOptimizer.LogVerbose($"[RuntimeGameSetup] ランドスケープ要素を生成: ゲート1, 噴水1, 広葉樹{treePositions.Length}, 針葉樹{pinePositions.Length}, 街灯{lampCount + 2}, 花壇{flowerPositions.Length}, ゴミ箱{trashPositions.Length}");
         }
 
         // ================================================================

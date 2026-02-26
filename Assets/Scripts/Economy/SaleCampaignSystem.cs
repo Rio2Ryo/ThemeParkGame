@@ -275,7 +275,7 @@ namespace ThemeParkGame.Economy
 
             MakeText(_uiPanel.transform, "Title",
                 new Vector2(0.02f, 0.93f), new Vector2(0.8f, 1f),
-                "Sale Campaigns", 20, FontStyle.Bold, Color.white);
+                "セールキャンペーン", 20, FontStyle.Bold, Color.white);
 
             MakeBtn(_uiPanel.transform, "Close",
                 new Vector2(0.9f, 0.94f), new Vector2(0.98f, 0.99f),

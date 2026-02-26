@@ -236,7 +236,7 @@ namespace ThemeParkGame.Core
             bg.color = new Color(0.04f, 0.06f, 0.14f, 0.96f);
             bg.raycastTarget = true;
 
-            MakeLabel(panelRt, "Title", "CLOUD SAVE", 22,
+            MakeLabel(panelRt, "Title", "クラウドセーブ", 22,
                 new Color(0.4f, 0.85f, 0.95f), FontStyle.Bold, TextAnchor.MiddleCenter,
                 new Vector2(0f, 115f), new Vector2(360f, 32f));
 
@@ -244,18 +244,18 @@ namespace ThemeParkGame.Core
                 new Color(0.6f, 0.65f, 0.75f), FontStyle.Normal, TextAnchor.MiddleCenter,
                 new Vector2(0f, 75f), new Vector2(340f, 40f));
 
-            MakeLabel(panelRt, "IdLabel", $"Player ID: {PlayerId}", 11,
+            MakeLabel(panelRt, "IdLabel", $"プレイヤーID: {PlayerId}", 11,
                 new Color(0.4f, 0.45f, 0.55f), FontStyle.Normal, TextAnchor.MiddleCenter,
                 new Vector2(0f, 45f), new Vector2(340f, 20f));
 
             // アップロードボタン
-            MakeBtn(panelRt, "UploadBtn", "CLOUD SAVE (Upload)",
+            MakeBtn(panelRt, "UploadBtn", "クラウドセーブ（保存）",
                 new Color(0.2f, 0.55f, 0.35f),
                 new Vector2(0f, 5f), new Vector2(280f, 40f),
                 () => CloudSave());
 
             // ダウンロードボタン
-            MakeBtn(panelRt, "DownloadBtn", "CLOUD LOAD (Download)",
+            MakeBtn(panelRt, "DownloadBtn", "クラウドロード（読込）",
                 new Color(0.25f, 0.45f, 0.65f),
                 new Vector2(0f, -45f), new Vector2(280f, 40f),
                 () => CloudLoad());
@@ -264,7 +264,7 @@ namespace ThemeParkGame.Core
                 new Color(0.7f, 0.8f, 0.9f), FontStyle.Normal, TextAnchor.MiddleCenter,
                 new Vector2(0f, -90f), new Vector2(340f, 24f));
 
-            MakeBtn(panelRt, "CloseBtn", "CLOSE",
+            MakeBtn(panelRt, "CloseBtn", "閉じる",
                 new Color(0.5f, 0.25f, 0.2f),
                 new Vector2(0f, -125f), new Vector2(120f, 32f),
                 HideCloudSaveUI);

@@ -264,7 +264,7 @@ namespace ThemeParkGame.Core
             // タイトル
             MakeText(_settingsPanel.transform, "Title",
                 new Vector2(0.02f, 0.88f), new Vector2(0.8f, 1f),
-                "Accessibility Settings", 22, FontStyle.Bold, Color.white);
+                "アクセシビリティ設定", 22, FontStyle.Bold, Color.white);
 
             // 閉じる
             MakeBtn(_settingsPanel.transform, "Close",
@@ -278,7 +278,7 @@ namespace ThemeParkGame.Core
                 "", 16, FontStyle.Normal, Color.white).GetComponent<Text>();
             MakeBtn(_settingsPanel.transform, "ContrastBtn",
                 new Vector2(0.65f, y + 0.02f), new Vector2(0.92f, y + 0.08f),
-                "Toggle", new Color(0.3f, 0.4f, 0.5f), ToggleHighContrast);
+                "切替", new Color(0.3f, 0.4f, 0.5f), ToggleHighContrast);
 
             // 大きいフォント
             y = 0.58f;
@@ -287,7 +287,7 @@ namespace ThemeParkGame.Core
                 "", 16, FontStyle.Normal, Color.white).GetComponent<Text>();
             MakeBtn(_settingsPanel.transform, "FontBtn",
                 new Vector2(0.65f, y + 0.02f), new Vector2(0.92f, y + 0.08f),
-                "Toggle", new Color(0.3f, 0.4f, 0.5f), ToggleLargeFont);
+                "切替", new Color(0.3f, 0.4f, 0.5f), ToggleLargeFont);
 
             // キーボードナビゲーション
             y = 0.44f;
@@ -296,23 +296,23 @@ namespace ThemeParkGame.Core
                 "", 16, FontStyle.Normal, Color.white).GetComponent<Text>();
             MakeBtn(_settingsPanel.transform, "KeyboardBtn",
                 new Vector2(0.65f, y + 0.02f), new Vector2(0.92f, y + 0.08f),
-                "Toggle", new Color(0.3f, 0.4f, 0.5f), ToggleKeyboardNav);
+                "切替", new Color(0.3f, 0.4f, 0.5f), ToggleKeyboardNav);
 
             // ショートカット一覧
             MakeText(_settingsPanel.transform, "ShortcutsTitle",
                 new Vector2(0.05f, 0.32f), new Vector2(0.95f, 0.4f),
-                "--- Keyboard Shortcuts ---", 14, FontStyle.Bold, new Color(1f, 0.9f, 0.5f));
+                "--- キーボードショートカット ---", 14, FontStyle.Bold, new Color(1f, 0.9f, 0.5f));
 
             MakeText(_settingsPanel.transform, "Shortcuts",
                 new Vector2(0.05f, 0.02f), new Vector2(0.95f, 0.32f),
-                "Escape  : Pause / Resume\n" +
-                "Space   : Toggle Pause\n" +
-                "1-4     : Speed (||, x1, x2, x5)\n" +
-                "F       : Weather Forecast\n" +
-                "E       : Events Panel\n" +
-                "C       : Challenges\n" +
-                "N       : Social Share\n" +
-                "F12     : Screenshot",
+                "Escape  : 一時停止 / 再開\n" +
+                "Space   : 一時停止切替\n" +
+                "1-4     : 速度 (||, x1, x2, x5)\n" +
+                "F       : 天気予報\n" +
+                "E       : イベントパネル\n" +
+                "C       : チャレンジ\n" +
+                "N       : シェア\n" +
+                "F12     : スクリーンショット",
                 13, FontStyle.Normal, new Color(0.7f, 0.7f, 0.8f));
 
             _settingsPanel.SetActive(false);
@@ -321,11 +321,11 @@ namespace ThemeParkGame.Core
         private void RefreshSettingsUI()
         {
             if (_contrastLabel != null)
-                _contrastLabel.text = $"High Contrast: {(_highContrastEnabled ? "ON" : "OFF")}";
+                _contrastLabel.text = $"ハイコントラスト: {(_highContrastEnabled ? "ON" : "OFF")}";
             if (_fontLabel != null)
-                _fontLabel.text = $"Large Font: {(_largeFontEnabled ? "ON" : "OFF")}";
+                _fontLabel.text = $"大きいフォント: {(_largeFontEnabled ? "ON" : "OFF")}";
             if (_keyboardLabel != null)
-                _keyboardLabel.text = $"Keyboard Nav: {(_keyboardNavEnabled ? "ON" : "OFF")}";
+                _keyboardLabel.text = $"キーボード操作: {(_keyboardNavEnabled ? "ON" : "OFF")}";
         }
 
         // ============================================================

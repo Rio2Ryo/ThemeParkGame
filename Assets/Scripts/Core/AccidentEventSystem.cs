@@ -394,7 +394,7 @@ namespace ThemeParkGame.Core
 
             _titleLabel = MakeText(_uiPanel.transform, "Title",
                 new Vector2(0.02f, 0.92f), new Vector2(0.85f, 1f),
-                "Accident Report", 22, FontStyle.Bold, Color.white);
+                "事故レポート", 22, FontStyle.Bold, Color.white);
 
             // 統計
             MakeText(_uiPanel.transform, "Stats",
@@ -428,8 +428,8 @@ namespace ThemeParkGame.Core
             var statsText = _uiPanel.transform.Find("Stats")?.GetComponent<Text>();
             if (statsText != null)
             {
-                statsText.text = $"Total: {TotalAccidents} | Resolved: {ResolvedAccidents} | " +
-                    $"Failed: {FailedAccidents} | Rate: {ResolutionRate * 100f:F0}%";
+                statsText.text = $"合計: {TotalAccidents} | 解決: {ResolvedAccidents} | " +
+                    $"未対応: {FailedAccidents} | 解決率: {ResolutionRate * 100f:F0}%";
             }
 
             // 既存アイテムクリア

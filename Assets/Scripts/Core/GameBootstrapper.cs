@@ -514,7 +514,7 @@ namespace ThemeParkGame.Core
 
             var scenLabel = CreateUIElement("ScenLabel", scenGo.transform);
             var scenLabelText = scenLabel.AddComponent<Text>();
-            scenLabelText.text = "SCENARIO MODE";
+            scenLabelText.text = "シナリオモード";
             scenLabelText.font = GetBuiltinFont();
             scenLabelText.fontSize = 24;
             scenLabelText.fontStyle = FontStyle.Bold;
@@ -527,7 +527,7 @@ namespace ThemeParkGame.Core
             // ---- 操作ヒント ----
             var hint = CreateUIElement("Hint", canvasGo.transform);
             var hintText = hint.AddComponent<Text>();
-            hintText.text = "Click visitors to inspect  |  MENU button to pause  |  Speed: ||  x.5  x1  x2  x5";
+            hintText.text = "来場者をクリックで詳細  |  メニューで一時停止  |  速度: ||  x.5  x1  x2  x5";
             hintText.font = GetBuiltinFont();
             hintText.fontSize = 16;
             hintText.alignment = TextAnchor.MiddleCenter;

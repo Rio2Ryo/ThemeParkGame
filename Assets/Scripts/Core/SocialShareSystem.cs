@@ -125,9 +125,9 @@ namespace ThemeParkGame.Core
         {
             var gm = GameManager.Instance;
             if (gm == null)
-                return $"Theme Park Game をプレイ中！ #{HASHTAG}\n{GAME_URL}";
+                return $"テーマパークゲームをプレイ中！ #{HASHTAG}\n{GAME_URL}";
 
-            string parkName = "My Theme Park";
+            string parkName = "マイテーマパーク";
             float rating = gm.ParkManager?.Rating?.OverallRating ?? 0f;
             int visitors = gm.ParkManager?.Stats?.TotalVisitorsEver ?? 0;
             float money = gm.EconomyManager?.CurrentMoney ?? 0f;
@@ -137,9 +137,9 @@ namespace ThemeParkGame.Core
             int starCount = Mathf.FloorToInt(rating / 20f);
             for (int i = 0; i < starCount; i++) ratingStars += "*";
 
-            return $"[{parkName}] Year {year}\n" +
-                   $"Rating: {rating:F1}/100 {ratingStars}\n" +
-                   $"Visitors: {visitors:N0} | Money: ${money:N0}\n" +
+            return $"[{parkName}] {year}年目\n" +
+                   $"評価: {rating:F1}/100 {ratingStars}\n" +
+                   $"来場者: {visitors:N0} | 所持金: ${money:N0}\n" +
                    $"#{HASHTAG}\n{GAME_URL}";
         }
 
@@ -172,7 +172,7 @@ namespace ThemeParkGame.Core
             // タイトル
             MakeText(_uiPanel.transform, "Title",
                 new Vector2(0.02f, 0.92f), new Vector2(0.8f, 1f),
-                "Share Your Park", 22, FontStyle.Bold, Color.white);
+                "パークをシェア", 22, FontStyle.Bold, Color.white);
 
             // 閉じる
             MakeBtn(_uiPanel.transform, "CloseBtn",
@@ -211,17 +211,17 @@ namespace ThemeParkGame.Core
             // ボタン: スクリーンショット撮影
             MakeBtn(_uiPanel.transform, "CaptureBtn",
                 new Vector2(0.05f, 0.03f), new Vector2(0.35f, 0.12f),
-                "Screenshot", new Color(0.2f, 0.4f, 0.6f), CaptureScreenshot);
+                "スクリーンショット", new Color(0.2f, 0.4f, 0.6f), CaptureScreenshot);
 
             // ボタン: Twitter/Xでシェア
             MakeBtn(_uiPanel.transform, "ShareBtn",
                 new Vector2(0.4f, 0.03f), new Vector2(0.7f, 0.12f),
-                "Share to X", new Color(0.1f, 0.1f, 0.1f), ShareToTwitter);
+                "Xでシェア", new Color(0.1f, 0.1f, 0.1f), ShareToTwitter);
 
             // ボタン: URLコピー
             MakeBtn(_uiPanel.transform, "CopyBtn",
                 new Vector2(0.75f, 0.03f), new Vector2(0.95f, 0.12f),
-                "Copy URL", new Color(0.3f, 0.3f, 0.5f), () =>
+                "URLコピー", new Color(0.3f, 0.3f, 0.5f), () =>
                 {
                     GUIUtility.systemCopyBuffer = GAME_URL;
                     if (_statusText != null) _statusText.text = "URLをコピーしました！";

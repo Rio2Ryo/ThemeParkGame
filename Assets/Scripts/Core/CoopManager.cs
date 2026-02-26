@@ -401,7 +401,7 @@ namespace ThemeParkGame.Core
             // タイトル
             CreateText(_uiPanel.transform, "Title",
                 new Vector2(0f, 0.9f), new Vector2(0.85f, 1f),
-                "Co-op マルチプレイ", 22, FontStyle.Bold, Color.white);
+                "協力マルチプレイ", 22, FontStyle.Bold, Color.white);
 
             // 閉じるボタン
             CreateBtn(_uiPanel.transform, "CloseBtn",

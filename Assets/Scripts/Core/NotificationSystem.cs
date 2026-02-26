@@ -587,7 +587,7 @@ namespace ThemeParkGame.Core
             bgImg.raycastTarget = true;
 
             // ヘッダー
-            var title = MakeLabel(panelRt, "Title", "EVENT LOG", 28,
+            var title = MakeLabel(panelRt, "Title", "イベントログ", 28,
                 new Color(0.95f, 0.88f, 0.45f), FontStyle.Bold, TextAnchor.MiddleCenter);
             var titleRt = title.rectTransform;
             titleRt.anchorMin = titleRt.anchorMax = new Vector2(0.5f, 1f);
@@ -652,7 +652,7 @@ namespace ThemeParkGame.Core
             cc.pressedColor = new Color(0.25f, 0.28f, 0.38f);
             closeBtn2.colors = cc;
             closeBtn2.onClick.AddListener(HideLogPanel);
-            var closeLabel = MakeLabel(closeRt, "Label", "CLOSE", 18,
+            var closeLabel = MakeLabel(closeRt, "Label", "閉じる", 18,
                 Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(closeLabel.rectTransform);
 
@@ -667,7 +667,7 @@ namespace ThemeParkGame.Core
             _logItems.Clear();
 
             if (_logHeaderCount != null)
-                _logHeaderCount.text = $"{_log.Count} entries";
+                _logHeaderCount.text = $"{_log.Count} 件";
 
             float itemH = 48f;
             float gap = 2f;

@@ -175,7 +175,7 @@ namespace ThemeParkGame.UI
             hrt.anchoredPosition = Vector2.zero;
             hrt.sizeDelta = new Vector2(0f, 44f);
 
-            var title = MakeLabel(hrt, "Title", "STAFF - スタッフ管理", 18,
+            var title = MakeLabel(hrt, "Title", "スタッフ管理", 18,
                 AccentBlue, FontStyle.Bold, TextAnchor.MiddleLeft);
             var trt = title.rectTransform;
             trt.anchorMin = new Vector2(0f, 0f);
@@ -202,7 +202,7 @@ namespace ThemeParkGame.UI
             var closeBtn = closeGo.AddComponent<Button>();
             closeBtn.targetGraphic = closeImg;
             closeBtn.onClick.AddListener(Close);
-            var closeLabel = MakeLabel(closeRt, "X", "CLOSE", 13,
+            var closeLabel = MakeLabel(closeRt, "X", "閉じる", 13,
                 Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(closeLabel.rectTransform);
         }
@@ -514,7 +514,7 @@ namespace ThemeParkGame.UI
         private static string GetStaffStateLabel(StaffMember staff)
         {
             if (staff.IsOnStrike)
-                return "STRIKE! ストライキ中";
+                return "ストライキ中！";
 
             switch (staff.CurrentState)
             {

@@ -1224,5 +1224,315 @@ namespace ThemeParkGame.Core
             var renderer = go.GetComponent<Renderer>();
             if (renderer != null && mat != null) renderer.material = mat;
         }
+
+        // ============================================================
+        // ランドスケープ・装飾要素
+        // ============================================================
+
+        /// <summary>スタイライズドな広葉樹を生成（フォリッジシェーダー対応）</summary>
+        public static GameObject CreateTree(string name, float height = 4.5f, float crownRadius = 2f)
+        {
+            var root = new GameObject(name);
+
+            // 幹（木材テクスチャ）
+            float trunkH = height * 0.45f;
+            float trunkR = height * 0.04f;
+            var trunk = CreateCylinderGameObject(trunkR, trunkH, SEG_MED);
+            trunk.name = "Trunk";
+            trunk.transform.SetParent(root.transform, false);
+            trunk.transform.localPosition = new Vector3(0f, trunkH * 0.5f, 0f);
+            ApplyPBR(trunk, ProceduralTextureGenerator.WoodPanelMaterial);
+
+            // 根元の広がり
+            var trunkBase = CreateConeGameObject(trunkR * 1.6f, trunkR, trunkH * 0.2f, SEG_LOW);
+            trunkBase.name = "TrunkBase";
+            trunkBase.transform.SetParent(root.transform, false);
+            trunkBase.transform.localPosition = new Vector3(0f, trunkH * 0.1f, 0f);
+            ApplyPBR(trunkBase, ProceduralTextureGenerator.WoodPanelMaterial);
+
+            // 樹冠（3段のスフィアで自然な形状）
+            float crownBase = trunkH * 0.75f;
+            float[] crownLayers = { 0f, 0.5f, 1.0f };
+            float[] crownScales = { 1f, 0.85f, 0.6f };
+
+            var foliageMat = ProceduralTextureGenerator.FoliageMaterial;
+
+            for (int i = 0; i < crownLayers.Length; i++)
+            {
+                float cy = crownBase + crownLayers[i] * crownRadius * 1.2f;
+                float r = crownRadius * crownScales[i];
+                var leaf = CreateSphereGameObject(r, SEG_MED);
+                leaf.name = $"Crown_{i}";
+                leaf.transform.SetParent(root.transform, false);
+                leaf.transform.localPosition = new Vector3(0f, cy, 0f);
+                leaf.transform.localScale = new Vector3(1f, 0.75f, 1f);
+                ApplyPBR(leaf, foliageMat);
+            }
+
+            return root;
+        }
+
+        /// <summary>針葉樹（クリスマスツリー型）を生成</summary>
+        public static GameObject CreatePineTree(string name, float height = 5f)
+        {
+            var root = new GameObject(name);
+
+            // 幹
+            float trunkH = height * 0.8f;
+            var trunk = CreateCylinderGameObject(height * 0.03f, trunkH, SEG_LOW);
+            trunk.name = "Trunk";
+            trunk.transform.SetParent(root.transform, false);
+            trunk.transform.localPosition = new Vector3(0f, trunkH * 0.5f, 0f);
+            ApplyPBR(trunk, ProceduralTextureGenerator.WoodPanelMaterial);
+
+            // 3段の円錐
+            var foliageMat = ProceduralTextureGenerator.FoliageMaterial;
+            float[] layerH = { 0.25f, 0.48f, 0.72f };
+            float[] layerR = { 0.5f, 0.38f, 0.22f };
+            float[] layerSize = { 0.4f, 0.35f, 0.3f };
+
+            for (int i = 0; i < 3; i++)
+            {
+                float y = height * layerH[i];
+                float r = height * layerR[i];
+                float h = height * layerSize[i];
+                var cone = CreateConeGameObject(r, 0.05f, h, SEG_MED);
+                cone.name = $"Foliage_{i}";
+                cone.transform.SetParent(root.transform, false);
+                cone.transform.localPosition = new Vector3(0f, y + h * 0.5f, 0f);
+                ApplyPBR(cone, foliageMat);
+            }
+
+            return root;
+        }
+
+        /// <summary>街灯（レトロスタイル）を生成</summary>
+        public static GameObject CreateLampPost(string name, float height = 3.5f)
+        {
+            var root = new GameObject(name);
+
+            // ベース
+            var baseObj = CreateCylinderGameObject(0.2f, 0.15f, SEG_MED);
+            baseObj.name = "Base";
+            baseObj.transform.SetParent(root.transform, false);
+            baseObj.transform.localPosition = new Vector3(0f, 0.075f, 0f);
+            ApplyPBR(baseObj, ProceduralTextureGenerator.MetalRideMaterial);
+
+            // ポール
+            var pole = CreateCylinderGameObject(0.06f, height, SEG_LOW);
+            pole.name = "Pole";
+            pole.transform.SetParent(root.transform, false);
+            pole.transform.localPosition = new Vector3(0f, height * 0.5f, 0f);
+            ApplyMaterial(pole, new Color(0.2f, 0.2f, 0.22f), 0.5f, 0.5f);
+
+            // アーム
+            var arm = CreateCylinderGameObject(0.035f, 0.7f, 8);
+            arm.name = "Arm";
+            arm.transform.SetParent(root.transform, false);
+            arm.transform.localPosition = new Vector3(0.2f, height - 0.15f, 0f);
+            arm.transform.localRotation = Quaternion.Euler(0f, 0f, -60f);
+            ApplyMaterial(arm, new Color(0.2f, 0.2f, 0.22f), 0.5f, 0.5f);
+
+            // ランプシェード
+            var shade = CreateConeGameObject(0.3f, 0.08f, 0.25f, SEG_MED);
+            shade.name = "Shade";
+            shade.transform.SetParent(root.transform, false);
+            shade.transform.localPosition = new Vector3(0.4f, height - 0.05f, 0f);
+            ApplyMaterial(shade, new Color(0.15f, 0.15f, 0.18f), 0.4f, 0.5f);
+
+            // 発光バルブ
+            var bulb = CreateSphereGameObject(0.12f, SEG_LOW);
+            bulb.name = "Bulb";
+            bulb.transform.SetParent(root.transform, false);
+            bulb.transform.localPosition = new Vector3(0.4f, height - 0.22f, 0f);
+            ApplyPBR(bulb, ProceduralTextureGenerator.EmissiveYellowMaterial);
+
+            return root;
+        }
+
+        /// <summary>花壇を生成</summary>
+        public static GameObject CreateFlowerBed(string name, float radius = 1.5f)
+        {
+            var root = new GameObject(name);
+
+            // 石枠
+            var border = CreateCylinderGameObject(radius, 0.3f, SEG_HIGH);
+            border.name = "Border";
+            border.transform.SetParent(root.transform, false);
+            border.transform.localPosition = new Vector3(0f, 0.15f, 0f);
+            ApplyPBR(border, ProceduralTextureGenerator.ConcretePathMaterial);
+
+            // 土
+            var dirt = CreateCylinderGameObject(radius - 0.1f, 0.25f, SEG_HIGH);
+            dirt.name = "Dirt";
+            dirt.transform.SetParent(root.transform, false);
+            dirt.transform.localPosition = new Vector3(0f, 0.16f, 0f);
+            ApplyMaterial(dirt, new Color(0.4f, 0.28f, 0.15f), 0f, 0.15f);
+
+            // 花のクラスター
+            Color[] flowerColors = {
+                new Color(0.95f, 0.3f, 0.3f),
+                new Color(0.95f, 0.85f, 0.2f),
+                new Color(0.9f, 0.4f, 0.85f),
+                new Color(0.95f, 0.5f, 0.2f),
+                new Color(1f, 0.6f, 0.7f),
+            };
+
+            for (int i = 0; i < 8; i++)
+            {
+                float a = (float)i / 8 * Mathf.PI * 2f + 0.3f;
+                float dist = (radius - 0.4f) * (0.5f + (i % 3) * 0.2f);
+                float fx = Mathf.Cos(a) * dist;
+                float fz = Mathf.Sin(a) * dist;
+
+                var flower = CreateSphereGameObject(0.15f + (i % 2) * 0.05f, 8);
+                flower.name = $"Flower_{i}";
+                flower.transform.SetParent(root.transform, false);
+                flower.transform.localPosition = new Vector3(fx, 0.38f, fz);
+                flower.transform.localScale = new Vector3(1f, 0.5f, 1f);
+                ApplyMaterial(flower, flowerColors[i % flowerColors.Length], 0f, 0.3f);
+
+                // 茎
+                var stem = CreateCylinderGameObject(0.015f, 0.15f, 6);
+                stem.name = $"Stem_{i}";
+                stem.transform.SetParent(root.transform, false);
+                stem.transform.localPosition = new Vector3(fx, 0.3f, fz);
+                ApplyMaterial(stem, new Color(0.2f, 0.5f, 0.15f), 0f, 0.2f);
+            }
+
+            return root;
+        }
+
+        /// <summary>噴水を生成</summary>
+        public static GameObject CreateFountain(string name)
+        {
+            var root = new GameObject(name);
+
+            // 底池
+            var pool = CreateCylinderGameObject(2.5f, 0.5f, SEG_HIGH);
+            pool.name = "Pool";
+            pool.transform.SetParent(root.transform, false);
+            pool.transform.localPosition = new Vector3(0f, 0.25f, 0f);
+            ApplyPBR(pool, ProceduralTextureGenerator.ConcretePathMaterial);
+
+            // 水面
+            var water = CreateCylinderGameObject(2.3f, 0.05f, SEG_HIGH);
+            water.name = "Water";
+            water.transform.SetParent(root.transform, false);
+            water.transform.localPosition = new Vector3(0f, 0.48f, 0f);
+            ApplyPBR(water, ProceduralTextureGenerator.WaterMaterial);
+
+            // 中央柱
+            var pillar = CreateCylinderGameObject(0.25f, 2f, SEG_MED);
+            pillar.name = "Pillar";
+            pillar.transform.SetParent(root.transform, false);
+            pillar.transform.localPosition = new Vector3(0f, 1.2f, 0f);
+            ApplyPBR(pillar, ProceduralTextureGenerator.CreateTintedPBRMaterial(
+                ProceduralTextureGenerator.Concrete, ProceduralTextureGenerator.ConcreteNormal,
+                new Color(0.9f, 0.88f, 0.85f), 0f, 0.35f, 2f));
+
+            // 上段皿
+            var bowl = CreateConeGameObject(0.9f, 0.3f, 0.35f, SEG_HIGH);
+            bowl.name = "Bowl";
+            bowl.transform.SetParent(root.transform, false);
+            bowl.transform.localPosition = new Vector3(0f, 2.3f, 0f);
+            ApplyPBR(bowl, ProceduralTextureGenerator.ConcretePathMaterial);
+
+            // 噴水頂部オーナメント
+            var ornament = CreateSphereGameObject(0.2f, SEG_MED);
+            ornament.name = "Ornament";
+            ornament.transform.SetParent(root.transform, false);
+            ornament.transform.localPosition = new Vector3(0f, 2.7f, 0f);
+            ApplyMaterial(ornament, Palette.FerrisGold, 0.8f, 0.85f);
+
+            return root;
+        }
+
+        /// <summary>ゴミ箱を生成</summary>
+        public static GameObject CreateTrashCan(string name)
+        {
+            var root = new GameObject(name);
+
+            // 本体
+            var body = CreateCylinderGameObject(0.28f, 0.8f, SEG_MED);
+            body.name = "Body";
+            body.transform.SetParent(root.transform, false);
+            body.transform.localPosition = new Vector3(0f, 0.4f, 0f);
+            ApplyMaterial(body, new Color(0.3f, 0.55f, 0.3f), 0.2f, 0.4f);
+
+            // リング装飾
+            var ring = CreateCylinderGameObject(0.3f, 0.05f, SEG_MED);
+            ring.name = "Ring";
+            ring.transform.SetParent(root.transform, false);
+            ring.transform.localPosition = new Vector3(0f, 0.78f, 0f);
+            ApplyMaterial(ring, new Color(0.25f, 0.45f, 0.25f), 0.3f, 0.5f);
+
+            // 蓋
+            var lid = CreateConeGameObject(0.3f, 0.15f, 0.15f, SEG_MED);
+            lid.name = "Lid";
+            lid.transform.SetParent(root.transform, false);
+            lid.transform.localPosition = new Vector3(0f, 0.88f, 0f);
+            ApplyMaterial(lid, new Color(0.28f, 0.5f, 0.28f), 0.2f, 0.4f);
+
+            return root;
+        }
+
+        /// <summary>パーク入口ゲート（アーチ型）を生成</summary>
+        public static GameObject CreateParkGate(string name)
+        {
+            var root = new GameObject(name);
+
+            // 左柱
+            var leftPillar = CreateBoxGameObject(new Vector3(1.2f, 5f, 1.2f));
+            leftPillar.name = "LeftPillar";
+            leftPillar.transform.SetParent(root.transform, false);
+            leftPillar.transform.localPosition = new Vector3(-3.5f, 2.5f, 0f);
+            ApplyPBR(leftPillar, ProceduralTextureGenerator.BrickWallMaterial);
+
+            // 右柱
+            var rightPillar = CreateBoxGameObject(new Vector3(1.2f, 5f, 1.2f));
+            rightPillar.name = "RightPillar";
+            rightPillar.transform.SetParent(root.transform, false);
+            rightPillar.transform.localPosition = new Vector3(3.5f, 2.5f, 0f);
+            ApplyPBR(rightPillar, ProceduralTextureGenerator.BrickWallMaterial);
+
+            // アーチ梁
+            var beam = CreateBoxGameObject(new Vector3(8.5f, 0.8f, 1.0f));
+            beam.name = "Beam";
+            beam.transform.SetParent(root.transform, false);
+            beam.transform.localPosition = new Vector3(0f, 5.4f, 0f);
+            ApplyPBR(beam, ProceduralTextureGenerator.WoodPanelMaterial);
+
+            // 看板
+            var sign = CreateBoxGameObject(new Vector3(5f, 1.2f, 0.15f));
+            sign.name = "Sign";
+            sign.transform.SetParent(root.transform, false);
+            sign.transform.localPosition = new Vector3(0f, 6.4f, 0f);
+            ApplyPBR(sign, ProceduralTextureGenerator.CreateTintedPBRMaterial(
+                ProceduralTextureGenerator.Wood, ProceduralTextureGenerator.WoodNormal,
+                new Color(0.85f, 0.75f, 0.55f), 0f, 0.35f, 1.5f));
+
+            // 柱頂の装飾球
+            for (int i = -1; i <= 1; i += 2)
+            {
+                var capBall = CreateSphereGameObject(0.35f, SEG_MED);
+                capBall.name = i < 0 ? "CapLeft" : "CapRight";
+                capBall.transform.SetParent(root.transform, false);
+                capBall.transform.localPosition = new Vector3(i * 3.5f, 5.3f, 0f);
+                ApplyMaterial(capBall, Palette.FerrisGold, 0.7f, 0.85f);
+            }
+
+            // ゲートランプ × 2
+            for (int i = -1; i <= 1; i += 2)
+            {
+                var lamp = CreateSphereGameObject(0.15f, SEG_LOW);
+                lamp.name = i < 0 ? "LampLeft" : "LampRight";
+                lamp.transform.SetParent(root.transform, false);
+                lamp.transform.localPosition = new Vector3(i * 2.8f, 5.35f, -0.5f);
+                ApplyPBR(lamp, ProceduralTextureGenerator.EmissiveYellowMaterial);
+            }
+
+            return root;
+        }
     }
 }

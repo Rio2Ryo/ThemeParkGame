@@ -213,7 +213,7 @@ namespace ThemeParkGame.Core
             bg.raycastTarget = true;
 
             // タイトル
-            _lbTitle = MakeText(panelRt, "Title", "ONLINE LEADERBOARD", 24,
+            _lbTitle = MakeText(panelRt, "Title", "オンラインランキング", 24,
                 new Color(0.95f, 0.88f, 0.45f), FontStyle.Bold, TextAnchor.MiddleCenter,
                 new Vector2(0f, 260f), new Vector2(460f, 40f));
 
@@ -255,7 +255,7 @@ namespace ThemeParkGame.Core
             _nameInput.onEndEdit.AddListener(s => { if (!string.IsNullOrEmpty(s)) PlayerName = s; });
 
             // Submit Button
-            _submitBtn = MakeButton(nrRt, "SubmitBtn", "SUBMIT SCORE",
+            _submitBtn = MakeButton(nrRt, "SubmitBtn", "スコア送信",
                 new Color(0.2f, 0.55f, 0.35f), new Vector2(150f, 0f), new Vector2(130f, 28f),
                 () =>
                 {
@@ -274,7 +274,7 @@ namespace ThemeParkGame.Core
                 new Vector2(0f, -240f), new Vector2(400f, 24f));
 
             // 閉じるボタン
-            _closeBtn = MakeButton(panelRt, "CloseBtn", "CLOSE",
+            _closeBtn = MakeButton(panelRt, "CloseBtn", "閉じる",
                 new Color(0.5f, 0.25f, 0.2f), new Vector2(0f, -270f), new Vector2(140f, 36f),
                 HideUI);
 
@@ -285,7 +285,7 @@ namespace ThemeParkGame.Core
         {
             if (_lbContent == null) return;
             var sb = new System.Text.StringBuilder();
-            sb.AppendLine("<color=#FFE070>RANK  NAME                 SCORE       RATING</color>");
+            sb.AppendLine("<color=#FFE070>順位  名前                 スコア       評価</color>");
             sb.AppendLine("----  ----                 -----       ------");
 
             for (int i = 0; i < _entries.Count; i++)

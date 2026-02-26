@@ -498,7 +498,7 @@ namespace ThemeParkGame.Core
             bg.raycastTarget = true;
 
             // タイトル
-            MakeLabel(panelRt, "Title", "CHALLENGES", 22,
+            MakeLabel(panelRt, "Title", "チャレンジ", 22,
                 new Color(0.95f, 0.88f, 0.45f), FontStyle.Bold, TextAnchor.MiddleCenter,
                 new Vector2(0f, 185f), new Vector2(420f, 32f));
 
@@ -508,7 +508,7 @@ namespace ThemeParkGame.Core
                 new Vector2(0f, 10f), new Vector2(420f, 320f));
 
             // 閉じるボタン
-            MakeBtn(panelRt, "CloseBtn", "CLOSE",
+            MakeBtn(panelRt, "CloseBtn", "閉じる",
                 new Color(0.5f, 0.25f, 0.2f),
                 new Vector2(0f, -190f), new Vector2(120f, 32f),
                 HideChallengeUI);

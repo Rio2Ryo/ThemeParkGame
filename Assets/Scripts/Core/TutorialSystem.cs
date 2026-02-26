@@ -487,7 +487,7 @@ namespace ThemeParkGame.Core
             int totalSteps = Enum.GetValues(typeof(TutorialStep)).Length - 1; // Completedを除く
             int currentNum = (int)_currentStep + 1;
             if (_stepIndicator != null)
-                _stepIndicator.text = $"STEP {currentNum}/{totalSteps}";
+                _stepIndicator.text = $"ステップ {currentNum}/{totalSteps}";
 
             if (_titleText != null)
                 _titleText.text = stepData.Title;

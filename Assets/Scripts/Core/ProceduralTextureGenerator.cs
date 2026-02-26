@@ -36,6 +36,10 @@ namespace ThemeParkGame.Core
         private static Material _tileFloorMat, _grassGroundMat, _concretePathMat;
         private static Material _stuccoWallMat, _roofTileMat, _glassMat;
 
+        // キャッシュ: カスタムシェーダーマテリアル
+        private static Material _toonDefaultMat, _waterMat, _foliageMat;
+        private static Material _emissiveYellowMat, _emissiveRedMat, _emissiveBlueMat;
+
         // ============================================================
         // アルベドテクスチャ プロパティ
         // ============================================================
@@ -786,6 +790,137 @@ namespace ThemeParkGame.Core
             tex.filterMode = FilterMode.Bilinear;
             tex.name = "ProceduralRoofTile";
             return tex;
+        }
+
+        // ============================================================
+        // カスタムシェーダーマテリアル
+        // ============================================================
+
+        /// <summary>トゥーンシェーダーマテリアル（デフォルト白）</summary>
+        public static Material ToonDefaultMaterial
+        {
+            get { if (_toonDefaultMat == null) _toonDefaultMat = CreateToonMaterial(Color.white, Brick, BrickNormal); return _toonDefaultMat; }
+        }
+
+        /// <summary>水面マテリアル</summary>
+        public static Material WaterMaterial
+        {
+            get { if (_waterMat == null) _waterMat = CreateWaterMaterial(); return _waterMat; }
+        }
+
+        /// <summary>草木マテリアル（風揺れ付き）</summary>
+        public static Material FoliageMaterial
+        {
+            get { if (_foliageMat == null) _foliageMat = CreateFoliageMaterial(); return _foliageMat; }
+        }
+
+        /// <summary>発光マテリアル（黄色 - 街灯用）</summary>
+        public static Material EmissiveYellowMaterial
+        {
+            get { if (_emissiveYellowMat == null) _emissiveYellowMat = CreateEmissiveMaterial(new Color(1f, 0.9f, 0.5f), 2f); return _emissiveYellowMat; }
+        }
+
+        /// <summary>発光マテリアル（赤 - 装飾用）</summary>
+        public static Material EmissiveRedMaterial
+        {
+            get { if (_emissiveRedMat == null) _emissiveRedMat = CreateEmissiveMaterial(new Color(1f, 0.3f, 0.2f), 1.8f); return _emissiveRedMat; }
+        }
+
+        /// <summary>発光マテリアル（青 - 装飾用）</summary>
+        public static Material EmissiveBlueMaterial
+        {
+            get { if (_emissiveBlueMat == null) _emissiveBlueMat = CreateEmissiveMaterial(new Color(0.3f, 0.6f, 1f), 1.8f); return _emissiveBlueMat; }
+        }
+
+        /// <summary>トゥーンシェーダーマテリアルを生成</summary>
+        public static Material CreateToonMaterial(Color tint, Texture2D albedo = null, Texture2D normalMap = null,
+            float tileScale = 2f)
+        {
+            var shader = Shader.Find("ThemeParkGame/Toon");
+            if (shader == null) return CreatePBRMaterial(albedo, normalMap, tint, 0f, 0.3f, tileScale);
+
+            var mat = new Material(shader);
+            mat.SetColor("_Color", tint);
+            mat.SetColor("_ShadowColor", new Color(0.55f, 0.5f, 0.65f, 1f));
+            mat.SetFloat("_ShadowThreshold", 0.45f);
+            mat.SetFloat("_ShadowSoftness", 0.06f);
+            mat.SetColor("_RimColor", new Color(1f, 0.95f, 0.85f, 1f));
+            mat.SetFloat("_RimPower", 3f);
+            mat.SetFloat("_TileScale", tileScale);
+
+            if (albedo != null) mat.SetTexture("_MainTex", albedo);
+            if (normalMap != null) mat.SetTexture("_BumpMap", normalMap);
+
+            return mat;
+        }
+
+        /// <summary>水面シェーダーマテリアルを生成</summary>
+        public static Material CreateWaterMaterial()
+        {
+            var shader = Shader.Find("ThemeParkGame/Water");
+            if (shader == null)
+            {
+                // フォールバック: 半透明Standard
+                var fallback = CreateGlassMat();
+                fallback.color = new Color(0.2f, 0.5f, 0.8f, 0.6f);
+                return fallback;
+            }
+
+            var mat = new Material(shader);
+            mat.SetColor("_ShallowColor", new Color(0.3f, 0.75f, 0.92f, 0.65f));
+            mat.SetColor("_DeepColor", new Color(0.05f, 0.25f, 0.55f, 0.85f));
+            mat.SetColor("_FoamColor", new Color(0.9f, 0.95f, 1f, 0.9f));
+            mat.SetFloat("_WaveSpeed", 1f);
+            mat.SetFloat("_WaveScale", 4f);
+            mat.SetFloat("_WaveHeight", 0.06f);
+            return mat;
+        }
+
+        /// <summary>草木シェーダーマテリアルを生成</summary>
+        public static Material CreateFoliageMaterial(Color? leafColor = null)
+        {
+            var shader = Shader.Find("ThemeParkGame/Foliage");
+            if (shader == null)
+            {
+                Color c = leafColor ?? new Color(0.25f, 0.65f, 0.2f);
+                return CreatePBRMaterial(null, null, c, 0f, 0.15f, 1f);
+            }
+
+            var mat = new Material(shader);
+            Color lc = leafColor ?? new Color(0.25f, 0.65f, 0.2f);
+            mat.SetColor("_Color", lc);
+            mat.SetColor("_ColorVariation", new Color(lc.r + 0.1f, lc.g + 0.1f, lc.b - 0.05f, 1f));
+            mat.SetColor("_ShadowColor", new Color(lc.r * 0.5f, lc.g * 0.5f, lc.b * 0.5f, 1f));
+            mat.SetFloat("_WindSpeed", 1.2f);
+            mat.SetFloat("_WindStrength", 0.07f);
+            return mat;
+        }
+
+        /// <summary>発光シェーダーマテリアルを生成</summary>
+        public static Material CreateEmissiveMaterial(Color emissionColor, float intensity = 2f)
+        {
+            var shader = Shader.Find("ThemeParkGame/Emissive");
+            if (shader == null)
+            {
+                // フォールバック: Standard with emission
+                var fallback = new Material(Shader.Find("Standard") ?? Shader.Find("Sprites/Default"));
+                fallback.color = emissionColor;
+                if (fallback.shader.name == "Standard")
+                {
+                    fallback.EnableKeyword("_EMISSION");
+                    fallback.SetColor("_EmissionColor", emissionColor * intensity);
+                    fallback.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
+                }
+                return fallback;
+            }
+
+            var mat = new Material(shader);
+            mat.SetColor("_Color", emissionColor);
+            mat.SetColor("_EmissionColor", emissionColor);
+            mat.SetFloat("_EmissionIntensity", intensity);
+            mat.SetFloat("_PulseSpeed", 1.5f);
+            mat.SetFloat("_PulseMin", 0.6f);
+            return mat;
         }
     }
 }

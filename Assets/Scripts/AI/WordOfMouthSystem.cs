@@ -275,7 +275,7 @@ namespace ThemeParkGame.AI
 
             MakeText(_uiPanel.transform, "Title",
                 new Vector2(0.02f, 0.92f), new Vector2(0.8f, 1f),
-                "Word of Mouth - SNS Reviews", 20, FontStyle.Bold, Color.white);
+                "口コミ - SNSレビュー", 20, FontStyle.Bold, Color.white);
 
             MakeBtn(_uiPanel.transform, "Close",
                 new Vector2(0.9f, 0.93f), new Vector2(0.98f, 0.99f),
@@ -297,7 +297,7 @@ namespace ThemeParkGame.AI
         {
             if (_scoreLabel != null)
             {
-                string trend = _spawnBonus >= 1.2f ? "UP" : _spawnBonus <= 0.8f ? "DOWN" : "---";
+                string trend = _spawnBonus >= 1.2f ? "上昇" : _spawnBonus <= 0.8f ? "下降" : "---";
                 _scoreLabel.text = $"口コミスコア: {_wordOfMouthScore:F0}/100 | " +
                     $"集客倍率: x{_spawnBonus:F2} | トレンド: {trend}";
             }
@@ -315,7 +315,7 @@ namespace ThemeParkGame.AI
                         ReviewType.Negative => "[-]",
                         _ => "[=]"
                     };
-                    sb.AppendLine($"{icon} {r.Content} ({r.Likes} likes)");
+                    sb.AppendLine($"{icon} {r.Content} ({r.Likes} いいね)");
                 }
                 _reviewListText.text = sb.ToString();
             }

@@ -295,7 +295,7 @@ namespace ThemeParkGame.Park
 
             MakeText(_uiPanel.transform, "Title",
                 new Vector2(0.02f, 0.92f), new Vector2(0.8f, 1f),
-                "Rival Parks - Competition", 20, FontStyle.Bold, Color.white);
+                "ライバルパーク - 競争情報", 20, FontStyle.Bold, Color.white);
 
             MakeBtn(_uiPanel.transform, "Close",
                 new Vector2(0.9f, 0.93f), new Vector2(0.98f, 0.99f),
@@ -330,7 +330,7 @@ namespace ThemeParkGame.Park
 
                 foreach (var rival in _rivals)
                 {
-                    string status = rival.IsActive ? "OPEN" : "CLOSED";
+                    string status = rival.IsActive ? "営業中" : "閉園";
                     string vs = rival.OverallScore > playerRating ? "<<負けてます>>" :
                                rival.OverallScore < playerRating * 0.7f ? "<<圧勝中>>" : "<<互角>>";
 

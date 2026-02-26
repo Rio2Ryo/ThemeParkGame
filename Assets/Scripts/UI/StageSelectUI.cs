@@ -129,7 +129,7 @@ namespace ThemeParkGame.UI
             },
         };
 
-        private static readonly string[] CountryNames = { "JAPAN", "USA", "FRANCE" };
+        private static readonly string[] CountryNames = { "日本", "アメリカ", "フランス" };
         private static readonly string[] CountryIcons = { "[JP]", "[US]", "[FR]" };
         private static readonly Color[] CountryColors = { JapanColor, USAColor, FranceColor };
 
@@ -182,7 +182,7 @@ namespace ThemeParkGame.UI
             bgImg.raycastTarget = true;
 
             // タイトル
-            var title = MakeLabel(rt, "Title", "SCENARIO MODE", 48, Gold,
+            var title = MakeLabel(rt, "Title", "シナリオモード", 48, Gold,
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             var titleRt = title.rectTransform;
             titleRt.anchorMin = titleRt.anchorMax = new Vector2(0.5f, 1f);
@@ -212,7 +212,7 @@ namespace ThemeParkGame.UI
             }
 
             // 戻るボタン
-            CreateBackButton(rt, "BACK", new Vector2(0f, -520f), () =>
+            CreateBackButton(rt, "戻る", new Vector2(0f, -520f), () =>
             {
                 Close();
                 // タイトル画面を再生成
@@ -253,8 +253,8 @@ namespace ThemeParkGame.UI
             {
                 var stage = AllStages[countryIndex][s];
                 bool cleared = ScenarioManager.IsCleared(stage.Country);
-                string mark = cleared ? "[CLEAR]" : "";
-                stagesText += $"  Stage {s + 1}: {stage.Objectives} {mark}\n";
+                string mark = cleared ? "[クリア]" : "";
+                stagesText += $"  ステージ {s + 1}: {stage.Objectives} {mark}\n";
             }
 
             var desc = MakeLabel(cardRt, "Desc", stagesText, 13, Muted,
@@ -282,7 +282,7 @@ namespace ThemeParkGame.UI
             colors.pressedColor = CountryColors[countryIndex] * 0.7f;
             btn.colors = colors;
 
-            var selectLabel = MakeLabel(selectRt, "Label", "SELECT", 22, Color.white,
+            var selectLabel = MakeLabel(selectRt, "Label", "選択", 22, Color.white,
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(selectLabel.rectTransform);
 
@@ -319,7 +319,7 @@ namespace ThemeParkGame.UI
 
             // タイトル
             var title = MakeLabel(rt, "Title",
-                $"{CountryIcons[countryIndex]} {CountryNames[countryIndex]} - STAGES",
+                $"{CountryIcons[countryIndex]} {CountryNames[countryIndex]} - ステージ選択",
                 42, CountryColors[countryIndex], FontStyle.Bold, TextAnchor.MiddleCenter);
             var titleRt = title.rectTransform;
             titleRt.anchorMin = titleRt.anchorMax = new Vector2(0.5f, 1f);
@@ -340,7 +340,7 @@ namespace ThemeParkGame.UI
             }
 
             // 戻るボタン
-            CreateBackButton(rt, "BACK", new Vector2(0f, -490f), () =>
+            CreateBackButton(rt, "戻る", new Vector2(0f, -490f), () =>
             {
                 if (_stagePanel != null) Destroy(_stagePanel);
                 if (_countryPanel != null) _countryPanel.SetActive(true);
@@ -367,7 +367,7 @@ namespace ThemeParkGame.UI
             markerRt.anchoredPosition = new Vector2(8f, 0f);
 
             // ステージ名
-            string nameText = cleared ? $"{stage.StageName}  [CLEAR]" : stage.StageName;
+            string nameText = cleared ? $"{stage.StageName}  [クリア]" : stage.StageName;
             var nameLabel = MakeLabel(cardRt, "Name", nameText, 22, Color.white,
                 FontStyle.Bold, TextAnchor.MiddleLeft);
             var nameRt = nameLabel.rectTransform;
@@ -411,7 +411,7 @@ namespace ThemeParkGame.UI
             btn.colors = colors;
 
             var startLabel = MakeLabel(startRt, "Label",
-                cleared ? "REPLAY" : "START", 20, Color.white,
+                cleared ? "リプレイ" : "スタート", 20, Color.white,
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(startLabel.rectTransform);
 

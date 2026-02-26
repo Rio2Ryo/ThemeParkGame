@@ -778,7 +778,7 @@ namespace ThemeParkGame.Core
             accentRt.anchoredPosition = Vector2.zero;
 
             // ラベル「ACHIEVEMENT UNLOCKED」
-            var header = MakeLabel(panelRt, "Header", "ACHIEVEMENT UNLOCKED", 11,
+            var header = MakeLabel(panelRt, "Header", "実績解除！", 11,
                 Gold, FontStyle.Bold, TextAnchor.MiddleLeft);
             var hRt = header.rectTransform;
             hRt.anchorMin = hRt.anchorMax = new Vector2(0f, 1f);
@@ -934,7 +934,7 @@ namespace ThemeParkGame.Core
             dimBtn.onClick.AddListener(HideAchievementList);
 
             // タイトル
-            var title = MakeLabel(panelRt, "Title", "ACHIEVEMENTS", 32, Gold,
+            var title = MakeLabel(panelRt, "Title", "実績一覧", 32, Gold,
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             var titleRt = title.rectTransform;
             titleRt.anchorMin = titleRt.anchorMax = new Vector2(0.5f, 1f);
@@ -976,7 +976,7 @@ namespace ThemeParkGame.Core
             cc.pressedColor = new Color(0.25f, 0.28f, 0.38f);
             closeBtn.colors = cc;
             closeBtn.onClick.AddListener(HideAchievementList);
-            var closeLabel = MakeLabel(closeRt, "Label", "CLOSE", 18, Color.white,
+            var closeLabel = MakeLabel(closeRt, "Label", "閉じる", 18, Color.white,
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(closeLabel.rectTransform);
 
@@ -992,7 +992,7 @@ namespace ThemeParkGame.Core
             var progressText = _listPanel.GetComponentInChildren<RectTransform>()
                 ?.parent?.Find("Progress")?.GetComponent<Text>();
             if (progressText != null)
-                progressText.text = $"{_unlocked.Count} / {_definitions.Count} Unlocked";
+                progressText.text = $"{_unlocked.Count} / {_definitions.Count} 達成";
 
             // アイテム再構築
             foreach (var item in _listItems)
@@ -1108,7 +1108,7 @@ namespace ThemeParkGame.Core
             dRt.sizeDelta = new Vector2(itemW - 100f, 20f);
 
             // ステータスマーク
-            var status = MakeLabel(rt, "Status", unlocked ? "DONE" : "", 12,
+            var status = MakeLabel(rt, "Status", unlocked ? "達成" : "", 12,
                 unlocked ? Green : Locked,
                 FontStyle.Bold, TextAnchor.MiddleRight);
             var sRt = status.rectTransform;

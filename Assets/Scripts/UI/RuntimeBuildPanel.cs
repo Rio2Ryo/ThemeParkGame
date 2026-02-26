@@ -400,7 +400,7 @@ namespace ThemeParkGame.UI
             hrt.anchoredPosition = Vector2.zero;
             hrt.sizeDelta = new Vector2(0f, 40f);
 
-            var title = MakeLabel(hrt, "Title", "BUILD - 建設パネル", 20,
+            var title = MakeLabel(hrt, "Title", "建設パネル", 20,
                 AccentBlue, FontStyle.Bold, TextAnchor.MiddleLeft);
             var trt = title.rectTransform;
             trt.anchorMin = new Vector2(0f, 0f);
@@ -419,7 +419,7 @@ namespace ThemeParkGame.UI
             var closeBtn = closeGo.AddComponent<Button>();
             closeBtn.targetGraphic = closeImg;
             closeBtn.onClick.AddListener(Close);
-            var closeLabel = MakeLabel(closeRt, "X", "CLOSE", 14,
+            var closeLabel = MakeLabel(closeRt, "X", "閉じる", 14,
                 Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(closeLabel.rectTransform);
 
@@ -718,7 +718,7 @@ namespace ThemeParkGame.UI
             PlaceInParent(subText.rectTransform, 10f, -26f, 300f, 18f);
 
             // コスト
-            string costLabel = researched ? $"${item.BuildCost:N0}" : "LOCKED";
+            string costLabel = researched ? $"${item.BuildCost:N0}" : "未解放";
             var costText = MakeLabel(cardRt, "Cost", costLabel, 14,
                 !researched ? new Color(0.6f, 0.4f, 0.4f)
                 : canAfford ? new Color(0.95f, 0.88f, 0.45f) : AccentRed,
