@@ -38,6 +38,8 @@ jobs:
           unityVersion: ${{ env.UNITY_VERSION }}
           buildName: ThemeParkGame
           buildsPath: build
+          versioning: None
+          allowDirtyBuild: true
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
