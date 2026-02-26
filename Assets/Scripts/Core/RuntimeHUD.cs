@@ -346,7 +346,7 @@ namespace ThemeParkGame.Core
             float colW = boardW / 3f;
 
             // ---- 入場者数 ----
-            var visLabel = MakeLabel(rt, "VisLabel", "VISITORS", 13, new Color(0.5f, 0.6f, 0.7f),
+            var visLabel = MakeLabel(rt, "VisLabel", LocalizationData.LabelVisitors, 13, new Color(0.5f, 0.6f, 0.7f),
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             PlaceInParent(visLabel.rectTransform, 0f, boardH - 4f, colW, 20f, new Vector2(0f, 1f));
 
@@ -365,7 +365,7 @@ namespace ThemeParkGame.Core
             sep1Rt.anchoredPosition = new Vector2(colW, 0f);
 
             // ---- 総収益 ----
-            var revLabel = MakeLabel(rt, "RevLabel", "TOTAL REVENUE", 13, new Color(0.5f, 0.6f, 0.7f),
+            var revLabel = MakeLabel(rt, "RevLabel", LocalizationData.LabelRevenue, 13, new Color(0.5f, 0.6f, 0.7f),
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             PlaceInParent(revLabel.rectTransform, colW, boardH - 4f, colW, 20f, new Vector2(0f, 1f));
 
@@ -384,7 +384,7 @@ namespace ThemeParkGame.Core
             sep2Rt.anchoredPosition = new Vector2(colW * 2f, 0f);
 
             // ---- 平均満足度 ----
-            var satLabel = MakeLabel(rt, "SatLabel", "SATISFACTION", 13, new Color(0.5f, 0.6f, 0.7f),
+            var satLabel = MakeLabel(rt, "SatLabel", LocalizationData.LabelSatisfaction, 13, new Color(0.5f, 0.6f, 0.7f),
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             PlaceInParent(satLabel.rectTransform, colW * 2f, boardH - 4f, colW, 20f, new Vector2(0f, 1f));
 
@@ -552,7 +552,7 @@ namespace ThemeParkGame.Core
             _attrPanelRt.pivot = new Vector2(1f, 0f);
             _attrPanelRt.anchoredPosition = new Vector2(-10f, 10f);
 
-            var header = MakeLabel(_attrPanelRt, "Header", "Attraction Status", 16, Gold, FontStyle.Bold, TextAnchor.MiddleCenter);
+            var header = MakeLabel(_attrPanelRt, "Header", "アトラクション状況", 16, Gold, FontStyle.Bold, TextAnchor.MiddleCenter);
             PlaceInParent(header.rectTransform, 0f, panelH - 4f, panelW, 24f, new Vector2(0f, 1f));
         }
 
@@ -773,7 +773,7 @@ namespace ThemeParkGame.Core
             upgradeColors.pressedColor = new Color(0.15f, 0.38f, 0.5f);
             _fiUpgradeBtn.colors = upgradeColors;
             _fiUpgradeBtn.onClick.AddListener(OnFacilityUpgrade);
-            _fiUpgradeText = MakeLabel(upgradeRt, "L", "UPGRADE", 14, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            _fiUpgradeText = MakeLabel(upgradeRt, "L", LocalizationData.LabelUpgrade, 14, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(_fiUpgradeText.rectTransform);
 
             // 撤去ボタン
@@ -869,8 +869,8 @@ namespace ThemeParkGame.Core
                     bool canAfford = money >= upgradeCost;
                     _fiUpgradeBtn.interactable = canAfford;
                     _fiUpgradeText.text = canAfford
-                        ? $"UPGRADE (${upgradeCost:N0})"
-                        : $"UPGRADE (${upgradeCost:N0}) - 資金不足";
+                        ? $"アップグレード (${upgradeCost:N0})"
+                        : $"アップグレード (${upgradeCost:N0}) - 資金不足";
                     _fiUpgradeBtn.GetComponent<Image>().color = canAfford
                         ? new Color(0.2f, 0.5f, 0.65f, 0.95f)
                         : new Color(0.3f, 0.3f, 0.3f, 0.8f);
@@ -879,7 +879,7 @@ namespace ThemeParkGame.Core
                 {
                     _fiUpgradeBtn.gameObject.SetActive(true);
                     _fiUpgradeBtn.interactable = false;
-                    _fiUpgradeText.text = "MAX LEVEL";
+                    _fiUpgradeText.text = LocalizationData.LabelMaxLevel;
                     _fiUpgradeBtn.GetComponent<Image>().color = new Color(0.3f, 0.3f, 0.3f, 0.8f);
                 }
             }
@@ -1045,7 +1045,7 @@ namespace ThemeParkGame.Core
             btn.colors = colors;
             btn.onClick.AddListener(OnMenuClicked);
 
-            var label = MakeLabel(rt, "Label", "MENU", 18, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            var label = MakeLabel(rt, "Label", LocalizationData.BtnMenu, 18, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(label.rectTransform);
 
             // 通知バッジ（未読数）
@@ -1083,7 +1083,7 @@ namespace ThemeParkGame.Core
             bBtn.colors = bc;
             bBtn.onClick.AddListener(OnBuildClicked);
 
-            var bLabel = MakeLabel(brt, "Label", "BUILD", 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            var bLabel = MakeLabel(brt, "Label", LocalizationData.BtnBuild, 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(bLabel.rectTransform);
 
             // STAFF ボタン（BUILDの右隣）
@@ -1103,7 +1103,7 @@ namespace ThemeParkGame.Core
             sBtn.colors = sc;
             sBtn.onClick.AddListener(OnStaffClicked);
 
-            var sLabel = MakeLabel(srt, "Label", "STAFF", 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            var sLabel = MakeLabel(srt, "Label", LocalizationData.BtnStaff, 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(sLabel.rectTransform);
 
             // RESEARCH ボタン（STAFFの右隣）
@@ -1123,7 +1123,7 @@ namespace ThemeParkGame.Core
             rBtn.colors = rc;
             rBtn.onClick.AddListener(OnResearchClicked);
 
-            var rLabel = MakeLabel(rrt, "Label", "RESEARCH", 14, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            var rLabel = MakeLabel(rrt, "Label", LocalizationData.BtnResearch, 14, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(rLabel.rectTransform);
 
             // LOAN ボタン（RESEARCHの右隣）
@@ -1143,7 +1143,7 @@ namespace ThemeParkGame.Core
             lBtn.colors = lc;
             lBtn.onClick.AddListener(OnLoanClicked);
 
-            var lLabel = MakeLabel(lrt, "Label", "LOAN", 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            var lLabel = MakeLabel(lrt, "Label", LocalizationData.BtnLoan, 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(lLabel.rectTransform);
         }
 
@@ -1207,7 +1207,7 @@ namespace ThemeParkGame.Core
             bgImg.raycastTarget = true;
 
             // タイトル
-            _researchTitle = MakeLabel(rt, "Title", "RESEARCH LAB", 26, Gold,
+            _researchTitle = MakeLabel(rt, "Title", LocalizationData.ResearchTitle, 26, Gold,
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             var titleRt = _researchTitle.rectTransform;
             titleRt.anchorMin = titleRt.anchorMax = new Vector2(0.5f, 1f);
@@ -1216,7 +1216,7 @@ namespace ThemeParkGame.Core
             titleRt.sizeDelta = new Vector2(panelW, 32f);
 
             // サイエンティスト情報
-            _researchScientistInfo = MakeLabel(rt, "SciInfo", "Scientist: 0  Skill: --", 14, Muted,
+            _researchScientistInfo = MakeLabel(rt, "SciInfo", "サイエンティスト: 0  スキル: --", 14, Muted,
                 FontStyle.Normal, TextAnchor.MiddleCenter);
             var sciRt = _researchScientistInfo.rectTransform;
             sciRt.anchorMin = sciRt.anchorMax = new Vector2(0.5f, 1f);
@@ -1256,7 +1256,7 @@ namespace ThemeParkGame.Core
             PlaceInParent(_researchProgressText.rectTransform, panelW - 110f, 58f, 90f, 24f, new Vector2(0f, 1f));
 
             // 区切り線
-            var sepLabel = MakeLabel(rt, "SepLabel", "Available Research", 13, Muted,
+            var sepLabel = MakeLabel(rt, "SepLabel", "研究可能な項目", 13, Muted,
                 FontStyle.Bold, TextAnchor.MiddleLeft);
             var sepLabelRt = sepLabel.rectTransform;
             sepLabelRt.anchorMin = sepLabelRt.anchorMax = new Vector2(0f, 1f);
@@ -1284,7 +1284,7 @@ namespace ThemeParkGame.Core
             var closeBtn2 = closeGo.AddComponent<Button>();
             closeBtn2.targetGraphic = closeImg2;
             closeBtn2.onClick.AddListener(() => _researchPanel.SetActive(false));
-            var closeLbl = MakeLabel(closeGoRt, "Label", "CLOSE", 16, Color.white,
+            var closeLbl = MakeLabel(closeGoRt, "Label", LocalizationData.BtnClose, 16, Color.white,
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(closeLbl.rectTransform);
 
@@ -1301,8 +1301,8 @@ namespace ThemeParkGame.Core
             int sciCount = rm.ScientistCount;
             float avgSkill = rm.AverageScientistSkill;
             _researchScientistInfo.text = sciCount > 0
-                ? $"Scientist: {sciCount}   Avg Skill: {avgSkill:P0}"
-                : "Scientist: 0  (雇用するとスタッフで研究が進みます)";
+                ? $"サイエンティスト: {sciCount}   平均スキル: {avgSkill:P0}"
+                : "サイエンティスト: 0  (雇用するとスタッフで研究が進みます)";
 
             // 現在の研究
             if (rm.IsResearching)
@@ -1352,9 +1352,9 @@ namespace ThemeParkGame.Core
                 PlaceInParent(nameText.rectTransform, 8f, rowH - 2f, listW - 120f, 22f, new Vector2(0f, 1f));
 
                 // コスト + カテゴリ
-                string catLabel = item.Category == ResearchCategory.Attractions ? "Attraction"
-                    : item.Category == ResearchCategory.Shops ? "Shop"
-                    : item.Category == ResearchCategory.Upgrades ? "Upgrade" : "Facility";
+                string catLabel = item.Category == ResearchCategory.Attractions ? "アトラクション"
+                    : item.Category == ResearchCategory.Shops ? "ショップ"
+                    : item.Category == ResearchCategory.Upgrades ? "アップグレード" : "施設";
                 var descText = MakeLabel(rowRt, "Desc", $"${item.ResearchCost:N0}  [{catLabel}]  {item.BaseResearchTime:F0}s",
                     11, Muted, FontStyle.Normal, TextAnchor.MiddleLeft);
                 PlaceInParent(descText.rectTransform, 8f, rowH - 24f, listW - 120f, 18f, new Vector2(0f, 1f));
@@ -1464,7 +1464,7 @@ namespace ThemeParkGame.Core
             bgImg.raycastTarget = true;
 
             // タイトル
-            var title = MakeLabel(rt, "Title", "LOAN MANAGEMENT", 24, Gold,
+            var title = MakeLabel(rt, "Title", LocalizationData.LoanTitle, 24, Gold,
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             var titleRt = title.rectTransform;
             titleRt.anchorMin = titleRt.anchorMax = new Vector2(0.5f, 1f);
@@ -1669,7 +1669,7 @@ namespace ThemeParkGame.Core
             var closeBtn = closeGo.AddComponent<Button>();
             closeBtn.targetGraphic = closeImg;
             closeBtn.onClick.AddListener(() => _loanPanel.SetActive(false));
-            var closeLbl = MakeLabel(closeRt, "L", "CLOSE", 14, Color.white,
+            var closeLbl = MakeLabel(closeRt, "L", LocalizationData.BtnClose, 14, Color.white,
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(closeLbl.rectTransform);
 
@@ -1782,7 +1782,7 @@ namespace ThemeParkGame.Core
             bgImg.color = new Color(0.05f, 0.07f, 0.12f, 0.85f);
             bgImg.raycastTarget = false;
 
-            string[] zoneNames = { "Lost Kingdom", "Halloween", "Wonderland", "Space Zone" };
+            string[] zoneNames = { LocalizationData.ZoneLostKingdom, LocalizationData.ZoneHalloweenWorld, LocalizationData.ZoneWonderland, LocalizationData.ZoneSpaceZone };
             ThemeZone[] zones = { ThemeZone.LostKingdom, ThemeZone.HalloweenWorld,
                                   ThemeZone.Wonderland, ThemeZone.SpaceZone };
 
@@ -1858,12 +1858,12 @@ namespace ThemeParkGame.Core
                 if (!isUnlocked)
                 {
                     int cost = pm.GetZoneUnlockCost(zones[i]);
-                    _zoneLabels[i].text = $"[LOCKED] x{cost}";
+                    _zoneLabels[i].text = $"[未開放] x{cost}";
                     _zoneLabels[i].color = new Color(0.7f, 0.5f, 0.3f);
                 }
                 else
                 {
-                    string[] shortNames = { "Lost Kingdom", "Halloween", "Wonderland", "Space Zone" };
+                    string[] shortNames = { LocalizationData.ZoneLostKingdom, LocalizationData.ZoneHalloweenWorld, LocalizationData.ZoneWonderland, LocalizationData.ZoneSpaceZone };
                     _zoneLabels[i].text = shortNames[i];
                     _zoneLabels[i].color = Color.white;
                 }
@@ -1901,7 +1901,7 @@ namespace ThemeParkGame.Core
             bgImg.raycastTarget = true;
 
             // タイトル
-            var title = MakeLabel(rt, "PauseTitle", "PAUSED", 56, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            var title = MakeLabel(rt, "PauseTitle", LocalizationData.PauseTitle, 56, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
             var titleRt = title.rectTransform;
             titleRt.anchorMin = titleRt.anchorMax = new Vector2(0.5f, 0.5f);
             titleRt.anchoredPosition = new Vector2(0f, 240f);
@@ -1913,92 +1913,92 @@ namespace ThemeParkGame.Core
                 new Vector2(0f, 270f), OnResumeClicked);
 
             // 「セーブ/ロード」ボタン
-            MakeCenterButton(rt, "SaveLoadBtn", "SAVE / LOAD",
+            MakeCenterButton(rt, "SaveLoadBtn", "セーブ / ロード",
                 new Color(0.3f, 0.4f, 0.6f), new Color(0.38f, 0.5f, 0.72f), new Color(0.22f, 0.3f, 0.48f),
                 new Vector2(0f, 215f), OnSaveLoadClicked);
 
             // 「クラウドセーブ」ボタン
-            MakeCenterButton(rt, "CloudSaveBtn", "CLOUD SAVE",
+            MakeCenterButton(rt, "CloudSaveBtn", "クラウドセーブ",
                 new Color(0.2f, 0.4f, 0.6f), new Color(0.28f, 0.5f, 0.72f), new Color(0.15f, 0.3f, 0.48f),
                 new Vector2(0f, 160f), OnCloudSaveClicked);
 
             // 「リーダーボード」ボタン
-            MakeCenterButton(rt, "LeaderboardBtn", "LEADERBOARD",
+            MakeCenterButton(rt, "LeaderboardBtn", "ランキング",
                 new Color(0.55f, 0.45f, 0.15f), new Color(0.65f, 0.55f, 0.22f), new Color(0.42f, 0.34f, 0.1f),
                 new Vector2(0f, 105f), OnLeaderboardClicked);
 
             // 「チャレンジ」ボタン
-            MakeCenterButton(rt, "ChallengeBtn", "CHALLENGES",
+            MakeCenterButton(rt, "ChallengeBtn", LocalizationData.BtnChallenges,
                 new Color(0.6f, 0.35f, 0.15f), new Color(0.72f, 0.45f, 0.22f), new Color(0.48f, 0.28f, 0.1f),
                 new Vector2(0f, 50f), OnChallengeClicked);
 
             // 「パーク拡張」ボタン
-            MakeCenterButton(rt, "ExpansionBtn", "PARK EXPANSION",
+            MakeCenterButton(rt, "ExpansionBtn", "パーク拡張",
                 new Color(0.2f, 0.5f, 0.3f), new Color(0.28f, 0.6f, 0.38f), new Color(0.15f, 0.4f, 0.22f),
                 new Vector2(0f, -5f), OnExpansionClicked);
 
             // 「融資/投資」ボタン
-            MakeCenterButton(rt, "FinanceBtn", "FINANCE",
+            MakeCenterButton(rt, "FinanceBtn", "融資/投資",
                 new Color(0.45f, 0.4f, 0.2f), new Color(0.55f, 0.5f, 0.28f), new Color(0.35f, 0.3f, 0.15f),
                 new Vector2(0f, -60f), OnFinanceClicked);
 
             // 「Co-op」ボタン
-            MakeCenterButton(rt, "CoopBtn", "CO-OP",
+            MakeCenterButton(rt, "CoopBtn", "協力プレイ",
                 new Color(0.35f, 0.2f, 0.55f), new Color(0.45f, 0.28f, 0.65f), new Color(0.25f, 0.15f, 0.42f),
                 new Vector2(0f, -115f), OnCoopClicked);
 
             // Phase 9: 「天気予報」ボタン
-            MakeCenterButton(rt, "WeatherBtn", "WEATHER",
+            MakeCenterButton(rt, "WeatherBtn", "天気予報",
                 new Color(0.2f, 0.45f, 0.6f), new Color(0.28f, 0.55f, 0.72f), new Color(0.15f, 0.35f, 0.48f),
                 new Vector2(0f, -170f), OnWeatherClicked);
 
             // Phase 9: 「イベント」ボタン
-            MakeCenterButton(rt, "EventsBtn", "EVENTS",
+            MakeCenterButton(rt, "EventsBtn", "イベント",
                 new Color(0.55f, 0.3f, 0.5f), new Color(0.65f, 0.38f, 0.6f), new Color(0.42f, 0.22f, 0.38f),
                 new Vector2(0f, -225f), OnEventsClicked);
 
             // Phase 9: 「シェア」ボタン
-            MakeCenterButton(rt, "ShareBtn", "SHARE",
+            MakeCenterButton(rt, "ShareBtn", "シェア",
                 new Color(0.15f, 0.15f, 0.2f), new Color(0.25f, 0.25f, 0.32f), new Color(0.1f, 0.1f, 0.15f),
                 new Vector2(0f, -280f), OnShareClicked);
 
             // Phase 9: 「アクセシビリティ」ボタン
-            MakeCenterButton(rt, "AccessibilityBtn", "ACCESSIBILITY",
+            MakeCenterButton(rt, "AccessibilityBtn", "アクセシビリティ",
                 new Color(0.3f, 0.5f, 0.45f), new Color(0.38f, 0.6f, 0.55f), new Color(0.22f, 0.4f, 0.35f),
                 new Vector2(0f, -335f), OnAccessibilityClicked);
 
             // Phase 10: 「アクシデント」ボタン
-            MakeCenterButton(rt, "AccidentsBtn", "ACCIDENTS",
+            MakeCenterButton(rt, "AccidentsBtn", LocalizationData.BtnAccidents,
                 new Color(0.65f, 0.25f, 0.15f), new Color(0.75f, 0.35f, 0.22f), new Color(0.52f, 0.18f, 0.1f),
                 new Vector2(0f, -390f), OnAccidentsClicked);
 
             // Phase 10: 「口コミ」ボタン
-            MakeCenterButton(rt, "ReviewsBtn", "REVIEWS",
+            MakeCenterButton(rt, "ReviewsBtn", LocalizationData.BtnReviews,
                 new Color(0.2f, 0.5f, 0.55f), new Color(0.28f, 0.6f, 0.65f), new Color(0.15f, 0.4f, 0.44f),
                 new Vector2(0f, -445f), OnReviewsClicked);
 
             // Phase 10: 「ライバル」ボタン
-            MakeCenterButton(rt, "RivalsBtn", "RIVALS",
+            MakeCenterButton(rt, "RivalsBtn", LocalizationData.BtnRivals,
                 new Color(0.55f, 0.2f, 0.45f), new Color(0.65f, 0.28f, 0.55f), new Color(0.42f, 0.15f, 0.35f),
                 new Vector2(0f, -500f), OnRivalsClicked);
 
             // Phase 10: 「セール」ボタン
-            MakeCenterButton(rt, "SalesBtn", "SALES",
+            MakeCenterButton(rt, "SalesBtn", LocalizationData.BtnSales,
                 new Color(0.6f, 0.5f, 0.15f), new Color(0.72f, 0.6f, 0.22f), new Color(0.48f, 0.38f, 0.1f),
                 new Vector2(0f, -555f), OnSalesClicked);
 
             // 「実績」ボタン
-            MakeCenterButton(rt, "AchievementBtn", "ACHIEVEMENTS",
+            MakeCenterButton(rt, "AchievementBtn", LocalizationData.BtnAchievements,
                 new Color(0.55f, 0.45f, 0.2f), new Color(0.65f, 0.55f, 0.28f), new Color(0.42f, 0.34f, 0.15f),
                 new Vector2(0f, -610f), OnAchievementClicked);
 
             // 「サウンド設定」ボタン
-            MakeCenterButton(rt, "SoundBtn", "SOUND SETTINGS",
+            MakeCenterButton(rt, "SoundBtn", LocalizationData.BtnSoundSettings,
                 new Color(0.35f, 0.4f, 0.52f), new Color(0.45f, 0.5f, 0.62f), new Color(0.25f, 0.3f, 0.42f),
                 new Vector2(0f, -665f), OnSoundSettingsClicked);
 
             // 「イベントログ」ボタン
-            MakeCenterButton(rt, "EventLogBtn", "EVENT LOG",
+            MakeCenterButton(rt, "EventLogBtn", LocalizationData.BtnEventLog,
                 new Color(0.3f, 0.45f, 0.55f), new Color(0.38f, 0.55f, 0.65f), new Color(0.22f, 0.35f, 0.44f),
                 new Vector2(0f, -720f), OnEventLogClicked);
 
@@ -2032,21 +2032,21 @@ namespace ThemeParkGame.Core
             bgImg.raycastTarget = true;
 
             // タイトル
-            var title = MakeLabel(rt, "ResultsTitle", "GAME OVER", 60, Gold, FontStyle.Bold, TextAnchor.MiddleCenter);
+            var title = MakeLabel(rt, "ResultsTitle", LocalizationData.ResultTitle, 60, Gold, FontStyle.Bold, TextAnchor.MiddleCenter);
             var titleRt = title.rectTransform;
             titleRt.anchorMin = titleRt.anchorMax = new Vector2(0.5f, 0.5f);
             titleRt.anchoredPosition = new Vector2(0f, 280f);
             titleRt.sizeDelta = new Vector2(600f, 70f);
 
             // サブタイトル
-            var sub = MakeLabel(rt, "ResultsSub", "- Final Score Report -", 22, Muted, FontStyle.Normal, TextAnchor.MiddleCenter);
+            var sub = MakeLabel(rt, "ResultsSub", "- 最終スコアレポート -", 22, Muted, FontStyle.Normal, TextAnchor.MiddleCenter);
             var subRt = sub.rectTransform;
             subRt.anchorMin = subRt.anchorMax = new Vector2(0.5f, 0.5f);
             subRt.anchoredPosition = new Vector2(0f, 230f);
             subRt.sizeDelta = new Vector2(400f, 30f);
 
             // ---- 最終スコア（巨大表示） ----
-            var scoreLbl = MakeLabel(rt, "ScoreLabel", "TOTAL SCORE", 18, new Color(0.5f, 0.6f, 0.7f),
+            var scoreLbl = MakeLabel(rt, "ScoreLabel", LocalizationData.ResultFinalScore, 18, new Color(0.5f, 0.6f, 0.7f),
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             var scoreLblRt = scoreLbl.rectTransform;
             scoreLblRt.anchorMin = scoreLblRt.anchorMax = new Vector2(0.5f, 0.5f);
@@ -2077,12 +2077,12 @@ namespace ThemeParkGame.Core
             bodyRt.sizeDelta = new Vector2(520f, 200f);
 
             // ---- リスタートボタン ----
-            MakeCenterButton(rt, "RestartBtn", "RESTART",
+            MakeCenterButton(rt, "RestartBtn", LocalizationData.BtnRestart,
                 new Color(0.18f, 0.55f, 0.34f), new Color(0.22f, 0.65f, 0.40f), new Color(0.14f, 0.45f, 0.28f),
                 new Vector2(0f, -175f), OnRestartClicked);
 
             // ---- メインメニューに戻るボタン ----
-            MakeCenterButton(rt, "ReturnMenuBtn", "TITLE MENU",
+            MakeCenterButton(rt, "ReturnMenuBtn", LocalizationData.BtnBackToTitle,
                 new Color(0.3f, 0.35f, 0.45f), new Color(0.4f, 0.45f, 0.55f), new Color(0.2f, 0.25f, 0.35f),
                 new Vector2(0f, -250f), OnReturnToMenuClicked);
 
@@ -2105,7 +2105,7 @@ namespace ThemeParkGame.Core
             rt.pivot = new Vector2(1f, 1f);
             rt.anchoredPosition = new Vector2(-10f, -10f);
 
-            _scenarioTitle = MakeLabel(rt, "ScTitle", "SCENARIO", 16, Gold,
+            _scenarioTitle = MakeLabel(rt, "ScTitle", "シナリオ", 16, Gold,
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             PlaceInParent(_scenarioTitle.rectTransform, 0f, panelH - 4f, panelW, 24f, new Vector2(0f, 1f));
 
@@ -2142,7 +2142,7 @@ namespace ThemeParkGame.Core
             bgImg.raycastTarget = true;
 
             // タイトル
-            var title = MakeLabel(rt, "SLTitle", "SAVE / LOAD", 28, Gold,
+            var title = MakeLabel(rt, "SLTitle", "セーブ / ロード", 28, Gold,
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             var titleRt = title.rectTransform;
             titleRt.anchorMin = titleRt.anchorMax = new Vector2(0.5f, 1f);
@@ -2181,7 +2181,7 @@ namespace ThemeParkGame.Core
             var closeBtn = closeGo.AddComponent<Button>();
             closeBtn.targetGraphic = closeImg;
             closeBtn.onClick.AddListener(() => _saveLoadPanel.SetActive(false));
-            var closeLabel = MakeLabel(closeRt, "Label", "CLOSE", 18, Color.white,
+            var closeLabel = MakeLabel(closeRt, "Label", LocalizationData.BtnClose, 18, Color.white,
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(closeLabel.rectTransform);
 
@@ -2199,7 +2199,7 @@ namespace ThemeParkGame.Core
             infoRt.anchoredPosition = new Vector2(0f, -y + h);
 
             // スロット番号
-            var slotLabel = MakeLabel(infoRt, "SlotNum", $"Slot {slot + 1}", 14, Muted,
+            var slotLabel = MakeLabel(infoRt, "SlotNum", $"スロット {slot + 1}", 14, Muted,
                 FontStyle.Bold, TextAnchor.MiddleLeft);
             PlaceInParent(slotLabel.rectTransform, 10f, h - 2f, 80f, 20f, new Vector2(0f, 1f));
 
@@ -2228,7 +2228,7 @@ namespace ThemeParkGame.Core
             sc.highlightedColor = new Color(0.25f, 0.6f, 0.42f);
             sc.pressedColor = new Color(0.15f, 0.38f, 0.25f);
             saveBtn.colors = sc;
-            var saveTxt = MakeLabel(saveRt, "L", "SAVE", 14, Color.white,
+            var saveTxt = MakeLabel(saveRt, "L", LocalizationData.BtnSave, 14, Color.white,
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(saveTxt.rectTransform);
 
@@ -2250,7 +2250,7 @@ namespace ThemeParkGame.Core
             lc.highlightedColor = new Color(0.38f, 0.5f, 0.72f);
             lc.pressedColor = new Color(0.22f, 0.3f, 0.48f);
             loadBtn.colors = lc;
-            var loadTxt = MakeLabel(loadRt, "L", "LOAD", 14, Color.white,
+            var loadTxt = MakeLabel(loadRt, "L", LocalizationData.BtnLoad, 14, Color.white,
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(loadTxt.rectTransform);
 
@@ -2271,7 +2271,7 @@ namespace ThemeParkGame.Core
             if (_saveLoadMessage != null)
             {
                 _saveLoadMessage.text = success
-                    ? $"Slot {slot + 1} にセーブしました"
+                    ? $"スロット {slot + 1} にセーブしました"
                     : "セーブに失敗しました";
                 _saveLoadMessage.color = success ? Green : Red;
             }
@@ -2284,7 +2284,7 @@ namespace ThemeParkGame.Core
             {
                 if (_saveLoadMessage != null)
                 {
-                    _saveLoadMessage.text = $"Slot {slot + 1} にデータがありません";
+                    _saveLoadMessage.text = $"スロット {slot + 1} にデータがありません";
                     _saveLoadMessage.color = Yellow;
                 }
                 return;
@@ -2473,7 +2473,7 @@ namespace ThemeParkGame.Core
             bgImg.raycastTarget = true;
 
             // タイトル
-            var title = MakeLabel(pRt, "SndTitle", "SOUND SETTINGS", 20,
+            var title = MakeLabel(pRt, "SndTitle", LocalizationData.SoundTitle, 20,
                 new Color(0.95f, 0.88f, 0.45f), FontStyle.Bold, TextAnchor.MiddleCenter);
             var tRt = title.rectTransform;
             tRt.anchorMin = tRt.anchorMax = new Vector2(0.5f, 1f);
@@ -2482,13 +2482,13 @@ namespace ThemeParkGame.Core
             tRt.sizeDelta = new Vector2(panelW, 30f);
 
             float y = -44f;
-            _sliderMaster = MakeSoundSlider(pRt, "Master", "MASTER", y, 1f);
+            _sliderMaster = MakeSoundSlider(pRt, "Master", LocalizationData.LabelMasterVolume, y, 1f);
             y -= 50f;
-            _sliderBGM = MakeSoundSlider(pRt, "BGM", "BGM", y, 0.5f);
+            _sliderBGM = MakeSoundSlider(pRt, "BGM", LocalizationData.LabelBGMVolume, y, 0.5f);
             y -= 50f;
-            _sliderSE = MakeSoundSlider(pRt, "SE", "SE", y, 0.8f);
+            _sliderSE = MakeSoundSlider(pRt, "SE", LocalizationData.LabelSEVolume, y, 0.8f);
             y -= 50f;
-            _sliderAmbient = MakeSoundSlider(pRt, "Ambient", "AMBIENT", y, 0.3f);
+            _sliderAmbient = MakeSoundSlider(pRt, "Ambient", LocalizationData.LabelAmbientVolume, y, 0.3f);
 
             // AudioManagerから現在値を取得
             if (AudioManager.Instance != null)
@@ -2644,9 +2644,9 @@ namespace ThemeParkGame.Core
             if (_resultsFinalScore != null)
             {
                 if (isScenario && ScenarioManager.Instance.IsScenarioCleared)
-                    _resultsFinalScore.text = "CLEAR!";
+                    _resultsFinalScore.text = "クリア！";
                 else if (isScenario && ScenarioManager.Instance.IsScenarioFailed)
-                    _resultsFinalScore.text = "FAILED";
+                    _resultsFinalScore.text = "失敗";
                 else
                     _resultsFinalScore.text = score.ToString("N0");
             }
@@ -2666,7 +2666,7 @@ namespace ThemeParkGame.Core
             if (gm.TimeManager != null)
             {
                 var tm = gm.TimeManager;
-                time = $"Y{tm.CurrentYear} M{tm.CurrentMonth} D{tm.CurrentDay}";
+                time = $"{tm.CurrentYear}年{tm.CurrentMonth}月{tm.CurrentDay}日";
             }
 
             int attrCount = (_attractions != null) ? _attractions.Length : 0;
@@ -2682,7 +2682,7 @@ namespace ThemeParkGame.Core
                 float enjoyRatio = gm.VisitorManager.OverallEnjoymentRatio * 100f;
                 int expStarts = gm.VisitorManager.TotalExperienceStarts;
                 int expDone = gm.VisitorManager.TotalExperienceCompletions;
-                lcText = $"  Lifecycle: Enjoy {enjoyRatio:F0}%  Starts:{expStarts}  Done:{expDone}\n";
+                lcText = $"  ライフサイクル: 楽しさ {enjoyRatio:F0}%  開始:{expStarts}  完了:{expDone}\n";
             }
 
             // パーク評価
@@ -2693,7 +2693,7 @@ namespace ThemeParkGame.Core
                 float stars = ParkRatingEvaluator.ScoreToStars(overall);
                 string starsStr = ParkRatingEvaluator.StarsToText(stars);
                 string label = ParkRatingEvaluator.GetRatingLabel(overall);
-                ratingText = $"  Park Rating: [{starsStr}] {overall:F1} - {label}\n";
+                ratingText = $"  パーク評価: [{starsStr}] {overall:F1} - {label}\n";
             }
 
             // 通知・アラート統計
@@ -2702,7 +2702,7 @@ namespace ThemeParkGame.Core
             {
                 int logCount = NotificationSystem.Instance.Log.Count;
                 int alertCount = AlertMonitor.Instance != null ? AlertMonitor.Instance.TotalAlertCount : 0;
-                alertText = $"  Notifications: {logCount}  Active Alerts: {alertCount}\n";
+                alertText = $"  通知: {logCount}  アクティブアラート: {alertCount}\n";
             }
 
             // SNSレピュテーション
@@ -2712,26 +2712,26 @@ namespace ThemeParkGame.Core
                 float rep = gm.AIManager.SNSSystem.Reputation;
                 int posts = gm.AIManager.SNSSystem.Feed.Count;
                 float spawn = gm.AIManager.SNSSystem.VisitorSpawnMultiplier;
-                snsText = $"  SNS Reputation: {rep:F0}/100  Posts: {posts}  Spawn: x{spawn:F2}\n";
+                snsText = $"  SNS評判: {rep:F0}/100  投稿数: {posts}  来場倍率: x{spawn:F2}\n";
             }
 
             _resultsBody.text =
-                $"  Visitors: {visitors}  (Peak: {peak})\n" +
-                $"  Satisfaction: {avgSatisfaction:F0}%  Happiness: {avgHappiness:F0}%\n" +
+                $"  来場者数: {visitors}  (ピーク: {peak})\n" +
+                $"  満足度: {avgSatisfaction:F0}%  幸福度: {avgHappiness:F0}%\n" +
                 ratingText +
                 lcText +
                 snsText +
                 alertText +
-                $"  Revenue: {revenue}         Expenses: {expenses}\n" +
-                $"  Final Balance: {money}\n" +
-                $"  Attractions: {attrCount}         Golden Tickets: {tickets}\n" +
-                $"  Date: {time}         Achievements: {achText}\n" +
+                $"  収入: {revenue}         支出: {expenses}\n" +
+                $"  最終残高: {money}\n" +
+                $"  アトラクション数: {attrCount}         ゴールデンチケット: {tickets}\n" +
+                $"  日付: {time}         実績: {achText}\n" +
                 $"\n" +
-                $"  Score Breakdown:\n" +
-                $"    Visitors x10 = {(gm.VisitorManager != null ? gm.VisitorManager.TotalVisitorsToday * 10 : 0):N0}\n" +
-                $"    Revenue / 100 = {(gm.EconomyManager != null ? (int)(gm.EconomyManager.TotalRevenueEarned / 100f) : 0):N0}\n" +
-                $"    Satisfaction x50 = {(int)(avgSatisfaction * 50f):N0}\n" +
-                $"    Golden Tickets x500 = {gm.GoldenTickets * 500:N0}";
+                $"  スコア内訳:\n" +
+                $"    来場者 x10 = {(gm.VisitorManager != null ? gm.VisitorManager.TotalVisitorsToday * 10 : 0):N0}\n" +
+                $"    収益 / 100 = {(gm.EconomyManager != null ? (int)(gm.EconomyManager.TotalRevenueEarned / 100f) : 0):N0}\n" +
+                $"    満足度 x50 = {(int)(avgSatisfaction * 50f):N0}\n" +
+                $"    ゴールデンチケット x500 = {gm.GoldenTickets * 500:N0}";
         }
 
         // ================================================================
@@ -3160,7 +3160,7 @@ namespace ThemeParkGame.Core
             _snsToggleBtn.colors = hbc;
             _snsToggleBtn.onClick.AddListener(() => { _snsPanelExpanded = !_snsPanelExpanded; });
 
-            var headerLabel = MakeLabel(headerRt, "Title", "SNS FEED", 13,
+            var headerLabel = MakeLabel(headerRt, "Title", "SNS フィード", 13,
                 new Color(0.5f, 0.8f, 1f), FontStyle.Bold, TextAnchor.MiddleLeft);
             var hlRt = headerLabel.rectTransform;
             hlRt.anchorMin = hlRt.anchorMax = new Vector2(0f, 0.5f);
@@ -3169,7 +3169,7 @@ namespace ThemeParkGame.Core
             hlRt.sizeDelta = new Vector2(120f, 20f);
 
             // レピュテーションメーター（ヘッダー右側）
-            _snsReputationText = MakeLabel(headerRt, "Rep", "Rep: 50", 12,
+            _snsReputationText = MakeLabel(headerRt, "Rep", "評判: 50", 12,
                 Color.white, FontStyle.Bold, TextAnchor.MiddleRight);
             var repRt = _snsReputationText.rectTransform;
             repRt.anchorMin = repRt.anchorMax = new Vector2(1f, 0.5f);
@@ -3213,7 +3213,7 @@ namespace ThemeParkGame.Core
             spRt.sizeDelta = new Vector2(panelW - 16f, 14f);
 
             // トレンドトピック（3行）
-            var trendHeader = MakeLabel(rt, "TrendH", "TRENDING", 11,
+            var trendHeader = MakeLabel(rt, "TrendH", LocalizationData.SNSTrending, 11,
                 new Color(0.9f, 0.78f, 0.25f), FontStyle.Bold, TextAnchor.MiddleLeft);
             var thRt = trendHeader.rectTransform;
             thRt.anchorMin = thRt.anchorMax = new Vector2(0f, 1f);
@@ -3234,7 +3234,7 @@ namespace ThemeParkGame.Core
             }
 
             // フィード（最新5件）
-            var feedHeader = MakeLabel(rt, "FeedH", "RECENT POSTS", 11,
+            var feedHeader = MakeLabel(rt, "FeedH", "最近の投稿", 11,
                 new Color(0.5f, 0.8f, 1f), FontStyle.Bold, TextAnchor.MiddleLeft);
             var fhRt = feedHeader.rectTransform;
             fhRt.anchorMin = fhRt.anchorMax = new Vector2(0f, 1f);
@@ -3301,7 +3301,7 @@ namespace ThemeParkGame.Core
             // レピュテーション
             float rep = snsSystem.Reputation;
             Color repColor = rep >= 70f ? Green : rep >= 40f ? Yellow : Red;
-            _snsReputationText.text = $"Rep: {rep:F0}";
+            _snsReputationText.text = $"評判: {rep:F0}";
             _snsReputationText.color = repColor;
 
             // バー
@@ -3316,7 +3316,7 @@ namespace ThemeParkGame.Core
 
             // スポーン倍率
             float spawnMul = snsSystem.VisitorSpawnMultiplier;
-            _snsSpawnText.text = $"Visitor Spawn: x{spawnMul:F2}  Posts: {snsSystem.Feed.Count}";
+            _snsSpawnText.text = $"来場倍率: x{spawnMul:F2}  投稿数: {snsSystem.Feed.Count}";
 
             // トレンドトピック
             var trends = snsSystem.TrendingTopics;
@@ -3933,7 +3933,7 @@ namespace ThemeParkGame.Core
             _viRides.text = $"搭乗回数: {prof.RidesExperienced}回";
             if (prof.FavoriteAttraction.HasValue)
             {
-                _viRides.text += $"  Best: {prof.FavoriteAttraction.Value.AttractionName}";
+                _viRides.text += $"  お気に入り: {prof.FavoriteAttraction.Value.AttractionName}";
             }
 
             // ライフサイクルFSM情報
@@ -4161,7 +4161,7 @@ namespace ThemeParkGame.Core
                 var tm = gm.TimeManager;
                 int h = (int)tm.CurrentHour;
                 int m = (int)((tm.CurrentHour - h) * 60);
-                time = $"Y{tm.CurrentYear} M{tm.CurrentMonth} D{tm.CurrentDay} {h:D2}:{m:D2}";
+                time = $"{tm.CurrentYear}年{tm.CurrentMonth}月{tm.CurrentDay}日 {h:D2}:{m:D2}";
             }
             string weather = gm.WeatherSystem != null ? WeatherLabel(gm.WeatherSystem.CurrentWeather) : "";
             _timeWeatherText.text = $"{weather}  {time}";
@@ -4176,8 +4176,8 @@ namespace ThemeParkGame.Core
                 int grd = sm.GetStaffCount(StaffType.Guard);
                 int sci = sm.GetStaffCount(StaffType.Scientist);
                 int striking = sm.StrikingStaffCount;
-                string strikeWarn = striking > 0 ? $" <color=#FF4444>ST:{striking}</color>" : "";
-                _staffText.text = $"M:{mech} C:{cln} E:{ent} G:{grd} S:{sci}{strikeWarn}";
+                string strikeWarn = striking > 0 ? $" <color=#FF4444>スト:{striking}</color>" : "";
+                _staffText.text = $"修:{mech} 掃:{cln} 芸:{ent} 警:{grd} 研:{sci}{strikeWarn}";
             }
 
             // ---- 通路混雑度 ----
@@ -4330,7 +4330,7 @@ namespace ThemeParkGame.Core
                     _attrLines[detailIdx].text = $"  {st}  Q:{attr.QueueLength}/{attr.MaxQueueLength}  乗車:{attr.TotalRiderCount}";
                     _attrLines[detailIdx].color = CycleColor(attr.CurrentCycleState);
 
-                    _attrLines[revenueIdx].text = $"  Ticket:${attr.TicketPrice}  今日:${attr.TodayRevenue:N0}  累計:${attr.TotalRevenue:N0}";
+                    _attrLines[revenueIdx].text = $"  チケット:${attr.TicketPrice}  今日:${attr.TodayRevenue:N0}  累計:${attr.TotalRevenue:N0}";
                     _attrLines[revenueIdx].color = attr.TotalRevenue > 0 ? Gold : Muted;
                 }
             }
@@ -4352,18 +4352,18 @@ namespace ThemeParkGame.Core
             var sm = ScenarioManager.Instance;
             var scenario = sm.ActiveScenario;
 
-            _scenarioTitle.text = $"SCENARIO: {ScenarioManager.GetCountryName(scenario.Country)}";
+            _scenarioTitle.text = $"シナリオ: {ScenarioManager.GetCountryName(scenario.Country)}";
 
             string objectives = sm.GetObjectiveProgressText();
             if (sm.IsScenarioCleared)
-                objectives += "\n*** SCENARIO CLEARED! ***";
+                objectives += "\n*** シナリオクリア！ ***";
             else if (sm.IsScenarioFailed)
-                objectives += "\n*** TIME OVER ***";
+                objectives += "\n*** タイムオーバー ***";
 
             if (scenario.TimeLimitYears > 0 && GameManager.Instance.TimeManager != null)
             {
                 int yr = GameManager.Instance.TimeManager.CurrentYear;
-                objectives += $"\n制限: Year {yr}/{scenario.TimeLimitYears}";
+                objectives += $"\n制限: {yr}年目/{scenario.TimeLimitYears}年";
             }
 
             _scenarioObjectives.text = objectives;
@@ -4460,11 +4460,11 @@ namespace ThemeParkGame.Core
         {
             switch (w)
             {
-                case Weather.Sunny:  return "[Sunny]";
-                case Weather.Cloudy: return "[Cloudy]";
-                case Weather.Rainy:  return "[Rainy]";
-                case Weather.Snowy:  return "[Snowy]";
-                case Weather.Hot:    return "[Hot]";
+                case Weather.Sunny:  return "[晴れ]";
+                case Weather.Cloudy: return "[曇り]";
+                case Weather.Rainy:  return "[雨]";
+                case Weather.Snowy:  return "[雪]";
+                case Weather.Hot:    return "[猛暑]";
                 default: return "";
             }
         }
@@ -4473,12 +4473,12 @@ namespace ThemeParkGame.Core
         {
             switch (s)
             {
-                case RideCycleState.WaitingForRiders: return "[Waiting]";
-                case RideCycleState.Loading:          return "[Loading]";
-                case RideCycleState.Running:          return "[Running]";
-                case RideCycleState.Unloading:        return "[Unloading]";
-                case RideCycleState.BrokenDown:       return "[BROKEN]";
-                case RideCycleState.Accident:         return "[ACCIDENT]";
+                case RideCycleState.WaitingForRiders: return "[待機中]";
+                case RideCycleState.Loading:          return "[乗車中]";
+                case RideCycleState.Running:          return "[運行中]";
+                case RideCycleState.Unloading:        return "[降車中]";
+                case RideCycleState.BrokenDown:       return "[故障中]";
+                case RideCycleState.Accident:         return "[事故発生]";
                 default: return "[---]";
             }
         }
@@ -4500,12 +4500,12 @@ namespace ThemeParkGame.Core
         {
             switch (t)
             {
-                case VisitorType.Kids:   return "キッズ";
-                case VisitorType.Young:  return "ヤング";
-                case VisitorType.Family: return "ファミリー";
-                case VisitorType.Couple: return "カップル";
-                case VisitorType.Senior: return "シニア";
-                case VisitorType.VIP:    return "VIP";
+                case VisitorType.Kids:   return LocalizationData.VisitorKids;
+                case VisitorType.Young:  return LocalizationData.VisitorYoung;
+                case VisitorType.Family: return LocalizationData.VisitorFamily;
+                case VisitorType.Couple: return LocalizationData.VisitorCouple;
+                case VisitorType.Senior: return LocalizationData.VisitorSenior;
+                case VisitorType.VIP:    return LocalizationData.VisitorVIP;
                 default: return t.ToString();
             }
         }

@@ -171,13 +171,11 @@ namespace ThemeParkGame.Core
             mesh.RecalculateBounds();
             mf.sharedMesh = mesh;
 
-            var shader = Shader.Find("Standard");
-            if (shader == null) shader = Shader.Find("UI/Default");
-            if (shader != null)
-                mr.material = new Material(shader) { color = new Color(0.45f, 0.65f, 0.35f) };
+            // プロシージャル芝生テクスチャを適用
+            mr.material = ProceduralTextureGenerator.CreateGroundMaterial();
 
             go.isStatic = true;
-            WebGLOptimizer.LogVerbose("[GameBootstrapper] Ground を生成");
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] Ground を生成（芝生テクスチャ適用）");
         }
 
         // ================================================================
@@ -378,7 +376,7 @@ namespace ThemeParkGame.Core
             // ---- 装飾アイコン行 ----
             var icons = CreateUIElement("Icons", canvasGo.transform);
             var iconsText = icons.AddComponent<Text>();
-            iconsText.text = "[ Roller Coaster ]   [ Ferris Wheel ]   [ Food Court ]   [ Haunted House ]";
+            iconsText.text = "[ ジェットコースター ]   [ 観覧車 ]   [ フードコート ]   [ お化け屋敷 ]";
             iconsText.font = GetBuiltinFont();
             iconsText.fontSize = 18;
             iconsText.alignment = TextAnchor.MiddleCenter;
@@ -388,7 +386,7 @@ namespace ThemeParkGame.Core
             // ---- メインタイトル ----
             var title = CreateUIElement("TitleText", canvasGo.transform);
             var titleText = title.AddComponent<Text>();
-            titleText.text = "THEME PARK GAME";
+            titleText.text = LocalizationData.GameTitle;
             titleText.font = GetBuiltinFont();
             titleText.fontSize = 80;
             titleText.fontStyle = FontStyle.Bold;
@@ -399,7 +397,7 @@ namespace ThemeParkGame.Core
             // ---- サブタイトル ----
             var sub = CreateUIElement("SubTitle", canvasGo.transform);
             var subText = sub.AddComponent<Text>();
-            subText.text = "- Build Your Dream Theme Park -";
+            subText.text = LocalizationData.GameSubtitle;
             subText.font = GetBuiltinFont();
             subText.fontSize = 28;
             subText.alignment = TextAnchor.MiddleCenter;
@@ -410,8 +408,8 @@ namespace ThemeParkGame.Core
             var desc = CreateUIElement("Description", canvasGo.transform);
             var descText = desc.AddComponent<Text>();
             descText.text =
-                "Attractions / Shops / Staff Management\n" +
-                "Visitor AI / Dynamic Weather / Economy System";
+                "アトラクション / ショップ / スタッフ管理\n" +
+                "来場者AI / 天候変化 / 経済システム";
             descText.font = GetBuiltinFont();
             descText.fontSize = 20;
             descText.alignment = TextAnchor.MiddleCenter;
@@ -422,7 +420,7 @@ namespace ThemeParkGame.Core
             // ---- 難易度選択ラベル ----
             var diffLabel = CreateUIElement("DiffLabel", canvasGo.transform);
             var diffLabelText = diffLabel.AddComponent<Text>();
-            diffLabelText.text = "SELECT DIFFICULTY";
+            diffLabelText.text = "難易度を選択してください";
             diffLabelText.font = GetBuiltinFont();
             diffLabelText.fontSize = 22;
             diffLabelText.fontStyle = FontStyle.Bold;
@@ -439,19 +437,19 @@ namespace ThemeParkGame.Core
 
             // Easy
             CreateDifficultyButton(canvasGo.transform, ctrl, "EasyBtn",
-                "EASY", "初期資金: $80,000\nスポーン: ゆっくり",
+                "かんたん", "初期資金: ¥80,000\nスポーン: ゆっくり",
                 new Color(0.2f, 0.6f, 0.35f), new Color(0.25f, 0.7f, 0.42f), new Color(0.15f, 0.48f, 0.28f),
                 startX, -90f, btnW, btnH, GameDifficulty.Easy);
 
             // Normal
             CreateDifficultyButton(canvasGo.transform, ctrl, "NormalBtn",
-                "NORMAL", "初期資金: $50,000\nスポーン: 標準",
+                "ふつう", "初期資金: ¥50,000\nスポーン: 標準",
                 new Color(0.25f, 0.45f, 0.65f), new Color(0.3f, 0.55f, 0.75f), new Color(0.18f, 0.35f, 0.52f),
                 startX + btnW + gap, -90f, btnW, btnH, GameDifficulty.Normal);
 
             // Hard
             CreateDifficultyButton(canvasGo.transform, ctrl, "HardBtn",
-                "HARD", "初期資金: $30,000\nスポーン: 高速",
+                "むずかしい", "初期資金: ¥30,000\nスポーン: 高速",
                 new Color(0.65f, 0.25f, 0.2f), new Color(0.75f, 0.35f, 0.3f), new Color(0.5f, 0.18f, 0.15f),
                 startX + (btnW + gap) * 2, -90f, btnW, btnH, GameDifficulty.Hard);
 
@@ -471,7 +469,7 @@ namespace ThemeParkGame.Core
 
                 var contLabel = CreateUIElement("ContLabel", contGo.transform);
                 var contLabelText = contLabel.AddComponent<Text>();
-                contLabelText.text = "CONTINUE";
+                contLabelText.text = LocalizationData.BtnContinue;
                 contLabelText.font = GetBuiltinFont();
                 contLabelText.fontSize = 24;
                 contLabelText.fontStyle = FontStyle.Bold;
@@ -539,7 +537,7 @@ namespace ThemeParkGame.Core
             // ---- バージョン表示 ----
             var ver = CreateUIElement("Version", canvasGo.transform);
             var verText = ver.AddComponent<Text>();
-            verText.text = "v1.8 - WebGL Build";
+            verText.text = "v2.0 - テーマパークワールド";
             verText.font = GetBuiltinFont();
             verText.fontSize = 18;
             verText.alignment = TextAnchor.LowerRight;

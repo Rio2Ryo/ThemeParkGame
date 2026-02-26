@@ -48,7 +48,7 @@ namespace ThemeParkGame.Core
             string[] rootNames = {
                 "--- Attractions ---", "--- Shops ---", "--- Facilities ---",
                 "SpawnPoint", "ExitPoint", "PathwaySystem",
-                "WeatherEffectController"
+                "WeatherEffectController", "ParkEffectsManager"
             };
             foreach (var name in rootNames)
             {
@@ -125,6 +125,15 @@ namespace ThemeParkGame.Core
                 var weatherFx = new GameObject("WeatherEffectController");
                 weatherFx.AddComponent<WeatherEffectController>();
                 WebGLOptimizer.LogVerbose("[RuntimeGameSetup] WeatherEffectController を生成");
+            }
+
+            // パーティクルエフェクト配置
+            if (FindObjectOfType<ParkEffectsManager>() == null)
+            {
+                var effectsGo = new GameObject("ParkEffectsManager");
+                var effectsMgr = effectsGo.AddComponent<ParkEffectsManager>();
+                effectsMgr.SetupParkEffects();
+                WebGLOptimizer.LogVerbose("[RuntimeGameSetup] ParkEffectsManager を生成");
             }
 
             WebGLOptimizer.LogVerbose("[RuntimeGameSetup] === ゲームワールド構築完了 ===");
@@ -388,37 +397,42 @@ namespace ThemeParkGame.Core
             col.size = new Vector3(6f, 4f, 6f);
             col.center = new Vector3(0f, 2f, 0f);
 
-            // ビジュアル: シンプルなキューブ
-            var visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            visual.name = "Visual";
-            visual.transform.SetParent(go.transform);
-            visual.transform.localPosition = new Vector3(0f, 2f, 0f);
-            visual.transform.localScale = new Vector3(5f, 4f, 5f);
-            // Colliderは親のBoxColliderを使う
-            Object.Destroy(visual.GetComponent<Collider>());
-
-            var renderer = visual.GetComponent<Renderer>();
-            if (renderer != null)
+            // ビジュアル: プロシージャルメッシュ生成
+            GameObject visual;
+            switch (category)
             {
-                Color color;
-                switch (category)
+                case AttractionCategory.GForce:
+                    visual = ProceduralMeshGenerator.CreateRollerCoaster(nameJP + "_Visual");
+                    break;
+                case AttractionCategory.Observation:
+                    visual = ProceduralMeshGenerator.CreateFerrisWheel(nameJP + "_Visual");
+                    break;
+                case AttractionCategory.RideAttraction:
+                    visual = ProceduralMeshGenerator.CreateMerryGoRound(nameJP + "_Visual");
+                    break;
+                case AttractionCategory.HorizontalRotation:
+                    visual = ProceduralMeshGenerator.CreateSpinningCups(nameJP + "_Visual");
+                    break;
+                case AttractionCategory.ShowAttraction:
+                    visual = ProceduralMeshGenerator.CreateHauntedHouse(nameJP + "_Visual");
+                    break;
+                default:
                 {
-                    case AttractionCategory.GForce:
-                        color = new Color(0.9f, 0.2f, 0.2f); break;
-                    case AttractionCategory.Observation:
-                        color = new Color(0.2f, 0.5f, 0.9f); break;
-                    case AttractionCategory.HorizontalRotation:
-                        color = new Color(0.9f, 0.7f, 0.2f); break;
-                    case AttractionCategory.RideAttraction:
-                        color = new Color(0.3f, 0.9f, 0.5f); break;
-                    default:
-                        color = new Color(0.5f, 0.2f, 0.8f); break;
+                    // フォールバック: カラーボックス
+                    visual = ProceduralMeshGenerator.CreateBoxGameObject(new Vector3(5f, 4f, 5f));
+                    visual.name = nameJP + "_Visual";
+                    Color color = category switch
+                    {
+                        AttractionCategory.VerticalRotation => new Color(0.9f, 0.4f, 0.1f),
+                        AttractionCategory.TransportRide => new Color(0.2f, 0.7f, 0.9f),
+                        _ => new Color(0.5f, 0.2f, 0.8f)
+                    };
+                    ProceduralMeshGenerator.ApplyMaterial(visual, color, 0.1f, 0.4f);
+                    break;
                 }
-                var shader = Shader.Find("Standard");
-                if (shader == null) shader = Shader.Find("UI/Default");
-                if (shader != null)
-                    renderer.material = new Material(shader) { color = color };
             }
+            visual.transform.SetParent(go.transform);
+            visual.transform.localPosition = Vector3.zero;
 
             // FacilityDirtの追加
             go.AddComponent<FacilityDirt>();
@@ -472,32 +486,20 @@ namespace ThemeParkGame.Core
             col.size = new Vector3(4f, 3f, 4f);
             col.center = new Vector3(0f, 1.5f, 0f);
 
-            // ビジュアル: シンプルなキューブ
-            var visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            visual.name = "Visual";
-            visual.transform.SetParent(go.transform);
-            visual.transform.localPosition = new Vector3(0f, 1.5f, 0f);
-            visual.transform.localScale = new Vector3(3.5f, 3f, 3.5f);
-            Object.Destroy(visual.GetComponent<Collider>());
-
-            var renderer = visual.GetComponent<Renderer>();
-            if (renderer != null)
+            // ビジュアル: プロシージャルショップ建物
+            Color shopColor;
+            switch (type)
             {
-                Color color;
-                switch (type)
-                {
-                    case FacilityType.FoodShop:
-                        color = new Color(1.0f, 0.6f, 0.2f); break;
-                    case FacilityType.DrinkShop:
-                        color = new Color(0.2f, 0.8f, 1.0f); break;
-                    default:
-                        color = new Color(1.0f, 0.4f, 0.8f); break;
-                }
-                var shader = Shader.Find("Standard");
-                if (shader == null) shader = Shader.Find("UI/Default");
-                if (shader != null)
-                    renderer.material = new Material(shader) { color = color };
+                case FacilityType.FoodShop:
+                    shopColor = ProceduralMeshGenerator.Palette.FoodOrange; break;
+                case FacilityType.DrinkShop:
+                    shopColor = ProceduralMeshGenerator.Palette.DrinkCyan; break;
+                default:
+                    shopColor = ProceduralMeshGenerator.Palette.SouvenirPink; break;
             }
+            var visual = ProceduralMeshGenerator.CreateShopBuilding(shopName + "_Visual", shopColor);
+            visual.transform.SetParent(go.transform);
+            visual.transform.localPosition = Vector3.zero;
 
             go.AddComponent<FacilityDirt>();
 
@@ -580,23 +582,28 @@ namespace ThemeParkGame.Core
                 : new Vector3(2f, 1f, 1f);
             col.center = new Vector3(0f, col.size.y * 0.5f, 0f);
 
-            // ビジュアル
-            var visual = GameObject.CreatePrimitive(
-                tag == "Toilet" ? PrimitiveType.Cube : PrimitiveType.Cube);
-            visual.name = "Visual";
-            visual.transform.SetParent(go.transform);
-            visual.transform.localPosition = col.center;
-            visual.transform.localScale = col.size * 0.9f;
-            Object.Destroy(visual.GetComponent<Collider>());
-
-            var renderer = visual.GetComponent<Renderer>();
-            if (renderer != null)
+            // ビジュアル: 施設タイプ別プロシージャルメッシュ
+            GameObject visual;
+            if (tag == "Toilet")
             {
-                var shader = Shader.Find("Standard");
-                if (shader == null) shader = Shader.Find("UI/Default");
-                if (shader != null)
-                    renderer.material = new Material(shader) { color = color };
+                visual = ProceduralMeshGenerator.CreateToiletBuilding(facilityName + "_Visual");
             }
+            else if (tag == "Bench")
+            {
+                visual = ProceduralMeshGenerator.CreateBench(facilityName + "_Visual");
+            }
+            else if (facilityName.Contains("スタッフ"))
+            {
+                visual = ProceduralMeshGenerator.CreateStaffRoom(facilityName + "_Visual");
+            }
+            else
+            {
+                visual = ProceduralMeshGenerator.CreateBoxGameObject(col.size * 0.9f);
+                visual.name = facilityName + "_Visual";
+                ProceduralMeshGenerator.ApplyMaterial(visual, color, 0f, 0.4f);
+            }
+            visual.transform.SetParent(go.transform);
+            visual.transform.localPosition = Vector3.zero;
 
             // 浮遊ラベル
             float labelH = tag == "Toilet" ? 4f : 2f;
@@ -735,39 +742,10 @@ namespace ThemeParkGame.Core
             // StaffMember派生コンポーネント
             prefab.AddComponent<T>();
 
-            // ビジュアル: 少し太めのカプセルでVisitorと区別
-            var visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            visual.name = "Body";
+            // ビジュアル: プロシージャルスタッフメッシュ
+            var visual = ProceduralMeshGenerator.CreateStaffMesh(bodyColor);
             visual.transform.SetParent(prefab.transform);
-            visual.transform.localPosition = new Vector3(0f, 0.9f, 0f);
-            visual.transform.localScale = new Vector3(0.6f, 0.5f, 0.6f);
-            Object.Destroy(visual.GetComponent<Collider>());
-
-            var bodyRenderer = visual.GetComponent<Renderer>();
-            if (bodyRenderer != null)
-            {
-                var shader = Shader.Find("Standard");
-                if (shader == null) shader = Shader.Find("UI/Default");
-                if (shader != null)
-                    bodyRenderer.material = new Material(shader) { color = bodyColor };
-            }
-
-            // 頭上マーカー: 小さな球で「スタッフ」と分かるようにする
-            var marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            marker.name = "StaffMarker";
-            marker.transform.SetParent(prefab.transform);
-            marker.transform.localPosition = new Vector3(0f, 2.0f, 0f);
-            marker.transform.localScale = new Vector3(0.25f, 0.25f, 0.25f);
-            Object.Destroy(marker.GetComponent<Collider>());
-
-            var markerRenderer = marker.GetComponent<Renderer>();
-            if (markerRenderer != null)
-            {
-                var shader = Shader.Find("Standard");
-                if (shader == null) shader = Shader.Find("UI/Default");
-                if (shader != null)
-                    markerRenderer.material = new Material(shader) { color = Color.white };
-            }
+            visual.transform.localPosition = Vector3.zero;
 
             DontDestroyOnLoad(prefab);
             return prefab;
@@ -828,22 +806,12 @@ namespace ThemeParkGame.Core
             // VisitorAI
             prefab.AddComponent<VisitorAI>();
 
-            // ビジュアル: カプセル
-            var visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            visual.name = "Body";
+            // ビジュアル: プロシージャルビジターメッシュ
+            var visual = ProceduralMeshGenerator.CreateVisitorMesh();
             visual.transform.SetParent(prefab.transform);
-            visual.transform.localPosition = new Vector3(0f, 0.9f, 0f);
-            visual.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
-            Object.Destroy(visual.GetComponent<Collider>());
+            visual.transform.localPosition = Vector3.zero;
 
-            var bodyRenderer = visual.GetComponent<Renderer>();
-            if (bodyRenderer != null)
-            {
-                var shader = Shader.Find("Standard");
-                if (shader == null) shader = Shader.Find("UI/Default");
-                if (shader != null)
-                    bodyRenderer.material = new Material(shader) { color = new Color(0.3f, 0.6f, 1.0f) };
-            }
+            var bodyRenderer = visual.GetComponentInChildren<Renderer>();
 
             // VisitorVisualController: 状態別プロシージャルアニメ
             var visualCtrl = prefab.AddComponent<VisitorVisualController>();
@@ -851,21 +819,8 @@ namespace ThemeParkGame.Core
 
             // VisitorStateMachine: ライフサイクルFSM + 頭上フェーズマーカー
             var vsm = prefab.AddComponent<VisitorStateMachine>();
-            var phaseMarker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            phaseMarker.name = "PhaseMarker";
-            phaseMarker.transform.SetParent(prefab.transform);
-            phaseMarker.transform.localPosition = new Vector3(0f, 2.2f, 0f);
-            phaseMarker.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
-            Object.Destroy(phaseMarker.GetComponent<Collider>());
-
-            var pmRenderer = phaseMarker.GetComponent<Renderer>();
-            if (pmRenderer != null)
-            {
-                var pmShader = Shader.Find("Standard");
-                if (pmShader == null) pmShader = Shader.Find("UI/Default");
-                if (pmShader != null)
-                    pmRenderer.material = new Material(pmShader) { color = new Color(0.3f, 0.7f, 1.0f) };
-            }
+            var phaseMarker = visual.transform.Find("PhaseMarker");
+            Renderer pmRenderer = phaseMarker != null ? phaseMarker.GetComponent<Renderer>() : null;
             vsm.SetupHeadMarker(pmRenderer);
 
             // DontDestroyOnLoad対象にして破棄を防ぐ
