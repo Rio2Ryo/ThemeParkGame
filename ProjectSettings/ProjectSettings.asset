@@ -74,14 +74,14 @@ PlayerSettings:
   stripEngineCode: 1
   m_ManagedStrippingLevel:
     WebGL: 2
-  webGLMemorySize: 512
+  webGLMemorySize: 256
   webGLExceptionSupport: 0
-  webGLCompressionFormat: 1
+  webGLCompressionFormat: 2
   webGLLinkerTarget: 1
   webGLThreadsSupport: 0
   webGLDecompressionFallback: 1
   webGLPowerPreference: 2
-  webGLTemplate: APPLICATION:Default
+  webGLTemplate: PROJECT:ThemeParkGame
   scriptingBackend:
     WebGL: 1
     Standalone: 0

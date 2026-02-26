@@ -51,11 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
     permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      contents: write
     steps:
       - name: Download Build Artifact
         uses: actions/download-artifact@v4
@@ -63,14 +59,14 @@ jobs:
           name: WebGL-Build
           path: build/WebGL
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
+      - name: List build output
+        run: find build/WebGL -type f | head -30
 
-      - name: Upload to Pages
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: build/WebGL/WebGL
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: build/WebGL/ThemeParkGame
+          publish_branch: gh-pages
+          force_orphan: true
+          commit_message: "deploy: WebGL build ${{ github.sha }}"

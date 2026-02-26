@@ -1184,45 +1184,113 @@ namespace ThemeParkGame.Core
         // マテリアル適用
         // ============================================================
 
-        /// <summary>Standard Shaderマテリアルを適用する（フラットカラー）</summary>
+        // マテリアルキャッシュ（同一色のマテリアルを共有してドローコール削減）
+        private static readonly Dictionary<int, Material> _materialCache = new Dictionary<int, Material>();
+        private static Shader _toonShader;
+        private static Shader _standardShader;
+
+        private static Shader GetToonShader()
+        {
+            if (_toonShader == null) _toonShader = Shader.Find("ThemeParkGame/Toon");
+            return _toonShader;
+        }
+
+        private static Shader GetStandardShader()
+        {
+            if (_standardShader == null) _standardShader = Shader.Find("Standard");
+            if (_standardShader == null) _standardShader = Shader.Find("UI/Default");
+            return _standardShader;
+        }
+
+        /// <summary>キャッシュキーを生成する（色+メタリック+スムースネスの組み合わせ）</summary>
+        private static int GetMaterialKey(Color color, float metallic, float smoothness)
+        {
+            int r = Mathf.RoundToInt(color.r * 255f);
+            int g = Mathf.RoundToInt(color.g * 255f);
+            int b = Mathf.RoundToInt(color.b * 255f);
+            int a = Mathf.RoundToInt(color.a * 255f);
+            int m = Mathf.RoundToInt(metallic * 100f);
+            int s = Mathf.RoundToInt(smoothness * 100f);
+            return (r << 24) | (g << 16) | (b << 8) | a ^ (m << 12) ^ (s << 4);
+        }
+
+        /// <summary>Toon Shaderマテリアルを適用する（キャッシュ付き、セルシェーディング）</summary>
         public static void ApplyMaterial(GameObject go, Color color, float metallic = 0f, float smoothness = 0.5f)
         {
             var renderer = go.GetComponent<Renderer>();
             if (renderer == null) return;
 
-            var shader = Shader.Find("Standard");
-            if (shader == null) shader = Shader.Find("UI/Default");
-            if (shader == null) return;
-
-            var mat = new Material(shader);
-            mat.color = color;
-
-            if (shader.name == "Standard")
+            int key = GetMaterialKey(color, metallic, smoothness);
+            if (_materialCache.TryGetValue(key, out var cached) && cached != null)
             {
+                renderer.sharedMaterial = cached;
+                return;
+            }
+
+            Material mat;
+            var toon = GetToonShader();
+            if (toon != null && color.a >= 1f)
+            {
+                // Toonシェーダー適用（セルシェーディング）
+                mat = new Material(toon);
+                mat.SetColor("_Color", color);
+                // 影色は元の色を暗くした版
+                Color shadowColor = color * 0.55f;
+                shadowColor.a = 1f;
+                mat.SetColor("_ShadowColor", shadowColor);
+                mat.SetFloat("_ShadowThreshold", 0.35f);
+                mat.SetFloat("_ShadowSoftness", 0.08f);
+                // メタリック要素のリムライト強調
+                Color rimColor = metallic > 0.3f
+                    ? new Color(0.85f, 0.85f, 0.95f, 1f)
+                    : new Color(0.65f, 0.75f, 0.85f, 1f);
+                mat.SetColor("_RimColor", rimColor);
+                mat.SetFloat("_RimPower", metallic > 0.3f ? 2.5f : 3.5f);
                 mat.SetFloat("_Metallic", metallic);
                 mat.SetFloat("_Glossiness", smoothness);
-
-                if (color.a < 1f)
+            }
+            else
+            {
+                // フォールバック: Standard shader
+                var std = GetStandardShader();
+                if (std == null) return;
+                mat = new Material(std);
+                mat.color = color;
+                if (std.name == "Standard")
                 {
-                    mat.SetFloat("_Mode", 3);
-                    mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                    mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                    mat.SetInt("_ZWrite", 0);
-                    mat.DisableKeyword("_ALPHATEST_ON");
-                    mat.EnableKeyword("_ALPHABLEND_ON");
-                    mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-                    mat.renderQueue = 3000;
+                    mat.SetFloat("_Metallic", metallic);
+                    mat.SetFloat("_Glossiness", smoothness);
+                    if (color.a < 1f)
+                    {
+                        mat.SetFloat("_Mode", 3);
+                        mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                        mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                        mat.SetInt("_ZWrite", 0);
+                        mat.DisableKeyword("_ALPHATEST_ON");
+                        mat.EnableKeyword("_ALPHABLEND_ON");
+                        mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+                        mat.renderQueue = 3000;
+                    }
                 }
             }
 
-            renderer.material = mat;
+            _materialCache[key] = mat;
+            renderer.sharedMaterial = mat;
         }
 
         /// <summary>PBRマテリアル（テクスチャ+法線マップ付き）を直接適用する</summary>
         public static void ApplyPBR(GameObject go, Material mat)
         {
             var renderer = go.GetComponent<Renderer>();
-            if (renderer != null && mat != null) renderer.material = mat;
+            if (renderer != null && mat != null) renderer.sharedMaterial = mat;
+        }
+
+        /// <summary>マテリアルキャッシュをクリアする（シーン遷移時用）</summary>
+        public static void ClearMaterialCache()
+        {
+            _materialCache.Clear();
+            _toonShader = null;
+            _standardShader = null;
         }
 
         // ============================================================

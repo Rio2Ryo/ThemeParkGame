@@ -59,6 +59,9 @@ namespace ThemeParkGame.Core
             // RuntimeHUDは残す（StartScreenで再利用される可能性があるため）
             // NavMeshSurfaceはGroundに付いているのでGroundは破棄しない
 
+            // マテリアルキャッシュをクリア（メモリ解放）
+            ProceduralMeshGenerator.ClearMaterialCache();
+
             // AlertMonitorのアラートをクリア
             if (AlertMonitor.Instance != null)
                 AlertMonitor.Instance.ClearAllAlerts();
@@ -141,6 +144,9 @@ namespace ThemeParkGame.Core
 
             // 環境品質セットアップ（フォグ・アンビエント・ライティング）
             SetupEnvironmentQuality();
+
+            // 静的バッチング最適化（ランドスケープ・施設を結合してドローコール削減）
+            ApplyStaticBatching();
 
             WebGLOptimizer.LogVerbose("[RuntimeGameSetup] === ゲームワールド構築完了 ===");
         }
@@ -1006,6 +1012,38 @@ namespace ThemeParkGame.Core
 #endif
 
             WebGLOptimizer.LogVerbose("[RuntimeGameSetup] 環境品質設定を適用");
+        }
+
+        // ================================================================
+        // 静的バッチング最適化
+        // ================================================================
+
+        /// <summary>静的オブジェクトをバッチングしてドローコールを削減する</summary>
+        private void ApplyStaticBatching()
+        {
+            try
+            {
+                // ランドスケープ要素（木、街灯、花壇、噴水、ゴミ箱、ゲート）
+                var landscape = GameObject.Find("--- Landscape ---");
+                if (landscape != null)
+                    UnityEngine.StaticBatchingUtility.Combine(landscape);
+
+                // 施設（トイレ、ベンチ、スタッフルーム）
+                var facilities = GameObject.Find("--- Facilities ---");
+                if (facilities != null)
+                    UnityEngine.StaticBatchingUtility.Combine(facilities);
+
+                // 通路
+                var pathways = GameObject.Find("PathwaySystem");
+                if (pathways != null)
+                    UnityEngine.StaticBatchingUtility.Combine(pathways);
+
+                WebGLOptimizer.LogVerbose("[RuntimeGameSetup] 静的バッチング最適化を適用");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[RuntimeGameSetup] 静的バッチング適用失敗: {e.Message}");
+            }
         }
 
         /// <summary>施設の上部に浮遊する名前ラベルを作成する</summary>

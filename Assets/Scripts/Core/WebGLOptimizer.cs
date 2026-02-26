@@ -39,12 +39,19 @@ namespace ThemeParkGame.Core
             QualitySettings.asyncUploadTimeSlice = 2;  // テクスチャアップロード最小化
             QualitySettings.asyncUploadBufferSize = 4; // アップロードバッファ4MB
 
-            // GC: 閾値を低めに設定してスパイクを軽減
-            // Unity 2021+ ではインクリメンタルGCがデフォルト有効
-            Debug.Log("[WebGLOptimizer] WebGL最適化設定を適用しました (v3.0)");
+            // 動的バッチングは有効にする（小さいメッシュの結合）
+            // staticBatchingはProjectSettingsで有効、dynamicはランタイム設定不可
+
+            // シェーダーの最大LOD（Toonシェーダー LOD 200を使用）
+            Shader.globalMaximumLOD = 200;
+
+            Debug.Log("[WebGLOptimizer] WebGL最適化設定を適用しました (v5.0)");
 #else
             // エディタ/スタンドアロンではフレームレート60固定
             Application.targetFrameRate = 60;
+            // エディタでは影を有効にする
+            QualitySettings.shadows = ShadowQuality.HardOnly;
+            QualitySettings.shadowDistance = 80f;
 #endif
         }
 
