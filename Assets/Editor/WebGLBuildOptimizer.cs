@@ -34,10 +34,8 @@ namespace ThemeParkGame.Editor
             PlayerSettings.stripEngineCode = true;
             PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.WebGL, ManagedStrippingLevel.High);
 
-            // IL2CPP コード生成最適化
-            PlayerSettings.SetIl2CppCodeGeneration(
-                UnityEditor.Build.NamedBuildTarget.WebGL,
-                Il2CppCodeGeneration.OptimizeSize);
+            // IL2CPP コード生成最適化（Unity 2021.3では設定不可、ProjectSettingsで対応）
+            // PlayerSettings.SetIl2CppCodeGeneration は Unity 2022.1以降のAPI
 
             // ---- WebGL固有設定 ----
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Brotli;
