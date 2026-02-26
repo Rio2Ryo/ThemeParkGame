@@ -93,7 +93,7 @@ namespace ThemeParkGame.Editor
 
             // WebGL 固有設定
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
-            PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.None;
+            PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly;
             PlayerSettings.WebGL.memorySize = 512;
             PlayerSettings.WebGL.linkerTarget = WebGLLinkerTarget.Wasm;
             PlayerSettings.WebGL.threadsSupport = false;
@@ -108,7 +108,7 @@ namespace ThemeParkGame.Editor
             Debug.Log("  - Stripping Level: High");
             Debug.Log("  - Strip Engine Code: ON");
             Debug.Log("  - Compression: Gzip");
-            Debug.Log("  - Exception Support: None");
+            Debug.Log("  - Exception Support: ExplicitlyThrownOnly");
             Debug.Log("  - Memory Size: 512 MB");
             Debug.Log("  - Linker Target: Wasm");
             Debug.Log("  - Decompression Fallback: ON");

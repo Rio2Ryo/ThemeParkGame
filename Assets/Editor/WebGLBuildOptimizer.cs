@@ -40,7 +40,7 @@ namespace ThemeParkGame.Editor
             // ---- WebGL固有設定 ----
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Brotli;
             PlayerSettings.WebGL.dataCaching = true;
-            PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.None;
+            PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly;
             PlayerSettings.WebGL.debugSymbolMode = WebGLDebugSymbolMode.Off;
             PlayerSettings.WebGL.nameFilesAsHashes = true;
             PlayerSettings.WebGL.template = "PROJECT:ThemeParkGame";
@@ -62,7 +62,7 @@ namespace ThemeParkGame.Editor
                       "  - IL2CPP Code Gen: OptimizeSize\n" +
                       "  - Compression: Brotli\n" +
                       "  - Data Caching: ON\n" +
-                      "  - Exception Support: None\n" +
+                      "  - Exception Support: ExplicitlyThrownOnly\n" +
                       "  - Debug Symbols: Off\n" +
                       "  - Memory: 256MB");
         }
