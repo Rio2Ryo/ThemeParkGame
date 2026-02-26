@@ -119,6 +119,9 @@ namespace ThemeParkGame.Staff
         /// <summary>声かけ対象の来場者</summary>
         private VisitorAI _greetingTarget;
 
+        /// <summary>現在のパフォーマンス中に効果を与えた来場者ID（重複カウント防止）</summary>
+        private readonly HashSet<int> _currentPerformanceVisitors = new HashSet<int>();
+
         // ============================================================
         // プロパティ
         // ============================================================
@@ -377,6 +380,7 @@ namespace ThemeParkGame.Staff
         {
             isPerforming = true;
             performanceTimer = 0f;
+            _currentPerformanceVisitors.Clear();
             CurrentState = StaffBehaviorState.Working;
             StopNavigation();
 
@@ -444,7 +448,12 @@ namespace ThemeParkGame.Staff
 
                 visitor.Parameters.ModifyHappiness(happinessBoost);
                 GameEvents.FireVisitorHappinessChanged(visitor.VisitorId, happinessBoost);
-                TotalVisitorsEntertained++;
+
+                // 同一パフォーマンス中は1来場者につき1回だけカウント
+                if (_currentPerformanceVisitors.Add(visitor.VisitorId))
+                {
+                    TotalVisitorsEntertained++;
+                }
             }
         }
 

@@ -264,8 +264,18 @@ namespace ThemeParkGame.Staff
         {
             WebGLOptimizer.LogVerbose($"[Mechanic] {Name} がアトラクション {targetAttractionId} の点検を完了しました");
 
-            // 点検完了により安全性ポイントを加算（AttractionManager側で処理する想定）
-            // ここではイベント通知のみ
+            // 点検完了により安全性を向上（故障確率リセット）
+            var attractionObj = FindAttractionById(targetAttractionId);
+            if (attractionObj != null)
+            {
+                var attraction = attractionObj.GetComponent<Attraction.Attraction>();
+                if (attraction != null)
+                {
+                    attraction.OnMaintenancePerformed();
+                    WebGLOptimizer.LogVerbose($"[Mechanic] {Name} の点検により {attraction.DisplayName} の安全性が向上しました");
+                }
+            }
+
             ReleaseTarget();
             CompleteCurrentTask();
         }

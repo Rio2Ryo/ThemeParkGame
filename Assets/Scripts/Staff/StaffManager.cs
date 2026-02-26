@@ -363,7 +363,12 @@ namespace ThemeParkGame.Staff
 
             if (totalPaid > 0f)
             {
-                GameEvents.FireExpensePaid(totalPaid);
+                // EconomyManagerを通じて実際に資金を差し引く
+                if (GameManager.Instance != null && GameManager.Instance.EconomyManager != null)
+                {
+                    GameManager.Instance.EconomyManager.PayExpense(totalPaid, Economy.ExpenseCategory.StaffSalary);
+                }
+
                 WebGLOptimizer.LogVerbose($"[StaffManager] 月次給与支払い: {totalPaid:F0}"
                           + $"（{allStaff.Count}名）");
             }

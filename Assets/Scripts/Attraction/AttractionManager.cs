@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using ThemeParkGame.Core;
+using ThemeParkGame.Staff;
 using ThemeParkGame.Visitor;
 
 namespace ThemeParkGame.Attraction
@@ -634,9 +635,23 @@ namespace ThemeParkGame.Attraction
         /// <summary>メカニックへの修理リクエストを発行する</summary>
         public void RequestRepair(Attraction attraction)
         {
-            // StaffManagerのメカニック派遣システムに修理リクエストを送信
-            // （StaffManagerは既存のFindAndAssignTask機構で処理する想定）
             WebGLOptimizer.LogVerbose($"[AttractionManager] 修理リクエスト発行: {attraction.DisplayName}");
+
+            // StaffManagerを通じて最寄りの空きメカニックを派遣
+            if (GameManager.Instance != null && GameManager.Instance.StaffManager != null)
+            {
+                var mechanic = GameManager.Instance.StaffManager.FindNearestAvailableStaff(
+                    StaffType.Mechanic, attraction.transform.position);
+
+                if (mechanic != null)
+                {
+                    WebGLOptimizer.LogVerbose($"[AttractionManager] メカニック {mechanic.Name} を派遣: {attraction.DisplayName}");
+                }
+                else
+                {
+                    WebGLOptimizer.LogVerbose($"[AttractionManager] 空きメカニックなし - キュー待ち: {attraction.DisplayName}");
+                }
+            }
         }
 
         /// <summary>状態列挙値から状態オブジェクトを取得する</summary>

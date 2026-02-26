@@ -300,9 +300,20 @@ namespace ThemeParkGame.Staff
                       + $"（累計清掃数: {TotalCleanCount}）");
 
             // 清掃対象を除去（トイレの場合は汚れフラグをリセットするのみ）
-            if (currentTarget != null && currentMessType != MessType.Toilet)
+            if (currentTarget != null)
             {
-                Object.Destroy(currentTarget);
+                if (currentMessType == MessType.Toilet)
+                {
+                    var dirtComp = currentTarget.GetComponent<FacilityDirt>();
+                    if (dirtComp != null)
+                    {
+                        dirtComp.Clean();
+                    }
+                }
+                else
+                {
+                    Object.Destroy(currentTarget);
+                }
             }
 
             currentTarget = null;
