@@ -1,82 +1,76 @@
-name: Build WebGL and Deploy to GitHub Pages
+name: Build & Deploy WebGL
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [master, main]
   workflow_dispatch:
 
-permissions:
-  contents: write
-  pages: write
+env:
+  UNITY_VERSION: 2021.3.35f1
 
 jobs:
   build:
-    name: Build Unity WebGL
+    name: Build WebGL
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
           lfs: true
 
-      - name: Cache Unity Library
+      - name: Cache Library
         uses: actions/cache@v4
         with:
           path: Library
-          key: Library-WebGL-${{ hashFiles('Assets/**', 'Packages/manifest.json', 'ProjectSettings/**') }}
+          key: Library-WebGL-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
           restore-keys: |
             Library-WebGL-
             Library-
 
-      - name: Free disk space
-        run: |
-          echo "=== Before cleanup ==="
-          df -h /
-          free -h
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /opt/hostedtoolcache/CodeQL
-          sudo docker image prune --all --force || true
-          echo "=== After cleanup ==="
-          df -h /
-          sudo swapoff -a || true
-          sudo fallocate -l 12G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
-          echo "=== Memory ==="
-          free -h
-
-      - name: Build Unity WebGL
+      - name: Build WebGL
         uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
-          unityVersion: 2021.3.35f1
           targetPlatform: WebGL
+          unityVersion: ${{ env.UNITY_VERSION }}
           buildName: ThemeParkGame
           buildsPath: build
-          versioning: None
-          allowDirtyBuild: true
 
-      - name: Upload build artifact
+      - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: WebGL-Build
           path: build/WebGL
-          retention-days: 14
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: WebGL-Build
+          path: build/WebGL
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload to Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/WebGL/WebGL
 
       - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          branch: gh-pages
-          folder: build/WebGL/ThemeParkGame
-          clean: true
-          commit-message: 'deploy: WebGL build ${{ github.sha }}'
+        id: deployment
+        uses: actions/deploy-pages@v4

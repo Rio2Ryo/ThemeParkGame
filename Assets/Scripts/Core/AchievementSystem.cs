@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using ThemeParkGame.AI;
+using ThemeParkGame.Attraction;
 using ThemeParkGame.Economy;
 using ThemeParkGame.Park;
 using ThemeParkGame.Staff;
@@ -75,6 +76,20 @@ namespace ThemeParkGame.Core
         private int _profitStreakDays;
         private int _lastCheckedDay = -1;
 
+        // セール種別トラッキング（全種類使用済み判定用）
+        private readonly HashSet<SaleType> _usedSaleTypes = new HashSet<SaleType>();
+
+        // ローン履歴トラッキング
+        private bool _hadLoan;
+
+        // 天候トラッキング
+        private int _sunnyStreak;
+        private bool _survivedStorm;
+        private Weather _prevWeather = Weather.Sunny;
+
+        // スタッフ解雇トラッキング
+        private bool _hasFiredStaff;
+
         // 実績一覧パネル
         private GameObject _listPanel;
         private RectTransform _listContent;
@@ -104,11 +119,32 @@ namespace ThemeParkGame.Core
             LoadUnlocked();
             BuildToastUI();
             BuildListPanel();
+
+            // イベント購読
+            GameEvents.OnWeatherChanged += OnWeatherChangedForAchievement;
+            GameEvents.OnStaffFired += OnStaffFiredForAchievement;
         }
 
         private void OnDestroy()
         {
+            GameEvents.OnWeatherChanged -= OnWeatherChangedForAchievement;
+            GameEvents.OnStaffFired -= OnStaffFiredForAchievement;
             if (Instance == this) Instance = null;
+        }
+
+        private void OnWeatherChangedForAchievement(Weather newWeather)
+        {
+            if ((_prevWeather == Weather.Rainy || _prevWeather == Weather.Snowy) &&
+                newWeather != Weather.Rainy && newWeather != Weather.Snowy)
+            {
+                _survivedStorm = true;
+            }
+            _prevWeather = newWeather;
+        }
+
+        private void OnStaffFiredForAchievement(int staffId, StaffType type)
+        {
+            _hasFiredStaff = true;
         }
 
         // ================================================================
@@ -430,6 +466,22 @@ namespace ThemeParkGame.Core
                     if (_profitStreakDays >= 30) Unlock("profit_streak");
                     if (_profitStreakDays >= 90) Unlock("profit_streak_90");
                 }
+
+                // ローン
+                if (gm.EconomyManager.ActiveLoanCount >= 1) Unlock("loan_first");
+                if (_hadLoan && gm.EconomyManager.TotalLoanBalance <= 0f) Unlock("loan_repaid");
+                if (gm.EconomyManager.ActiveLoanCount >= 1) _hadLoan = true;
+
+                // チケット価格
+                if (gm.EconomyManager.Pricing != null)
+                {
+                    float fee = gm.EconomyManager.Pricing.EntranceFee;
+                    if (fee >= 50f) Unlock("ticket_price_high");
+                    if (fee <= 5f && fee > 0f) Unlock("ticket_price_low");
+                }
+
+                // 日次収益
+                if (gm.EconomyManager.CurrentMonthRevenue >= 10000f) Unlock("daily_revenue_10k");
             }
 
             // ---- セールキャンペーン ----
@@ -441,36 +493,24 @@ namespace ThemeParkGame.Core
 
                 foreach (var sale in sales)
                 {
-                    if (sale.IsActive && sale.SpawnBonus > sale.SpawnBonus) // season bonus detected by checking > base
+                    if (!sale.IsActive) continue;
+                    for (int pi = 0; pi < SaleCampaignSystem.Plans.Length; pi++)
                     {
-                        // Check if spawn bonus exceeds base plan bonus (season bonus applied)
-                        for (int pi = 0; pi < SaleCampaignSystem.Plans.Length; pi++)
+                        var plan = SaleCampaignSystem.Plans[pi];
+                        if (plan.Name == sale.Name && sale.SpawnBonus > plan.SpawnBonus)
                         {
-                            var plan = SaleCampaignSystem.Plans[pi];
-                            if (plan.Name == sale.Name && sale.SpawnBonus > plan.SpawnBonus)
-                            {
-                                Unlock("sale_season_bonus");
-                                break;
-                            }
+                            Unlock("sale_season_bonus");
+                            break;
                         }
                     }
                 }
 
-                // Check all sale types used (track via active or resolved)
-                bool hasEntrance = false, hasAttraction = false, hasFood = false, hasSouvenir = false, hasAll = false;
+                // Track sale types used (historical, not just active)
                 foreach (var sale in sales)
                 {
-                    switch (sale.Type)
-                    {
-                        case SaleType.EntranceFee: hasEntrance = true; break;
-                        case SaleType.AttractionTicket: hasAttraction = true; break;
-                        case SaleType.FoodDrink: hasFood = true; break;
-                        case SaleType.Souvenir: hasSouvenir = true; break;
-                        case SaleType.AllInclusive: hasAll = true; break;
-                    }
+                    if (sale.IsActive) _usedSaleTypes.Add(sale.Type);
                 }
-                if (hasEntrance && hasAttraction && hasFood && hasSouvenir && hasAll)
-                    Unlock("sale_all_types");
+                if (_usedSaleTypes.Count >= 5) Unlock("sale_all_types");
             }
 
             // ---- アトラクション ----
@@ -481,6 +521,14 @@ namespace ThemeParkGame.Core
                 if (count >= 5) Unlock("attraction_5");
                 if (count >= 10) Unlock("attraction_10");
                 if (count >= 20) Unlock("attraction_20");
+
+                // アップグレードチェック
+                var allAttractions = UnityEngine.Object.FindObjectsOfType<ThemeParkGame.Attraction.Attraction>();
+                foreach (var attr in allAttractions)
+                {
+                    if (attr.UpgradeLevel >= 1) Unlock("attraction_upgrade");
+                    if (attr.UpgradeLevel >= 3) Unlock("attraction_maxlevel");
+                }
             }
 
             // ---- 研究 ----
@@ -489,6 +537,7 @@ namespace ThemeParkGame.Core
                 int completed = gm.ResearchManager.CompletedResearchCount;
                 if (completed >= 3) Unlock("research_3");
                 if (completed >= 10) Unlock("research_10");
+                if (completed >= gm.ResearchManager.AllResearch.Count && completed > 0) Unlock("research_all");
             }
 
             // ---- 認定証 ----
@@ -522,6 +571,33 @@ namespace ThemeParkGame.Core
                 if (ParkExpansionSystem.Instance.PurchasedPlotCount >= 3) Unlock("expansion_3");
             }
 
+            // ---- ショップ ----
+            {
+                var allShops = UnityEngine.Object.FindObjectsOfType<Shop>();
+                int food = 0, souvenir = 0, totalShops = 0;
+                foreach (var shop in allShops)
+                {
+                    totalShops++;
+                    if (shop.ShopType == ShopType.FoodShop || shop.ShopType == ShopType.DrinkShop) food++;
+                    if (shop.ShopType == ShopType.SouvenirShop) souvenir++;
+                }
+                if (food >= 1) Unlock("shop_food_1");
+                if (food >= 5) Unlock("shop_food_5");
+                if (souvenir >= 1) Unlock("shop_souvenir_1");
+                if (totalShops >= 10) Unlock("shop_total_10");
+            }
+
+            // ---- トイレ/ベンチ/装飾 ----
+            {
+                int toiletCount = 0, benchCount = 0, decoCount = 0;
+                try { toiletCount = GameObject.FindGameObjectsWithTag("Toilet")?.Length ?? 0; } catch { }
+                try { benchCount = GameObject.FindGameObjectsWithTag("Bench")?.Length ?? 0; } catch { }
+                try { decoCount = GameObject.FindGameObjectsWithTag("Decoration")?.Length ?? 0; } catch { }
+                if (toiletCount >= 5) Unlock("toilet_5");
+                if (benchCount >= 10) Unlock("bench_10");
+                if (decoCount >= 10) Unlock("decoration_10");
+            }
+
             // ---- スタッフ ----
             if (gm.StaffManager != null)
             {
@@ -551,6 +627,17 @@ namespace ThemeParkGame.Core
                 bool hasSci = gm.StaffManager.HasStaffOfType(StaffType.Scientist);
                 if (hasMech && hasClean && hasEnter && hasGuard && hasSci)
                     Unlock("staff_all_types");
+
+                // 種別ごとの人数チェック
+                if (gm.StaffManager.GetStaffCountByType(StaffType.Mechanic) >= 5) Unlock("staff_mechanic_5");
+                if (gm.StaffManager.GetStaffCountByType(StaffType.Cleaner) >= 5) Unlock("staff_cleaner_5");
+                if (gm.StaffManager.GetStaffCountByType(StaffType.Entertainer) >= 3) Unlock("staff_entertainer_3");
+                if (gm.StaffManager.GetStaffCountByType(StaffType.Guard) >= 3) Unlock("staff_guard_3");
+                if (gm.StaffManager.GetStaffCountByType(StaffType.Scientist) >= 3) Unlock("staff_scientist_3");
+
+                // 解雇せずに1年経過
+                if (!_hasFiredStaff && gm.TimeManager != null && gm.TimeManager.CurrentYear >= 2)
+                    Unlock("staff_no_fire");
             }
 
             // ---- ゴールデンチケット ----
@@ -576,6 +663,23 @@ namespace ThemeParkGame.Core
                 if (resolved >= 10) Unlock("accident_10_resolve");
                 if (resolved >= 50) Unlock("accident_50_resolve");
                 if (AccidentEventSystem.Instance.HasResolvedCritical) Unlock("accident_critical");
+
+                // 平穏な一日 - アクシデント解決実績があり、現在アクティブなアクシデントがない
+                int total = AccidentEventSystem.Instance.TotalAccidents;
+                if (total > 0 && total == resolved && gm.TimeManager != null && gm.TimeManager.CurrentDay > 1)
+                    Unlock("accident_zero_day");
+            }
+
+            // ---- 天候実績 ----
+            if (gm.WeatherSystem != null)
+            {
+                if (gm.WeatherSystem.CurrentWeather == Weather.Sunny)
+                    _sunnyStreak++;
+                else
+                    _sunnyStreak = 0;
+
+                if (_sunnyStreak >= 5) Unlock("weather_sunny_streak");
+                if (_survivedStorm) Unlock("weather_survive_storm");
             }
 
             // ---- ライバルパーク ----

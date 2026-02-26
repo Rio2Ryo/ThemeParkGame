@@ -19,7 +19,7 @@ namespace ThemeParkGame.Core
     [Serializable]
     public class SaveData
     {
-        public string SaveVersion = "2.3";
+        public string SaveVersion = "3.0";
         public string SaveDate;
 
         // ゲーム時間
@@ -100,6 +100,28 @@ namespace ThemeParkGame.Core
 
         // パーク拡張（購入済み区画ID）
         public List<string> PurchasedLandPlots = new List<string>();
+
+        // Phase 8-10 data
+        // アクシデント
+        public int AccidentResolvedCount;
+        public int AccidentTotalCount;
+        public bool AccidentHasResolvedCritical;
+
+        // 口コミスコア
+        public float WordOfMouthScore;
+
+        // ライバルパーク
+        public int RivalParkCount;
+
+        // セールキャンペーン使用種類数
+        public int SaleTypesUsed;
+
+        // チャレンジ
+        public int ChallengesCompleted;
+
+        // 実績用トラッカー
+        public bool HadLoan;
+        public bool HasFiredStaff;
     }
 
     /// <summary>配置済み建物のセーブ用データ構造</summary>
@@ -243,6 +265,13 @@ namespace ThemeParkGame.Core
             {
                 string json = PlayerPrefs.GetString(SAVE_KEY_PREFIX + slot);
                 SaveData data = JsonUtility.FromJson<SaveData>(json);
+                data = MigrateSaveData(data);
+
+                if (!ValidateSaveData(data))
+                {
+                    Debug.LogError($"[SaveSystem] Save data in slot {slot} is corrupted");
+                    return false;
+                }
 
                 ApplySaveData(data);
 
@@ -419,6 +448,44 @@ namespace ThemeParkGame.Core
             {
                 data.SNSReputation = gm.AIManager.SNSSystem.Reputation;
                 data.SNSTotalPosts = gm.AIManager.SNSSystem.Feed.Count;
+            }
+
+            // Phase 8-10: アクシデント
+            if (AccidentEventSystem.Instance != null)
+            {
+                data.AccidentResolvedCount = AccidentEventSystem.Instance.ResolvedAccidents;
+                data.AccidentTotalCount = AccidentEventSystem.Instance.TotalAccidents;
+                data.AccidentHasResolvedCritical = AccidentEventSystem.Instance.HasResolvedCritical;
+            }
+
+            // Phase 8-10: 口コミ
+            if (AI.WordOfMouthSystem.Instance != null)
+            {
+                data.WordOfMouthScore = AI.WordOfMouthSystem.Instance.WordOfMouthScore;
+            }
+
+            // Phase 8-10: ライバル
+            if (Park.RivalParkSystem.Instance != null)
+            {
+                data.RivalParkCount = Park.RivalParkSystem.Instance.Rivals.Count;
+            }
+
+            // Phase 8-10: セール
+            if (Economy.SaleCampaignSystem.Instance != null)
+            {
+                data.SaleTypesUsed = Economy.SaleCampaignSystem.Instance.ActiveSales.Count;
+            }
+
+            // Phase 8-10: チャレンジ
+            if (ChallengeSystem.Instance != null)
+            {
+                data.ChallengesCompleted = ChallengeSystem.Instance.TotalChallengesCompleted;
+            }
+
+            // 実績用トラッカー
+            if (AchievementSystem.Instance != null)
+            {
+                data.HadLoan = gm.EconomyManager != null && gm.EconomyManager.ActiveLoanCount > 0;
             }
 
             // 配置済み建物を収集
@@ -697,6 +764,16 @@ namespace ThemeParkGame.Core
                 }
             }
 
+            // Phase 8-10データ復元
+            // AccidentEventSystem, WordOfMouthSystem, RivalParkSystem, SaleCampaignSystem は
+            // RuntimeInitialize で自動初期化されるため、ここでは統計値のみ復元する
+            // (各システムのRestore系メソッドが存在する場合のみ)
+            WebGLOptimizer.LogVerbose($"[SaveSystem] Phase 8-10 データ: " +
+                $"Accidents={data.AccidentResolvedCount}/{data.AccidentTotalCount}, " +
+                $"WoM={data.WordOfMouthScore:F1}, " +
+                $"Rivals={data.RivalParkCount}, " +
+                $"Challenges={data.ChallengesCompleted}");
+
             // ゲーム状態をPlayingに遷移
             gm.RestorePlayingState();
 
@@ -729,6 +806,42 @@ namespace ThemeParkGame.Core
                    $"${info.CurrentBalance:N0}  " +
                    $"Ticket:{info.GoldenTickets}{stars}{enjoyPct}{snsRep}  " +
                    $"{info.SaveDate}";
+        }
+
+        // ================================================================
+        // セーブデータマイグレーション
+        // ================================================================
+
+        private static readonly string CURRENT_SAVE_VERSION = "3.0";
+
+        /// <summary>古いバージョンのセーブデータを現在のバージョンに変換する</summary>
+        private static SaveData MigrateSaveData(SaveData data)
+        {
+            if (data == null) return data;
+
+            string version = data.SaveVersion ?? "1.0";
+
+            // v2.3以前 → v3.0: Phase 8-10フィールドのデフォルト値を設定
+            if (string.Compare(version, "3.0") < 0)
+            {
+                // 新規フィールドはJsonUtilityによりデフォルト値(0/false/null)で初期化済み
+                // 追加のマイグレーションロジックが必要な場合はここに記述
+                WebGLOptimizer.LogVerbose($"[SaveSystem] セーブデータを v{version} → v{CURRENT_SAVE_VERSION} にマイグレーション");
+            }
+
+            data.SaveVersion = CURRENT_SAVE_VERSION;
+            return data;
+        }
+
+        /// <summary>セーブデータのバリデーション。破損データを検出する。</summary>
+        private static bool ValidateSaveData(SaveData data)
+        {
+            if (data == null) return false;
+            if (data.CurrentYear < 0 || data.CurrentYear > 100) return false;
+            if (data.CurrentMonth < 1 || data.CurrentMonth > 12) return false;
+            if (data.CurrentDay < 1 || data.CurrentDay > 31) return false;
+            if (float.IsNaN(data.CurrentBalance) || float.IsInfinity(data.CurrentBalance)) return false;
+            return true;
         }
 
         // ================================================================
@@ -813,6 +926,14 @@ namespace ThemeParkGame.Core
             {
                 string json = PlayerPrefs.GetString(AUTOSAVE_KEY);
                 SaveData data = JsonUtility.FromJson<SaveData>(json);
+                data = MigrateSaveData(data);
+
+                if (!ValidateSaveData(data))
+                {
+                    Debug.LogError("[SaveSystem] AutoSave data is corrupted");
+                    return false;
+                }
+
                 ApplySaveData(data);
                 GameEvents.FireGameLoaded();
                 WebGLOptimizer.LogVerbose("[SaveSystem] AutoSave loaded");

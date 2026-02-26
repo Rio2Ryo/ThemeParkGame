@@ -58,5 +58,24 @@ namespace ThemeParkGame.Core
         {
             Debug.Log(message);
         }
+
+        /// <summary>
+        /// テクスチャメモリ使用量を削減する。
+        /// ゲーム起動後に呼び出し、不要なテクスチャを解放する。
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void OptimizeMemory()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            // 未使用アセットを解放
+            Resources.UnloadUnusedAssets();
+
+            // GC実行（起動時の1回のみ）
+            System.GC.Collect();
+            System.GC.WaitForPendingFinalizers();
+
+            Debug.Log("[WebGLOptimizer] メモリ最適化完了");
+#endif
+        }
     }
 }

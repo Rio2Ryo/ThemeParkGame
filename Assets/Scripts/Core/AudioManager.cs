@@ -25,8 +25,8 @@ namespace ThemeParkGame.Core
         // ---- 音量設定 ----
         private float masterVolume = 1f;
         private float bgmVolume = 0.5f;
-        private float seVolume = 0.8f;
-        private float ambientVolume = 0.3f;
+        private float seVolume = 0.65f;
+        private float ambientVolume = 0.35f;
 
         // ---- プロシージャル生成クリップ ----
         private AudioClip clipMenuBGM;
@@ -265,8 +265,8 @@ namespace ThemeParkGame.Core
         {
             masterVolume = PlayerPrefs.GetFloat("AUDIO_MASTER", 1f);
             bgmVolume = PlayerPrefs.GetFloat("AUDIO_BGM", 0.5f);
-            seVolume = PlayerPrefs.GetFloat("AUDIO_SE", 0.8f);
-            ambientVolume = PlayerPrefs.GetFloat("AUDIO_AMBIENT", 0.3f);
+            seVolume = PlayerPrefs.GetFloat("AUDIO_SE", 0.65f);
+            ambientVolume = PlayerPrefs.GetFloat("AUDIO_AMBIENT", 0.35f);
         }
 
         private void SaveVolumePrefs()
@@ -299,7 +299,7 @@ namespace ThemeParkGame.Core
                 case GameState.Paused:
                     // BGMそのまま、音量少し下げる
                     if (bgmSource != null)
-                        bgmSource.volume = bgmVolume * masterVolume * 0.3f;
+                        bgmSource.volume = bgmVolume * masterVolume * 0.4f;
                     break;
 
                 case GameState.BuildMode:
@@ -435,7 +435,7 @@ namespace ThemeParkGame.Core
 
         // ---- 来場者の歓声SE（一定確率で歓声を鳴らし連続再生を防ぐ） ----
         private float lastCheerTime;
-        private const float CheerCooldown = 3f;
+        private const float CheerCooldown = 5f;
 
         private void OnVisitorEnterPark(int visitorId)
         {
@@ -490,7 +490,7 @@ namespace ThemeParkGame.Core
 
         // ---- 収益SE（チャリン音、連続再生を抑制） ----
         private float lastCashTime;
-        private const float CashCooldown = 1f;
+        private const float CashCooldown = 1.5f;
 
         private void OnRevenueEarned(float amount)
         {
