@@ -136,6 +136,9 @@ namespace ThemeParkGame.Core
                 WebGLOptimizer.LogVerbose("[RuntimeGameSetup] ParkEffectsManager を生成");
             }
 
+            // 環境品質セットアップ（フォグ・アンビエント・ライティング）
+            SetupEnvironmentQuality();
+
             WebGLOptimizer.LogVerbose("[RuntimeGameSetup] === ゲームワールド構築完了 ===");
         }
 
@@ -807,7 +810,8 @@ namespace ThemeParkGame.Core
             prefab.AddComponent<VisitorAI>();
 
             // ビジュアル: プロシージャルビジターメッシュ
-            var visual = ProceduralMeshGenerator.CreateVisitorMesh();
+            var visual = ProceduralMeshGenerator.CreateVisitorMesh(
+                ProceduralMeshGenerator.Palette.VisitorColors[0]);
             visual.transform.SetParent(prefab.transform);
             visual.transform.localPosition = Vector3.zero;
 
@@ -843,6 +847,60 @@ namespace ThemeParkGame.Core
                 catch (System.Exception) { /* tag not registered */ }
             }
             return go.transform;
+        }
+
+        // ================================================================
+        // 環境品質セットアップ
+        // ================================================================
+
+        /// <summary>フォグ、アンビエントライト、スカイボックスカラーなどの環境設定</summary>
+        private void SetupEnvironmentQuality()
+        {
+            // フォグ（遠景の霞み）
+            RenderSettings.fog = true;
+            RenderSettings.fogMode = FogMode.ExponentialSquared;
+            RenderSettings.fogDensity = 0.008f;
+            RenderSettings.fogColor = new Color(0.75f, 0.85f, 0.95f);
+
+            // アンビエントライト（環境光）
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor = new Color(0.6f, 0.75f, 0.95f);
+            RenderSettings.ambientEquatorColor = new Color(0.85f, 0.82f, 0.75f);
+            RenderSettings.ambientGroundColor = new Color(0.35f, 0.45f, 0.3f);
+
+            // スカイボックスカラー（クリアカラー）
+            var mainCam = Camera.main;
+            if (mainCam != null)
+            {
+                mainCam.clearFlags = CameraClearFlags.SolidColor;
+                mainCam.backgroundColor = new Color(0.45f, 0.7f, 0.95f);
+                mainCam.farClipPlane = 200f;
+                mainCam.nearClipPlane = 0.3f;
+            }
+
+            // ディレクショナルライトの設定改善
+            var lights = FindObjectsOfType<Light>();
+            foreach (var light in lights)
+            {
+                if (light.type == LightType.Directional)
+                {
+                    light.intensity = 1.2f;
+                    light.color = new Color(1f, 0.96f, 0.88f); // 暖色の太陽光
+                    light.shadowStrength = 0.6f;
+                    light.shadowBias = 0.05f;
+                    light.shadowNormalBias = 0.4f;
+                    light.transform.rotation = Quaternion.Euler(45f, -30f, 0f);
+                }
+            }
+
+            // Quality settings for better visuals (エディタ/スタンドアロンのみ)
+#if !UNITY_WEBGL || UNITY_EDITOR
+            QualitySettings.shadows = ShadowQuality.HardOnly;
+            QualitySettings.shadowDistance = 80f;
+            QualitySettings.shadowResolution = ShadowResolution.Medium;
+#endif
+
+            WebGLOptimizer.LogVerbose("[RuntimeGameSetup] 環境品質設定を適用");
         }
 
         /// <summary>施設の上部に浮遊する名前ラベルを作成する</summary>

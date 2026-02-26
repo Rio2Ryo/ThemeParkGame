@@ -537,7 +537,7 @@ namespace ThemeParkGame.Core
             // ---- バージョン表示 ----
             var ver = CreateUIElement("Version", canvasGo.transform);
             var verText = ver.AddComponent<Text>();
-            verText.text = "v2.0 - テーマパークワールド";
+            verText.text = "v3.0 - テーマパークワールド";
             verText.font = GetBuiltinFont();
             verText.fontSize = 18;
             verText.alignment = TextAnchor.LowerRight;

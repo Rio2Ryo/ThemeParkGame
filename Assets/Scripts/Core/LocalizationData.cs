@@ -20,7 +20,7 @@ namespace ThemeParkGame.Core
         public const string BtnContinue = "つづきから";
         public const string BtnSettings = "設定";
         public const string BtnCredits = "クレジット";
-        public const string Version = "v2.0";
+        public const string Version = "v3.0";
 
         // ============================================================
         // HUD - スコアボード
