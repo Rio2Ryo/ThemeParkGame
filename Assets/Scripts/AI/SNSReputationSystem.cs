@@ -250,6 +250,21 @@ namespace ThemeParkGame.AI
         }
 
         /// <summary>
+        /// 外部システム（WordOfMouthSystem等）からテンプレート投稿を追加する公開API。
+        /// </summary>
+        public void AddTemplatePost(int visitorId, string authorName, string content,
+            PostSentiment sentiment, float sentimentScore)
+        {
+            var post = CreatePost(visitorId, authorName, content, false);
+            post.Sentiment = sentiment;
+            post.SentimentScore = Mathf.Clamp01(sentimentScore);
+            post.Topic = DetectTopic(content);
+            UpdateReputationFromPost(post);
+            RecalculateTrendingTopics();
+            WebGLOptimizer.LogVerbose($"[SNSReputation] External post added: {authorName}: {content}");
+        }
+
+        /// <summary>
         /// Generates a template-based SNS post without LLM.
         /// Used as fallback or when API is unavailable.
         /// </summary>

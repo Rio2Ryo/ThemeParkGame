@@ -7,7 +7,11 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using ThemeParkGame.AI;
+using ThemeParkGame.Economy;
+using ThemeParkGame.Park;
 using ThemeParkGame.Staff;
+using ThemeParkGame.Visitor;
 
 namespace ThemeParkGame.Core
 {
@@ -113,50 +117,130 @@ namespace ThemeParkGame.Core
 
         private void RegisterAllAchievements()
         {
-            // ---- 来場者系 ----
+            // ================================================================
+            // 来場者系 (20)
+            // ================================================================
             Reg("visitor_10", "はじめてのお客さん", "累計来場者10人達成", AchievementCategory.Visitor, "[V]");
             Reg("visitor_50", "にぎやかなパーク", "累計来場者50人達成", AchievementCategory.Visitor, "[V]");
             Reg("visitor_200", "大人気パーク", "累計来場者200人達成", AchievementCategory.Visitor, "[V]");
             Reg("visitor_500", "伝説のテーマパーク", "累計来場者500人達成", AchievementCategory.Visitor, "[V]");
             Reg("visitor_1000", "メガパーク", "累計来場者1000人達成", AchievementCategory.Visitor, "[V]");
+            Reg("visitor_2000", "モンスターパーク", "累計来場者2000人達成", AchievementCategory.Visitor, "[V]");
+            Reg("visitor_5000", "ワールドクラス", "累計来場者5000人達成", AchievementCategory.Visitor, "[V]");
+            Reg("visitor_10000", "観光名所", "累計来場者10000人達成", AchievementCategory.Visitor, "[V]");
             Reg("happiness_80", "笑顔あふれるパーク", "平均満足度80%以上", AchievementCategory.Visitor, "[H]");
             Reg("happiness_95", "パーフェクトパーク", "平均満足度95%以上", AchievementCategory.Visitor, "[H]");
+            Reg("happiness_60", "まずまずの評判", "平均満足度60%以上", AchievementCategory.Visitor, "[H]");
             Reg("peak_20", "行列のできるパーク", "同時来場者20人以上", AchievementCategory.Visitor, "[P]");
             Reg("peak_50", "超満員御礼", "同時来場者50人以上", AchievementCategory.Visitor, "[P]");
+            Reg("peak_100", "フルハウス", "同時来場者100人以上", AchievementCategory.Visitor, "[P]");
+            Reg("vip_welcome", "VIPウェルカム", "VIP来場者を初めて迎えた", AchievementCategory.Visitor, "[V]");
+            Reg("vip_10", "VIPパーク", "VIP来場者を10人迎えた", AchievementCategory.Visitor, "[V]");
+            Reg("wom_buzz", "バズ発生！", "口コミがバズった", AchievementCategory.Visitor, "[B]");
+            Reg("wom_score_80", "口コミ王", "口コミスコア80以上", AchievementCategory.Visitor, "[B]");
+            Reg("wom_score_95", "インフルエンサー", "口コミスコア95以上", AchievementCategory.Visitor, "[B]");
+            Reg("repeat_visitor", "リピーター獲得", "再来園者が発生した", AchievementCategory.Visitor, "[V]");
 
-            // ---- 経済系 ----
+            // ================================================================
+            // 経済系 (20)
+            // ================================================================
             Reg("revenue_10k", "はじめての収益", "総収益$10,000達成", AchievementCategory.Economy, "[$]");
             Reg("revenue_50k", "成長するビジネス", "総収益$50,000達成", AchievementCategory.Economy, "[$]");
             Reg("revenue_200k", "大企業への道", "総収益$200,000達成", AchievementCategory.Economy, "[$]");
             Reg("revenue_1m", "億万長者", "総収益$1,000,000達成", AchievementCategory.Economy, "[$]");
+            Reg("revenue_5m", "メガコーポレーション", "総収益$5,000,000達成", AchievementCategory.Economy, "[$]");
             Reg("balance_100k", "貯蓄王", "資金残高$100,000達成", AchievementCategory.Economy, "[$]");
+            Reg("balance_500k", "大富豪", "資金残高$500,000達成", AchievementCategory.Economy, "[$]");
+            Reg("balance_1m", "財閥", "資金残高$1,000,000達成", AchievementCategory.Economy, "[$]");
             Reg("profit_monthly", "黒字経営", "月間利益がプラス", AchievementCategory.Economy, "[$]");
             Reg("profit_streak", "堅実経営者", "連続30日間赤字なし", AchievementCategory.Economy, "[$]");
+            Reg("profit_streak_90", "鉄壁の経営", "連続90日間赤字なし", AchievementCategory.Economy, "[$]");
+            Reg("sale_first", "初めてのセール", "セールキャンペーンを初開催", AchievementCategory.Economy, "[%]");
+            Reg("sale_all_types", "セールマスター", "全種類のセールを開催", AchievementCategory.Economy, "[%]");
+            Reg("sale_3_simultaneous", "セール祭り", "同時に3つのセールを開催", AchievementCategory.Economy, "[%]");
+            Reg("sale_season_bonus", "閑散期の救世主", "閑散期ボーナス付きセール開催", AchievementCategory.Economy, "[%]");
+            Reg("loan_first", "初めての融資", "融資を初めて受けた", AchievementCategory.Economy, "[$]");
+            Reg("loan_repaid", "完済", "融資を完済した", AchievementCategory.Economy, "[$]");
+            Reg("ticket_price_high", "プレミアム路線", "入場料を$50以上に設定", AchievementCategory.Economy, "[$]");
+            Reg("ticket_price_low", "庶民の味方", "入場料を$5以下に設定", AchievementCategory.Economy, "[$]");
+            Reg("daily_revenue_10k", "大繁盛日", "1日の収益$10,000達成", AchievementCategory.Economy, "[$]");
 
-            // ---- パーク建設系 ----
+            // ================================================================
+            // パーク建設系 (25)
+            // ================================================================
             Reg("attraction_1", "はじめてのアトラクション", "アトラクション1基建設", AchievementCategory.Park, "[A]");
             Reg("attraction_5", "アミューズメントパーク", "アトラクション5基建設", AchievementCategory.Park, "[A]");
             Reg("attraction_10", "テーマパーク帝国", "アトラクション10基建設", AchievementCategory.Park, "[A]");
+            Reg("attraction_20", "メガリゾート", "アトラクション20基建設", AchievementCategory.Park, "[A]");
+            Reg("attraction_upgrade", "改良の始まり", "アトラクションを初アップグレード", AchievementCategory.Park, "[A]");
+            Reg("attraction_maxlevel", "究極のアトラクション", "アトラクションを最高レベルに", AchievementCategory.Park, "[A]");
+            Reg("shop_food_1", "フードコート開店", "飲食店を初建設", AchievementCategory.Park, "[F]");
+            Reg("shop_food_5", "グルメストリート", "飲食店を5軒建設", AchievementCategory.Park, "[F]");
+            Reg("shop_souvenir_1", "お土産屋さん", "お土産店を初建設", AchievementCategory.Park, "[F]");
+            Reg("shop_total_10", "ショッピングモール", "ショップを合計10軒建設", AchievementCategory.Park, "[F]");
             Reg("research_3", "研究の成果", "研究3つ完了", AchievementCategory.Park, "[R]");
             Reg("research_10", "テクノロジーマスター", "研究10個完了", AchievementCategory.Park, "[R]");
+            Reg("research_all", "万能の知識", "全研究を完了", AchievementCategory.Park, "[R]");
             Reg("cert_fame", "名声の認定証", "Fame認定証を獲得", AchievementCategory.Park, "[C]");
             Reg("cert_safety", "安全の認定証", "Safety認定証を獲得", AchievementCategory.Park, "[C]");
             Reg("cert_comfort", "快適の認定証", "Comfort認定証を獲得", AchievementCategory.Park, "[C]");
             Reg("cert_excitement", "興奮の認定証", "Excitement認定証を獲得", AchievementCategory.Park, "[C]");
             Reg("cert_mood", "ムードの認定証", "Mood認定証を獲得", AchievementCategory.Park, "[C]");
+            Reg("rating_70", "良いパーク", "パーク評価70以上", AchievementCategory.Park, "[R]");
+            Reg("rating_90", "最高のパーク", "パーク評価90以上", AchievementCategory.Park, "[R]");
+            Reg("expansion_first", "領土拡大", "パーク拡張を初めて実行", AchievementCategory.Park, "[E]");
+            Reg("expansion_3", "拡大する王国", "パーク拡張を3回実行", AchievementCategory.Park, "[E]");
+            Reg("toilet_5", "快適トイレ", "トイレを5基設置", AchievementCategory.Park, "[T]");
+            Reg("bench_10", "憩いの場", "ベンチを10基設置", AchievementCategory.Park, "[T]");
+            Reg("decoration_10", "美しいパーク", "装飾を10個設置", AchievementCategory.Park, "[D]");
 
-            // ---- スタッフ系 ----
+            // ================================================================
+            // スタッフ系 (15)
+            // ================================================================
+            Reg("staff_1", "初めての雇用", "スタッフ1人雇用", AchievementCategory.Staff, "[S]");
             Reg("staff_5", "チームワーク", "スタッフ5人雇用", AchievementCategory.Staff, "[S]");
             Reg("staff_15", "大所帯", "スタッフ15人雇用", AchievementCategory.Staff, "[S]");
+            Reg("staff_30", "大企業", "スタッフ30人雇用", AchievementCategory.Staff, "[S]");
             Reg("staff_maxlevel", "熟練の職人", "スタッフ1人がスキルLv5到達", AchievementCategory.Staff, "[S]");
+            Reg("staff_all_types", "フルチーム", "全種類のスタッフを雇用", AchievementCategory.Staff, "[S]");
+            Reg("staff_mechanic_5", "メカニックチーム", "整備士を5人雇用", AchievementCategory.Staff, "[S]");
+            Reg("staff_cleaner_5", "清掃部隊", "清掃員を5人雇用", AchievementCategory.Staff, "[S]");
+            Reg("staff_entertainer_3", "エンタメ集団", "エンターテイナーを3人雇用", AchievementCategory.Staff, "[S]");
+            Reg("staff_guard_3", "警備チーム", "警備員を3人雇用", AchievementCategory.Staff, "[S]");
+            Reg("staff_scientist_3", "研究チーム", "科学者を3人雇用", AchievementCategory.Staff, "[S]");
+            Reg("staff_train_10", "教育熱心", "スタッフ訓練を10回実施", AchievementCategory.Staff, "[S]");
+            Reg("staff_fatigue_save", "労働管理", "疲労したスタッフを休ませた", AchievementCategory.Staff, "[S]");
+            Reg("staff_all_maxlevel", "エリート集団", "全スタッフがスキルLv5", AchievementCategory.Staff, "[S]");
+            Reg("staff_no_fire", "温情経営", "解雇せずに1年経過", AchievementCategory.Staff, "[S]");
 
-            // ---- 特殊系 ----
+            // ================================================================
+            // 特殊系 (25)
+            // ================================================================
             Reg("golden_1", "ゴールデンチケット", "ゴールデンチケットを初獲得", AchievementCategory.Special, "[G]");
             Reg("golden_5", "チケットコレクター", "ゴールデンチケット5枚獲得", AchievementCategory.Special, "[G]");
+            Reg("golden_10", "ゴールデンレジェンド", "ゴールデンチケット10枚獲得", AchievementCategory.Special, "[G]");
+            Reg("year_1", "1年目クリア", "ゲーム内1年目到達", AchievementCategory.Special, "[Y]");
             Reg("year_3", "ベテラン経営者", "ゲーム内3年目到達", AchievementCategory.Special, "[Y]");
             Reg("year_5", "レジェンド", "ゲーム内5年目到達", AchievementCategory.Special, "[Y]");
+            Reg("year_10", "永遠の経営者", "ゲーム内10年目到達", AchievementCategory.Special, "[Y]");
             Reg("scenario_clear", "シナリオクリア", "シナリオを1つクリア", AchievementCategory.Special, "[!]");
             Reg("all_certs", "パーフェクト認定", "全5種類の認定証を獲得", AchievementCategory.Special, "[*]");
+            Reg("accident_first_resolve", "危機管理", "アクシデントを初めて解決", AchievementCategory.Special, "[!]");
+            Reg("accident_10_resolve", "トラブルシューター", "アクシデントを10回解決", AchievementCategory.Special, "[!]");
+            Reg("accident_50_resolve", "危機対応マスター", "アクシデントを50回解決", AchievementCategory.Special, "[!]");
+            Reg("accident_critical", "大惨事回避", "重大アクシデントを解決", AchievementCategory.Special, "[!]");
+            Reg("accident_zero_day", "平穏な一日", "1日アクシデントなしで過ごす", AchievementCategory.Special, "[!]");
+            Reg("rival_appear", "ライバル出現", "競合パークが初出現", AchievementCategory.Special, "[R]");
+            Reg("rival_beat_one", "ライバル撃破", "ライバルパーク1つに勝利", AchievementCategory.Special, "[R]");
+            Reg("rival_beat_all", "無敵のパーク", "全ライバルパークに勝利", AchievementCategory.Special, "[R]");
+            Reg("rival_closed", "ライバル閉園", "ライバルパークが閉園した", AchievementCategory.Special, "[R]");
+            Reg("weather_survive_storm", "嵐を乗り越えて", "嵐の日を乗り切った", AchievementCategory.Special, "[W]");
+            Reg("weather_sunny_streak", "晴天続き", "連続5日間晴天", AchievementCategory.Special, "[W]");
+            Reg("challenge_first", "初めての挑戦", "チャレンジを初クリア", AchievementCategory.Special, "[!]");
+            Reg("challenge_10", "挑戦者", "チャレンジを10回クリア", AchievementCategory.Special, "[!]");
+            Reg("sns_reputation_80", "ネット人気者", "SNS評判80以上", AchievementCategory.Special, "[N]");
+            Reg("coop_first", "協力プレイ", "Co-opで初めて協力", AchievementCategory.Special, "[M]");
+            Reg("achievement_50", "コレクター", "実績を50個解除", AchievementCategory.Special, "[*]");
         }
 
         private void Reg(string id, string title, string desc, AchievementCategory cat, string icon)
@@ -270,18 +354,45 @@ namespace ThemeParkGame.Core
                 int total = gm.VisitorManager.TotalVisitorsToday;
                 float avgHappy = gm.VisitorManager.AverageHappiness;
                 float peak = gm.VisitorManager.PeakVisitorCount;
+                int active = gm.VisitorManager.ActiveVisitorCount;
 
                 if (total >= 10) Unlock("visitor_10");
                 if (total >= 50) Unlock("visitor_50");
                 if (total >= 200) Unlock("visitor_200");
                 if (total >= 500) Unlock("visitor_500");
                 if (total >= 1000) Unlock("visitor_1000");
+                if (total >= 2000) Unlock("visitor_2000");
+                if (total >= 5000) Unlock("visitor_5000");
+                if (total >= 10000) Unlock("visitor_10000");
 
-                if (avgHappy >= 80f && gm.VisitorManager.ActiveVisitorCount >= 5) Unlock("happiness_80");
-                if (avgHappy >= 95f && gm.VisitorManager.ActiveVisitorCount >= 5) Unlock("happiness_95");
+                if (avgHappy >= 60f && active >= 5) Unlock("happiness_60");
+                if (avgHappy >= 80f && active >= 5) Unlock("happiness_80");
+                if (avgHappy >= 95f && active >= 5) Unlock("happiness_95");
 
                 if (peak >= 20f) Unlock("peak_20");
                 if (peak >= 50f) Unlock("peak_50");
+                if (peak >= 100f) Unlock("peak_100");
+            }
+
+            // ---- VIP ----
+            if (VIPVisitorSystem.Instance != null)
+            {
+                int vipCount = VIPVisitorSystem.Instance.TotalVIPsServed;
+                if (vipCount >= 1) Unlock("vip_welcome");
+                if (vipCount >= 10) Unlock("vip_10");
+            }
+
+            // ---- 口コミ ----
+            if (WordOfMouthSystem.Instance != null)
+            {
+                float womScore = WordOfMouthSystem.Instance.WordOfMouthScore;
+                if (womScore >= 80f) Unlock("wom_score_80");
+                if (womScore >= 95f) Unlock("wom_score_95");
+
+                foreach (var review in WordOfMouthSystem.Instance.RecentReviews)
+                {
+                    if (review.IsViral) { Unlock("wom_buzz"); break; }
+                }
             }
 
             // ---- 経済 ----
@@ -295,8 +406,11 @@ namespace ThemeParkGame.Core
                 if (revenue >= 50000f) Unlock("revenue_50k");
                 if (revenue >= 200000f) Unlock("revenue_200k");
                 if (revenue >= 1000000f) Unlock("revenue_1m");
+                if (revenue >= 5000000f) Unlock("revenue_5m");
 
                 if (balance >= 100000f) Unlock("balance_100k");
+                if (balance >= 500000f) Unlock("balance_500k");
+                if (balance >= 1000000f) Unlock("balance_1m");
 
                 if (monthlyProfit > 0f && gm.TimeManager != null && gm.TimeManager.CurrentMonth > 1)
                     Unlock("profit_monthly");
@@ -314,7 +428,49 @@ namespace ThemeParkGame.Core
                             _profitStreakDays = 0;
                     }
                     if (_profitStreakDays >= 30) Unlock("profit_streak");
+                    if (_profitStreakDays >= 90) Unlock("profit_streak_90");
                 }
+            }
+
+            // ---- セールキャンペーン ----
+            if (SaleCampaignSystem.Instance != null)
+            {
+                var sales = SaleCampaignSystem.Instance.ActiveSales;
+                if (sales.Count >= 1) Unlock("sale_first");
+                if (sales.Count >= 3) Unlock("sale_3_simultaneous");
+
+                foreach (var sale in sales)
+                {
+                    if (sale.IsActive && sale.SpawnBonus > sale.SpawnBonus) // season bonus detected by checking > base
+                    {
+                        // Check if spawn bonus exceeds base plan bonus (season bonus applied)
+                        for (int pi = 0; pi < SaleCampaignSystem.Plans.Length; pi++)
+                        {
+                            var plan = SaleCampaignSystem.Plans[pi];
+                            if (plan.Name == sale.Name && sale.SpawnBonus > plan.SpawnBonus)
+                            {
+                                Unlock("sale_season_bonus");
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Check all sale types used (track via active or resolved)
+                bool hasEntrance = false, hasAttraction = false, hasFood = false, hasSouvenir = false, hasAll = false;
+                foreach (var sale in sales)
+                {
+                    switch (sale.Type)
+                    {
+                        case SaleType.EntranceFee: hasEntrance = true; break;
+                        case SaleType.AttractionTicket: hasAttraction = true; break;
+                        case SaleType.FoodDrink: hasFood = true; break;
+                        case SaleType.Souvenir: hasSouvenir = true; break;
+                        case SaleType.AllInclusive: hasAll = true; break;
+                    }
+                }
+                if (hasEntrance && hasAttraction && hasFood && hasSouvenir && hasAll)
+                    Unlock("sale_all_types");
             }
 
             // ---- アトラクション ----
@@ -324,6 +480,7 @@ namespace ThemeParkGame.Core
                 if (count >= 1) Unlock("attraction_1");
                 if (count >= 5) Unlock("attraction_5");
                 if (count >= 10) Unlock("attraction_10");
+                if (count >= 20) Unlock("attraction_20");
             }
 
             // ---- 研究 ----
@@ -338,6 +495,10 @@ namespace ThemeParkGame.Core
             if (gm.ParkManager != null && gm.ParkManager.Rating != null)
             {
                 var rating = gm.ParkManager.Rating;
+                float overall = rating.OverallRating;
+                if (overall >= 70f) Unlock("rating_70");
+                if (overall >= 90f) Unlock("rating_90");
+
                 if (rating.IsCertificateAwarded(CertificateCategory.Fame)) Unlock("cert_fame");
                 if (rating.IsCertificateAwarded(CertificateCategory.Safety)) Unlock("cert_safety");
                 if (rating.IsCertificateAwarded(CertificateCategory.Comfort)) Unlock("cert_comfort");
@@ -354,33 +515,110 @@ namespace ThemeParkGame.Core
                 }
             }
 
+            // ---- パーク拡張 ----
+            if (ParkExpansionSystem.Instance != null)
+            {
+                if (ParkExpansionSystem.Instance.PurchasedPlotCount >= 1) Unlock("expansion_first");
+                if (ParkExpansionSystem.Instance.PurchasedPlotCount >= 3) Unlock("expansion_3");
+            }
+
             // ---- スタッフ ----
             if (gm.StaffManager != null)
             {
                 int staffCount = gm.StaffManager.TotalStaffCount;
+                if (staffCount >= 1) Unlock("staff_1");
                 if (staffCount >= 5) Unlock("staff_5");
                 if (staffCount >= 15) Unlock("staff_15");
+                if (staffCount >= 30) Unlock("staff_30");
 
+                bool hasMaxLevel = false;
+                bool allMaxLevel = staffCount > 0;
                 foreach (var staff in gm.StaffManager.GetAllStaff())
                 {
                     if (staff != null && staff.SkillLevel >= StaffMember.MaxSkillLevel)
-                    {
-                        Unlock("staff_maxlevel");
-                        break;
-                    }
+                        hasMaxLevel = true;
+                    else if (staff != null)
+                        allMaxLevel = false;
                 }
+                if (hasMaxLevel) Unlock("staff_maxlevel");
+                if (allMaxLevel && staffCount >= 5) Unlock("staff_all_maxlevel");
+
+                // スタッフ種別チェック
+                bool hasMech = gm.StaffManager.HasStaffOfType(StaffType.Mechanic);
+                bool hasClean = gm.StaffManager.HasStaffOfType(StaffType.Cleaner);
+                bool hasEnter = gm.StaffManager.HasStaffOfType(StaffType.Entertainer);
+                bool hasGuard = gm.StaffManager.HasStaffOfType(StaffType.Guard);
+                bool hasSci = gm.StaffManager.HasStaffOfType(StaffType.Scientist);
+                if (hasMech && hasClean && hasEnter && hasGuard && hasSci)
+                    Unlock("staff_all_types");
             }
 
             // ---- ゴールデンチケット ----
             if (gm.GoldenTickets >= 1) Unlock("golden_1");
             if (gm.GoldenTickets >= 5) Unlock("golden_5");
+            if (gm.GoldenTickets >= 10) Unlock("golden_10");
 
             // ---- 年数 ----
             if (gm.TimeManager != null)
             {
                 int year = gm.TimeManager.CurrentYear;
+                if (year >= 1) Unlock("year_1");
                 if (year >= 3) Unlock("year_3");
                 if (year >= 5) Unlock("year_5");
+                if (year >= 10) Unlock("year_10");
+            }
+
+            // ---- アクシデント ----
+            if (AccidentEventSystem.Instance != null)
+            {
+                int resolved = AccidentEventSystem.Instance.ResolvedAccidents;
+                if (resolved >= 1) Unlock("accident_first_resolve");
+                if (resolved >= 10) Unlock("accident_10_resolve");
+                if (resolved >= 50) Unlock("accident_50_resolve");
+                if (AccidentEventSystem.Instance.HasResolvedCritical) Unlock("accident_critical");
+            }
+
+            // ---- ライバルパーク ----
+            if (RivalParkSystem.Instance != null)
+            {
+                var rivals = RivalParkSystem.Instance.Rivals;
+                if (rivals.Count >= 1) Unlock("rival_appear");
+
+                float playerRating = gm.ParkManager?.Rating?.OverallRating ?? 0f;
+                bool anyBeaten = false;
+                bool allBeaten = rivals.Count > 0;
+                bool anyClosed = false;
+                foreach (var rival in rivals)
+                {
+                    if (rival.IsActive)
+                    {
+                        if (rival.OverallScore < playerRating)
+                            anyBeaten = true;
+                        else
+                            allBeaten = false;
+                    }
+                    else
+                    {
+                        anyClosed = true;
+                    }
+                }
+                if (anyBeaten) Unlock("rival_beat_one");
+                if (allBeaten && rivals.Count > 0) Unlock("rival_beat_all");
+                if (anyClosed) Unlock("rival_closed");
+            }
+
+            // ---- SNS評判 ----
+            if (SNSReputationSystem.Instance != null)
+            {
+                if (SNSReputationSystem.Instance.Reputation >= 80f) Unlock("sns_reputation_80");
+            }
+
+            // ---- チャレンジ ----
+            if (ChallengeSystem.Instance != null)
+            {
+                int cleared = ChallengeSystem.Instance.TotalChallengesCompleted;
+                if (cleared >= 1) Unlock("challenge_first");
+                if (cleared >= 10) Unlock("challenge_10");
             }
 
             // ---- シナリオクリア ----
@@ -388,6 +626,9 @@ namespace ThemeParkGame.Core
             {
                 Unlock("scenario_clear");
             }
+
+            // ---- 実績数メタ実績 ----
+            if (_unlocked.Count >= 50) Unlock("achievement_50");
         }
 
         // ================================================================

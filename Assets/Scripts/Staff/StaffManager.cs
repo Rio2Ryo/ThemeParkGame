@@ -608,6 +608,12 @@ namespace ThemeParkGame.Staff
             return allStaff.Values;
         }
 
+        /// <summary>指定タイプのスタッフが1人以上いるか</summary>
+        public bool HasStaffOfType(StaffType type)
+        {
+            return staffByType.ContainsKey(type) && staffByType[type].Count > 0;
+        }
+
         /// <summary>
         /// 指定位置から最も近い空きスタッフを検索する。
         /// 緊急タスク（故障など）の割り当てに使用する。

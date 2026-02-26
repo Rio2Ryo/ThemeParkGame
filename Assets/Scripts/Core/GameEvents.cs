@@ -147,6 +147,12 @@ namespace ThemeParkGame.Core
         public static event Action<float> OnPathwayCongestionChanged; // averageCongestion
         public static void FirePathwayCongestionChanged(float avg) => OnPathwayCongestionChanged?.Invoke(avg);
 
+        // ---- アクシデント関連イベント ----
+        public static event Action<int, AccidentType> OnAccidentOccurred;
+        public static event Action<int> OnAccidentResolved;
+        public static void FireAccidentOccurred(int id, AccidentType type) => OnAccidentOccurred?.Invoke(id, type);
+        public static void FireAccidentResolved(int id) => OnAccidentResolved?.Invoke(id);
+
         // ---- セーブ/ロード関連イベント ----
         public static event Action OnGameSaved;
         public static event Action OnGameLoaded;
@@ -231,6 +237,10 @@ namespace ThemeParkGame.Core
 
             // 通路
             OnPathwayCongestionChanged = null;
+
+            // アクシデント
+            OnAccidentOccurred = null;
+            OnAccidentResolved = null;
 
             // セーブ/ロード
             OnGameSaved = null;

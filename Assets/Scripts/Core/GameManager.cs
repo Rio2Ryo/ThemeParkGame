@@ -248,6 +248,12 @@ namespace ThemeParkGame.Core
             GameEvents.FireParkOpened();
         }
 
+        /// <summary>通知を表示するショートカット</summary>
+        public void ShowNotification(string message, NotifLevel level = NotifLevel.Info)
+        {
+            NotificationSystem?.Notify(message, level);
+        }
+
         /// <summary>ゴールデンチケットを使用する</summary>
         public bool SpendGoldenTicket(int amount = 1)
         {

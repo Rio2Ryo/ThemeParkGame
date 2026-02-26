@@ -1967,25 +1967,45 @@ namespace ThemeParkGame.Core
                 new Color(0.3f, 0.5f, 0.45f), new Color(0.38f, 0.6f, 0.55f), new Color(0.22f, 0.4f, 0.35f),
                 new Vector2(0f, -335f), OnAccessibilityClicked);
 
+            // Phase 10: 「アクシデント」ボタン
+            MakeCenterButton(rt, "AccidentsBtn", "ACCIDENTS",
+                new Color(0.65f, 0.25f, 0.15f), new Color(0.75f, 0.35f, 0.22f), new Color(0.52f, 0.18f, 0.1f),
+                new Vector2(0f, -390f), OnAccidentsClicked);
+
+            // Phase 10: 「口コミ」ボタン
+            MakeCenterButton(rt, "ReviewsBtn", "REVIEWS",
+                new Color(0.2f, 0.5f, 0.55f), new Color(0.28f, 0.6f, 0.65f), new Color(0.15f, 0.4f, 0.44f),
+                new Vector2(0f, -445f), OnReviewsClicked);
+
+            // Phase 10: 「ライバル」ボタン
+            MakeCenterButton(rt, "RivalsBtn", "RIVALS",
+                new Color(0.55f, 0.2f, 0.45f), new Color(0.65f, 0.28f, 0.55f), new Color(0.42f, 0.15f, 0.35f),
+                new Vector2(0f, -500f), OnRivalsClicked);
+
+            // Phase 10: 「セール」ボタン
+            MakeCenterButton(rt, "SalesBtn", "SALES",
+                new Color(0.6f, 0.5f, 0.15f), new Color(0.72f, 0.6f, 0.22f), new Color(0.48f, 0.38f, 0.1f),
+                new Vector2(0f, -555f), OnSalesClicked);
+
             // 「実績」ボタン
             MakeCenterButton(rt, "AchievementBtn", "ACHIEVEMENTS",
                 new Color(0.55f, 0.45f, 0.2f), new Color(0.65f, 0.55f, 0.28f), new Color(0.42f, 0.34f, 0.15f),
-                new Vector2(0f, -390f), OnAchievementClicked);
+                new Vector2(0f, -610f), OnAchievementClicked);
 
             // 「サウンド設定」ボタン
             MakeCenterButton(rt, "SoundBtn", "SOUND SETTINGS",
                 new Color(0.35f, 0.4f, 0.52f), new Color(0.45f, 0.5f, 0.62f), new Color(0.25f, 0.3f, 0.42f),
-                new Vector2(0f, -445f), OnSoundSettingsClicked);
+                new Vector2(0f, -665f), OnSoundSettingsClicked);
 
             // 「イベントログ」ボタン
             MakeCenterButton(rt, "EventLogBtn", "EVENT LOG",
                 new Color(0.3f, 0.45f, 0.55f), new Color(0.38f, 0.55f, 0.65f), new Color(0.22f, 0.35f, 0.44f),
-                new Vector2(0f, -500f), OnEventLogClicked);
+                new Vector2(0f, -720f), OnEventLogClicked);
 
             // 「ゲーム終了」ボタン
             MakeCenterButton(rt, "EndGameBtn", "ゲーム終了",
                 new Color(0.65f, 0.2f, 0.2f), new Color(0.75f, 0.3f, 0.3f), new Color(0.5f, 0.15f, 0.15f),
-                new Vector2(0f, -555f), OnEndGameClicked);
+                new Vector2(0f, -775f), OnEndGameClicked);
 
             // サウンド設定パネル（初期非表示）
             BuildSoundSettingsPanel(rt);
@@ -2403,6 +2423,30 @@ namespace ThemeParkGame.Core
         {
             if (AccessibilitySystem.Instance != null)
                 AccessibilitySystem.Instance.ToggleUI();
+        }
+
+        private void OnAccidentsClicked()
+        {
+            if (AccidentEventSystem.Instance != null)
+                AccidentEventSystem.Instance.ToggleUI();
+        }
+
+        private void OnReviewsClicked()
+        {
+            if (AI.WordOfMouthSystem.Instance != null)
+                AI.WordOfMouthSystem.Instance.ToggleUI();
+        }
+
+        private void OnRivalsClicked()
+        {
+            if (Park.RivalParkSystem.Instance != null)
+                Park.RivalParkSystem.Instance.ToggleUI();
+        }
+
+        private void OnSalesClicked()
+        {
+            if (Economy.SaleCampaignSystem.Instance != null)
+                Economy.SaleCampaignSystem.Instance.ToggleUI();
         }
 
         private void OnSoundSettingsClicked()

@@ -122,6 +122,16 @@ namespace ThemeParkGame.Visitor
         /// <summary>ピーク来場者数</summary>
         public float PeakVisitorCount => peakVisitorCount;
 
+        /// <summary>全アクティブ来場者の幸福度を一括調整する</summary>
+        public void ApplyGlobalHappinessModifier(float amount)
+        {
+            for (int i = 0; i < activeVisitors.Count; i++)
+            {
+                if (activeVisitors[i] != null && activeVisitors[i].Parameters != null)
+                    activeVisitors[i].Parameters.ModifyHappiness(amount);
+            }
+        }
+
         /// <summary>出口位置（来場者の退園先）</summary>
         public Vector3 ExitPosition => exitPoint != null ? exitPoint.position : Vector3.zero;
 

@@ -8,6 +8,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using ThemeParkGame.AI;
 using ThemeParkGame.UI;
 using ThemeParkGame.Visitor;
 using ThemeParkGame.Park;
@@ -52,6 +53,12 @@ namespace ThemeParkGame.Core
             EnsureSpecialEventUI();
             EnsureSocialShareSystem();
             EnsureAccessibilitySystem();
+
+            // Phase 10 システム
+            EnsureAccidentEventSystem();
+            EnsureWordOfMouthSystem();
+            EnsureRivalParkSystem();
+            EnsureSaleCampaignSystem();
 
             // ランタイムゲームセットアップ（ゲーム開始後にワールドを構築）
             EnsureRuntimeGameSetup();
@@ -279,6 +286,42 @@ namespace ThemeParkGame.Core
         }
 
         // ================================================================
+        // Phase 10 システム
+        // ================================================================
+
+        private static void EnsureAccidentEventSystem()
+        {
+            if (AccidentEventSystem.Instance != null) return;
+            var go = new GameObject("AccidentEventSystem");
+            go.AddComponent<AccidentEventSystem>();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] AccidentEventSystem を生成");
+        }
+
+        private static void EnsureWordOfMouthSystem()
+        {
+            if (WordOfMouthSystem.Instance != null) return;
+            var go = new GameObject("WordOfMouthSystem");
+            go.AddComponent<WordOfMouthSystem>();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] WordOfMouthSystem を生成");
+        }
+
+        private static void EnsureRivalParkSystem()
+        {
+            if (RivalParkSystem.Instance != null) return;
+            var go = new GameObject("RivalParkSystem");
+            go.AddComponent<RivalParkSystem>();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] RivalParkSystem を生成");
+        }
+
+        private static void EnsureSaleCampaignSystem()
+        {
+            if (SaleCampaignSystem.Instance != null) return;
+            var go = new GameObject("SaleCampaignSystem");
+            go.AddComponent<SaleCampaignSystem>();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] SaleCampaignSystem を生成");
+        }
+
+        // ================================================================
         // ランタイムゲームセットアップ
         // ================================================================
 
@@ -496,7 +539,7 @@ namespace ThemeParkGame.Core
             // ---- バージョン表示 ----
             var ver = CreateUIElement("Version", canvasGo.transform);
             var verText = ver.AddComponent<Text>();
-            verText.text = "v1.7 - WebGL Build";
+            verText.text = "v1.8 - WebGL Build";
             verText.font = GetBuiltinFont();
             verText.fontSize = 18;
             verText.alignment = TextAnchor.LowerRight;

@@ -36,6 +36,7 @@ namespace ThemeParkGame.Attraction
         public Vector2Int Size;
         public string RequiredResearchId;
         public float BaseBreakdownRate;
+        public bool CrossZoneCompatible;
         public List<AttractionUpgradeLevel> UpgradePath;
     }
 

@@ -41,7 +41,7 @@ namespace ThemeParkGame.Core
 
             // GC: 閾値を低めに設定してスパイクを軽減
             // Unity 2021+ ではインクリメンタルGCがデフォルト有効
-            Debug.Log("[WebGLOptimizer] WebGL最適化設定を適用しました (v1.7)");
+            Debug.Log("[WebGLOptimizer] WebGL最適化設定を適用しました (v1.8)");
 #else
             // エディタ/スタンドアロンではフレームレート60固定
             Application.targetFrameRate = 60;
