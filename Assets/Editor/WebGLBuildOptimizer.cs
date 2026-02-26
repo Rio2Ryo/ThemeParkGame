@@ -38,7 +38,7 @@ namespace ThemeParkGame.Editor
             // PlayerSettings.SetIl2CppCodeGeneration は Unity 2022.1以降のAPI
 
             // ---- WebGL固有設定 ----
-            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Brotli;
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
             PlayerSettings.WebGL.dataCaching = true;
             PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly;
             PlayerSettings.WebGL.debugSymbolMode = WebGLDebugSymbolMode.Off;
@@ -60,7 +60,7 @@ namespace ThemeParkGame.Editor
             Debug.Log("[WebGLBuildOptimizer] WebGL最適化設定を適用しました:\n" +
                       "  - Managed Stripping: High\n" +
                       "  - IL2CPP Code Gen: OptimizeSize\n" +
-                      "  - Compression: Brotli\n" +
+                      "  - Compression: Disabled\n" +
                       "  - Data Caching: ON\n" +
                       "  - Exception Support: ExplicitlyThrownOnly\n" +
                       "  - Debug Symbols: Off\n" +

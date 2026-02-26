@@ -76,7 +76,7 @@ PlayerSettings:
     WebGL: 2
   webGLMemorySize: 256
   webGLExceptionSupport: 0
-  webGLCompressionFormat: 2
+  webGLCompressionFormat: 0
   webGLLinkerTarget: 1
   webGLThreadsSupport: 0
   webGLDecompressionFallback: 1

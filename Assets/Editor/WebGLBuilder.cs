@@ -92,12 +92,12 @@ namespace ThemeParkGame.Editor
                 BuildTargetGroup.WebGL, Il2CppCompilerConfiguration.Release);
 
             // WebGL 固有設定
-            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
             PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly;
             PlayerSettings.WebGL.memorySize = 512;
             PlayerSettings.WebGL.linkerTarget = WebGLLinkerTarget.Wasm;
             PlayerSettings.WebGL.threadsSupport = false;
-            PlayerSettings.WebGL.decompressionFallback = true;
+            PlayerSettings.WebGL.decompressionFallback = false;
 
 #if UNITY_2021_2_OR_NEWER
             PlayerSettings.WebGL.powerPreference = WebGLPowerPreference.HighPerformance;
@@ -107,7 +107,7 @@ namespace ThemeParkGame.Editor
             Debug.Log("  - Scripting Backend: IL2CPP");
             Debug.Log("  - Stripping Level: High");
             Debug.Log("  - Strip Engine Code: ON");
-            Debug.Log("  - Compression: Gzip");
+            Debug.Log("  - Compression: Disabled");
             Debug.Log("  - Exception Support: ExplicitlyThrownOnly");
             Debug.Log("  - Memory Size: 512 MB");
             Debug.Log("  - Linker Target: Wasm");
