@@ -43,7 +43,7 @@ namespace ThemeParkGame.Editor
             PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.None;
             PlayerSettings.WebGL.debugSymbolMode = WebGLDebugSymbolMode.Off;
             PlayerSettings.WebGL.nameFilesAsHashes = true;
-            PlayerSettings.WebGL.template = "PROJECT:Minimal";
+            PlayerSettings.WebGL.template = "PROJECT:ThemeParkGame";
 
             // メモリサイズ（MB）
             PlayerSettings.WebGL.memorySize = 256;
