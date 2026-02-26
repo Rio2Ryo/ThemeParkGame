@@ -43,8 +43,8 @@ namespace ThemeParkGame.Core
 
         // ---- 速度ボタン ----
         private Image[] _speedBtnBgs;
-        private readonly int[] _speedLevels = { 0, 1, 2, 5 };
-        private readonly string[] _speedLabels = { "||", "x1", "x2", "x5" };
+        private readonly float[] _speedScales = { 0f, 0.5f, 1f, 2f, 5f };
+        private readonly string[] _speedLabels = { "||", "x.5", "x1", "x2", "x5" };
 
         // ---- 来場者状態パネル ----
         private Text[] _visitorStatTexts;
@@ -232,7 +232,7 @@ namespace ThemeParkGame.Core
         private const float UpdateInterval = 0.3f;
         private Attraction.Attraction[] _attractions;
         private float _attrCacheTimer;
-        private int _currentSpeed = 1;
+        private float _currentSpeed = 1f;
 
         // 来場者状態カウント
         private int _walkingCount, _waitingCount, _ridingCount;
@@ -457,7 +457,7 @@ namespace ThemeParkGame.Core
 
         private void BuildSpeedPanel(RectTransform root)
         {
-            float panelW = 230f;
+            float panelW = 276f;
             float panelH = 44f;
 
             var bg = MakePanel(root, "SpeedPanel", panelW, panelH, BgDark);
@@ -466,12 +466,12 @@ namespace ThemeParkGame.Core
             rt.pivot = new Vector2(1f, 1f);
             rt.anchoredPosition = new Vector2(-10f, -122f);
 
-            _speedBtnBgs = new Image[4];
-            float btnW = 50f;
+            _speedBtnBgs = new Image[5];
+            float btnW = 48f;
             float gap = 4f;
-            float startX = 8f;
+            float startX = 6f;
 
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < 5; i++)
             {
                 float bx = startX + i * (btnW + gap);
 
@@ -1947,25 +1947,45 @@ namespace ThemeParkGame.Core
                 new Color(0.35f, 0.2f, 0.55f), new Color(0.45f, 0.28f, 0.65f), new Color(0.25f, 0.15f, 0.42f),
                 new Vector2(0f, -115f), OnCoopClicked);
 
+            // Phase 9: 「天気予報」ボタン
+            MakeCenterButton(rt, "WeatherBtn", "WEATHER",
+                new Color(0.2f, 0.45f, 0.6f), new Color(0.28f, 0.55f, 0.72f), new Color(0.15f, 0.35f, 0.48f),
+                new Vector2(0f, -170f), OnWeatherClicked);
+
+            // Phase 9: 「イベント」ボタン
+            MakeCenterButton(rt, "EventsBtn", "EVENTS",
+                new Color(0.55f, 0.3f, 0.5f), new Color(0.65f, 0.38f, 0.6f), new Color(0.42f, 0.22f, 0.38f),
+                new Vector2(0f, -225f), OnEventsClicked);
+
+            // Phase 9: 「シェア」ボタン
+            MakeCenterButton(rt, "ShareBtn", "SHARE",
+                new Color(0.15f, 0.15f, 0.2f), new Color(0.25f, 0.25f, 0.32f), new Color(0.1f, 0.1f, 0.15f),
+                new Vector2(0f, -280f), OnShareClicked);
+
+            // Phase 9: 「アクセシビリティ」ボタン
+            MakeCenterButton(rt, "AccessibilityBtn", "ACCESSIBILITY",
+                new Color(0.3f, 0.5f, 0.45f), new Color(0.38f, 0.6f, 0.55f), new Color(0.22f, 0.4f, 0.35f),
+                new Vector2(0f, -335f), OnAccessibilityClicked);
+
             // 「実績」ボタン
             MakeCenterButton(rt, "AchievementBtn", "ACHIEVEMENTS",
                 new Color(0.55f, 0.45f, 0.2f), new Color(0.65f, 0.55f, 0.28f), new Color(0.42f, 0.34f, 0.15f),
-                new Vector2(0f, -170f), OnAchievementClicked);
+                new Vector2(0f, -390f), OnAchievementClicked);
 
             // 「サウンド設定」ボタン
             MakeCenterButton(rt, "SoundBtn", "SOUND SETTINGS",
                 new Color(0.35f, 0.4f, 0.52f), new Color(0.45f, 0.5f, 0.62f), new Color(0.25f, 0.3f, 0.42f),
-                new Vector2(0f, -225f), OnSoundSettingsClicked);
+                new Vector2(0f, -445f), OnSoundSettingsClicked);
 
             // 「イベントログ」ボタン
             MakeCenterButton(rt, "EventLogBtn", "EVENT LOG",
                 new Color(0.3f, 0.45f, 0.55f), new Color(0.38f, 0.55f, 0.65f), new Color(0.22f, 0.35f, 0.44f),
-                new Vector2(0f, -280f), OnEventLogClicked);
+                new Vector2(0f, -500f), OnEventLogClicked);
 
             // 「ゲーム終了」ボタン
             MakeCenterButton(rt, "EndGameBtn", "ゲーム終了",
                 new Color(0.65f, 0.2f, 0.2f), new Color(0.75f, 0.3f, 0.3f), new Color(0.5f, 0.15f, 0.15f),
-                new Vector2(0f, -335f), OnEndGameClicked);
+                new Vector2(0f, -555f), OnEndGameClicked);
 
             // サウンド設定パネル（初期非表示）
             BuildSoundSettingsPanel(rt);
@@ -2359,6 +2379,30 @@ namespace ThemeParkGame.Core
         {
             if (CoopManager.Instance != null)
                 CoopManager.Instance.ToggleUI();
+        }
+
+        private void OnWeatherClicked()
+        {
+            if (UI.WeatherForecastUI.Instance != null)
+                UI.WeatherForecastUI.Instance.ToggleUI();
+        }
+
+        private void OnEventsClicked()
+        {
+            if (UI.SpecialEventUI.Instance != null)
+                UI.SpecialEventUI.Instance.ToggleUI();
+        }
+
+        private void OnShareClicked()
+        {
+            if (SocialShareSystem.Instance != null)
+                SocialShareSystem.Instance.ToggleUI();
+        }
+
+        private void OnAccessibilityClicked()
+        {
+            if (AccessibilitySystem.Instance != null)
+                AccessibilitySystem.Instance.ToggleUI();
         }
 
         private void OnSoundSettingsClicked()
@@ -4130,7 +4174,7 @@ namespace ThemeParkGame.Core
             }
 
             // ---- 速度 ----
-            _currentSpeed = gm.SpeedLevel;
+            _currentSpeed = Time.timeScale;
             HighlightActiveSpeed();
 
             // ---- アトラクション ----
@@ -4288,17 +4332,17 @@ namespace ThemeParkGame.Core
         private void OnSpeedClicked(int index)
         {
             if (GameManager.Instance == null) return;
-            GameManager.Instance.SpeedLevel = _speedLevels[index];
-            _currentSpeed = _speedLevels[index];
+            GameManager.Instance.SetTimeScale(_speedScales[index]);
+            _currentSpeed = _speedScales[index];
             HighlightActiveSpeed();
         }
 
         private void HighlightActiveSpeed()
         {
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < _speedScales.Length; i++)
             {
                 if (_speedBtnBgs[i] != null)
-                    _speedBtnBgs[i].color = (_speedLevels[i] == _currentSpeed) ? BtnActive : BtnNormal;
+                    _speedBtnBgs[i].color = (Mathf.Approximately(_speedScales[i], _currentSpeed)) ? BtnActive : BtnNormal;
             }
         }
 

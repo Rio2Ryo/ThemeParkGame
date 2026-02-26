@@ -47,6 +47,12 @@ namespace ThemeParkGame.Core
             EnsureLoanInvestmentUI();
             EnsureCoopManager();
 
+            // Phase 9 システム
+            EnsureWeatherForecastUI();
+            EnsureSpecialEventUI();
+            EnsureSocialShareSystem();
+            EnsureAccessibilitySystem();
+
             // ランタイムゲームセットアップ（ゲーム開始後にワールドを構築）
             EnsureRuntimeGameSetup();
 
@@ -234,6 +240,42 @@ namespace ThemeParkGame.Core
             var go = new GameObject("CoopManager");
             go.AddComponent<CoopManager>();
             WebGLOptimizer.LogVerbose("[GameBootstrapper] CoopManager を生成");
+        }
+
+        // ================================================================
+        // Phase 9 システム
+        // ================================================================
+
+        private static void EnsureWeatherForecastUI()
+        {
+            if (UI.WeatherForecastUI.Instance != null) return;
+            var go = new GameObject("WeatherForecastUI");
+            go.AddComponent<UI.WeatherForecastUI>();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] WeatherForecastUI を生成");
+        }
+
+        private static void EnsureSpecialEventUI()
+        {
+            if (UI.SpecialEventUI.Instance != null) return;
+            var go = new GameObject("SpecialEventUI");
+            go.AddComponent<UI.SpecialEventUI>();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] SpecialEventUI を生成");
+        }
+
+        private static void EnsureSocialShareSystem()
+        {
+            if (SocialShareSystem.Instance != null) return;
+            var go = new GameObject("SocialShareSystem");
+            go.AddComponent<SocialShareSystem>();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] SocialShareSystem を生成");
+        }
+
+        private static void EnsureAccessibilitySystem()
+        {
+            if (AccessibilitySystem.Instance != null) return;
+            var go = new GameObject("AccessibilitySystem");
+            go.AddComponent<AccessibilitySystem>();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] AccessibilitySystem を生成");
         }
 
         // ================================================================
@@ -444,7 +486,7 @@ namespace ThemeParkGame.Core
             // ---- 操作ヒント ----
             var hint = CreateUIElement("Hint", canvasGo.transform);
             var hintText = hint.AddComponent<Text>();
-            hintText.text = "Click visitors to inspect  |  MENU button to pause  |  Speed controls: ||  x1  x2  x5";
+            hintText.text = "Click visitors to inspect  |  MENU button to pause  |  Speed: ||  x.5  x1  x2  x5";
             hintText.font = GetBuiltinFont();
             hintText.fontSize = 16;
             hintText.alignment = TextAnchor.MiddleCenter;
@@ -454,7 +496,7 @@ namespace ThemeParkGame.Core
             // ---- バージョン表示 ----
             var ver = CreateUIElement("Version", canvasGo.transform);
             var verText = ver.AddComponent<Text>();
-            verText.text = "v1.6 - WebGL Build";
+            verText.text = "v1.7 - WebGL Build";
             verText.font = GetBuiltinFont();
             verText.fontSize = 18;
             verText.alignment = TextAnchor.LowerRight;

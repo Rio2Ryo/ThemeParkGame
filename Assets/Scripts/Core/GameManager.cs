@@ -56,7 +56,7 @@ namespace ThemeParkGame.Core
         // 難易度
         public GameDifficulty CurrentDifficulty { get; private set; } = GameDifficulty.Normal;
 
-        // ゲーム速度: 0=一時停止, 1=通常, 2=2倍速, 3=3倍速
+        // ゲーム速度: 0=一時停止, 1=通常, 2=2倍速, 5=5倍速
         private int _speedLevel = 1;
         public int SpeedLevel
         {
@@ -66,6 +66,13 @@ namespace ThemeParkGame.Core
                 _speedLevel = Mathf.Clamp(value, 0, 5);
                 Time.timeScale = _speedLevel * gameSpeedMultiplier;
             }
+        }
+
+        /// <summary>任意のtimeScaleを設定する（0.5x等の小数速度対応）</summary>
+        public void SetTimeScale(float scale)
+        {
+            _speedLevel = Mathf.RoundToInt(scale);
+            Time.timeScale = scale * gameSpeedMultiplier;
         }
 
         private void Awake()
