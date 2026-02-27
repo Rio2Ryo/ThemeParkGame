@@ -154,7 +154,7 @@ namespace ThemeParkGame.AI
             if (parameters == null) return DialogueCategory.Greeting;
 
             if (parameters.Happiness <= 20f) return DialogueCategory.Complaint;
-            if (parameters.Fatigue >= 80f) return DialogueCategory.Tired;
+            if (parameters.Nausea >= 60f) return DialogueCategory.Tired;
             if (parameters.Happiness >= 85f) return DialogueCategory.Excited;
             if (parameters.Hunger >= 70f) return DialogueCategory.FoodReview;
 
@@ -162,7 +162,7 @@ namespace ThemeParkGame.AI
             if (GameManager.Instance?.WeatherSystem != null)
             {
                 var weather = GameManager.Instance.WeatherSystem.CurrentWeather;
-                if (weather == WeatherType.Rain || weather == WeatherType.Snow || weather == WeatherType.Storm)
+                if (weather == Weather.Rainy || weather == Weather.Snowy)
                     return DialogueCategory.WeatherComment;
             }
 
@@ -281,12 +281,11 @@ namespace ThemeParkGame.AI
             {
                 string weatherName = GameManager.Instance.WeatherSystem.CurrentWeather switch
                 {
-                    WeatherType.Sunny => "晴れ",
-                    WeatherType.Cloudy => "曇り",
-                    WeatherType.Rain => "雨",
-                    WeatherType.Snow => "雪",
-                    WeatherType.Storm => "嵐",
-                    WeatherType.HeatWave => "猛暑",
+                    Weather.Sunny => "晴れ",
+                    Weather.Cloudy => "曇り",
+                    Weather.Rainy => "雨",
+                    Weather.Snowy => "雪",
+                    Weather.Hot => "猛暑",
                     _ => "晴れ"
                 };
                 text = text.Replace("{weather}", weatherName);
@@ -295,8 +294,8 @@ namespace ThemeParkGame.AI
             // 時間帯
             if (GameManager.Instance?.TimeManager != null)
             {
-                int hour = GameManager.Instance.TimeManager.CurrentHour;
-                string timeOfDay = hour < 12 ? "午前" : hour < 17 ? "午後" : "夕方";
+                float hour = GameManager.Instance.TimeManager.CurrentHour;
+                string timeOfDay = hour < 12f ? "午前" : hour < 17f ? "午後" : "夕方";
                 text = text.Replace("{time}", timeOfDay);
             }
 
