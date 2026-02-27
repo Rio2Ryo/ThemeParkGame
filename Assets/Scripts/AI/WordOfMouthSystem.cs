@@ -147,9 +147,22 @@ namespace ThemeParkGame.AI
             var vm = GameManager.Instance?.VisitorManager;
             if (vm == null) return;
 
-            // 来場者の満足度からレビュータイプを決定
-            float happiness = vm.AverageHappiness;
-            float satisfaction = vm.AverageSatisfaction;
+            // 退園する来場者個人の体験からレビュータイプを決定
+            float happiness;
+            float satisfaction;
+            var visitor = vm.FindVisitorById(visitorId);
+            if (visitor != null)
+            {
+                // 個人の幸福度と満足度を使用
+                happiness = visitor.Happiness;
+                satisfaction = visitor.Parameters.Satisfaction;
+            }
+            else
+            {
+                // 来場者が既にプールに返却済みの場合はパーク平均値にフォールバック
+                happiness = vm.AverageHappiness;
+                satisfaction = vm.AverageSatisfaction;
+            }
             float avgScore = (happiness + satisfaction) / 2f;
 
             ReviewType type;

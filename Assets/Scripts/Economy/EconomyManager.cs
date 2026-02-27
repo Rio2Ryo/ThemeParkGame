@@ -372,7 +372,8 @@ namespace ThemeParkGame.Economy
             if (termMonths > 60) termMonths = 60;
 
             // 月利と月々の返済額を計算（元利均等返済）
-            float monthlyRate = BASE_LOAN_INTEREST_RATE / 12f;
+            // 複利ベースの月利: monthlyRate = (1 + annualRate)^(1/12) - 1
+            float monthlyRate = Mathf.Pow(1f + BASE_LOAN_INTEREST_RATE, 1f / 12f) - 1f;
             float monthlyPayment;
 
             if (monthlyRate > 0f)
@@ -391,7 +392,7 @@ namespace ThemeParkGame.Economy
                 LoanId = _nextLoanId++,
                 Principal = amount,
                 AnnualInterestRate = BASE_LOAN_INTEREST_RATE,
-                RemainingBalance = amount + (amount * BASE_LOAN_INTEREST_RATE * termMonths / 12f),
+                RemainingBalance = monthlyPayment * termMonths,
                 MonthlyPayment = monthlyPayment,
                 TermMonths = termMonths,
                 ElapsedMonths = 0
