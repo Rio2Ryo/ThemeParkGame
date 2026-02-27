@@ -111,6 +111,18 @@ namespace ThemeParkGame.Park
         [SerializeField] private int gridWidth = 64;
         [SerializeField] private int gridHeight = 64;
 
+        /// <summary>グリッド幅（動的拡張される）</summary>
+        public int GridWidth => gridWidth;
+
+        /// <summary>グリッド高さ（動的拡張される）</summary>
+        public int GridHeight => gridHeight;
+
+        /// <summary>パーク中心のグリッドX座標（拡張時にシフトされる）</summary>
+        public int ParkCenterX { get; private set; }
+
+        /// <summary>パーク中心のグリッドY座標（拡張時にシフトされる）</summary>
+        public int ParkCenterY { get; private set; }
+
         /// <summary>パーク総合評価システム</summary>
         public ParkRating Rating { get; private set; }
 
@@ -211,6 +223,9 @@ namespace ThemeParkGame.Park
             _grids.Clear();
             _placedFacilities.Clear();
             _nextFacilityId = 1;
+
+            ParkCenterX = gridWidth / 2;
+            ParkCenterY = gridHeight / 2;
 
             foreach (ThemeZone zone in Enum.GetValues(typeof(ThemeZone)))
             {
@@ -472,6 +487,68 @@ namespace ThemeParkGame.Park
         public IReadOnlyDictionary<int, PlacedFacility> GetAllFacilities()
         {
             return _placedFacilities;
+        }
+
+        // ================================================================
+        // グリッド動的拡張
+        // ================================================================
+
+        /// <summary>
+        /// グリッドが指定範囲を含むよう動的に拡張する。
+        /// 負の座標が必要な場合はグリッド原点をシフトし、既存データを移動する。
+        /// ParkExpansionSystemの区画購入時に呼ばれる。
+        /// </summary>
+        public void EnsureGridContains(int requiredMinX, int requiredMinY, int requiredMaxX, int requiredMaxY)
+        {
+            int expandLeft = requiredMinX < 0 ? -requiredMinX : 0;
+            int expandBottom = requiredMinY < 0 ? -requiredMinY : 0;
+            int expandRight = requiredMaxX >= gridWidth ? requiredMaxX - gridWidth + 1 : 0;
+            int expandTop = requiredMaxY >= gridHeight ? requiredMaxY - gridHeight + 1 : 0;
+
+            if (expandLeft == 0 && expandBottom == 0 && expandRight == 0 && expandTop == 0)
+                return;
+
+            int newWidth = gridWidth + expandLeft + expandRight;
+            int newHeight = gridHeight + expandBottom + expandTop;
+
+            // 全ゾーンのグリッドを拡張
+            var zoneKeys = new List<ThemeZone>(_grids.Keys);
+            foreach (var zone in zoneKeys)
+            {
+                var oldGrid = _grids[zone];
+                var newGrid = new int[newWidth, newHeight];
+
+                // 既存データをシフトしてコピー
+                for (int x = 0; x < gridWidth; x++)
+                {
+                    for (int y = 0; y < gridHeight; y++)
+                    {
+                        newGrid[x + expandLeft, y + expandBottom] = oldGrid[x, y];
+                    }
+                }
+                _grids[zone] = newGrid;
+            }
+
+            // 既存施設の座標をシフト
+            if (expandLeft > 0 || expandBottom > 0)
+            {
+                foreach (var facility in _placedFacilities.Values)
+                {
+                    facility.GridX += expandLeft;
+                    facility.GridY += expandBottom;
+                }
+            }
+
+            // パーク中心座標をシフト
+            ParkCenterX += expandLeft;
+            ParkCenterY += expandBottom;
+
+            gridWidth = newWidth;
+            gridHeight = newHeight;
+
+            WebGLOptimizer.LogVerbose(
+                $"[ParkManager] グリッド拡張: {newWidth}x{newHeight} " +
+                $"(左+{expandLeft}, 下+{expandBottom}, 右+{expandRight}, 上+{expandTop})");
         }
 
         /// <summary>指定タイプの施設一覧を取得する</summary>

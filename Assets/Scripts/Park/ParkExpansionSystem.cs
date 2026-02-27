@@ -195,6 +195,9 @@ namespace ThemeParkGame.Park
             plot.IsPurchased = true;
             PurchasedPlotCount++;
 
+            // ParkManagerのグリッドを拡張して建設可能エリアを増やす
+            ExpandParkGrid(plot);
+
             // パーク評価にボーナス
             var pm = GameManager.Instance?.ParkManager;
             if (pm?.Rating != null)
@@ -270,10 +273,14 @@ namespace ThemeParkGame.Park
             foreach (var plot in _allPlots)
             {
                 plot.IsPurchased = plotIds.Contains(plot.PlotId);
-                if (plot.IsPurchased) PurchasedPlotCount++;
+                if (plot.IsPurchased)
+                {
+                    PurchasedPlotCount++;
+                    ExpandParkGrid(plot);
+                }
             }
 
-            WebGLOptimizer.LogVerbose($"[ParkExpansion] {PurchasedPlotCount}区画を復元");
+            WebGLOptimizer.LogVerbose($"[ParkExpansion] {PurchasedPlotCount}区画を復元（グリッド拡張済み）");
         }
 
         // ============================================================
@@ -533,6 +540,31 @@ namespace ThemeParkGame.Park
             // 資金チェック
             float money = GameManager.Instance?.EconomyManager?.CurrentMoney ?? 0f;
             return money >= plot.Price;
+        }
+
+        /// <summary>
+        /// 購入した区画に対応するグリッドエリアを確保する。
+        /// ParkManager.EnsureGridContains()を呼び出してグリッドを動的拡張する。
+        /// </summary>
+        private void ExpandParkGrid(LandPlot plot)
+        {
+            var pm = GameManager.Instance?.ParkManager;
+            if (pm == null) return;
+
+            // パーク中心座標 + 区画オフセットから、区画の占有範囲を算出
+            int centerX = pm.ParkCenterX;
+            int centerY = pm.ParkCenterY;
+
+            int plotMinX = centerX + plot.GridOffsetX - PlotSize / 2;
+            int plotMinY = centerY + plot.GridOffsetY - PlotSize / 2;
+            int plotMaxX = plotMinX + PlotSize - 1;
+            int plotMaxY = plotMinY + PlotSize - 1;
+
+            pm.EnsureGridContains(plotMinX, plotMinY, plotMaxX, plotMaxY);
+
+            WebGLOptimizer.LogVerbose(
+                $"[ParkExpansion] グリッド拡張要求: {plot.DisplayName} " +
+                $"→ grid({plotMinX},{plotMinY})-({plotMaxX},{plotMaxY})");
         }
 
         private void OnBuyPlotClicked(string plotId)
