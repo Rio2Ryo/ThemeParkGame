@@ -3,6 +3,7 @@
 // アクセシビリティ改善 - キーボード操作完全対応・ハイコントラストモード
 // ============================================================
 
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -35,6 +36,12 @@ namespace ThemeParkGame.Core
         private bool _largeFontEnabled;
         private bool _keyboardNavEnabled = true;
         private float _fontScale = 1f;
+
+        // ハイコントラスト復元用: 変更前の値を保存
+        /// <summary>Image instance ID → 変更前のアルファ値</summary>
+        private readonly Dictionary<int, float> _originalImageAlphas = new Dictionary<int, float>();
+        /// <summary>Text instance ID → 変更前のテキスト色</summary>
+        private readonly Dictionary<int, Color> _originalTextColors = new Dictionary<int, Color>();
 
         // UI
         private GameObject _settingsPanel;
@@ -177,24 +184,34 @@ namespace ThemeParkGame.Core
 
         private void ApplyHighContrast()
         {
-            // 全Canvasの背景色を濃くする
+            // 全Canvasの背景色を濃くする（変更前のアルファ値を保存）
             var images = FindObjectsOfType<Image>();
             foreach (var img in images)
             {
                 if (img.color.a < 0.5f && img.color.a > 0.1f)
                 {
+                    int id = img.GetInstanceID();
+                    if (!_originalImageAlphas.ContainsKey(id))
+                    {
+                        _originalImageAlphas[id] = img.color.a;
+                    }
                     Color c = img.color;
                     c.a = Mathf.Max(c.a, 0.9f);
                     img.color = c;
                 }
             }
 
-            // テキストの色をハイコントラストに
+            // テキストの色をハイコントラストに（変更前の色を保存）
             var texts = FindObjectsOfType<Text>();
             foreach (var t in texts)
             {
                 if (t.color.r < 0.5f && t.color.g < 0.5f && t.color.b < 0.5f)
                 {
+                    int id = t.GetInstanceID();
+                    if (!_originalTextColors.ContainsKey(id))
+                    {
+                        _originalTextColors[id] = t.color;
+                    }
                     t.color = Color.white;
                 }
             }
@@ -204,6 +221,33 @@ namespace ThemeParkGame.Core
 
         private void RemoveHighContrast()
         {
+            // 保存済みのアルファ値を復元する
+            var images = FindObjectsOfType<Image>();
+            foreach (var img in images)
+            {
+                int id = img.GetInstanceID();
+                if (_originalImageAlphas.TryGetValue(id, out float originalAlpha))
+                {
+                    Color c = img.color;
+                    c.a = originalAlpha;
+                    img.color = c;
+                }
+            }
+
+            // 保存済みのテキスト色を復元する
+            var texts = FindObjectsOfType<Text>();
+            foreach (var t in texts)
+            {
+                int id = t.GetInstanceID();
+                if (_originalTextColors.TryGetValue(id, out Color originalColor))
+                {
+                    t.color = originalColor;
+                }
+            }
+
+            _originalImageAlphas.Clear();
+            _originalTextColors.Clear();
+
             WebGLOptimizer.LogVerbose("[Accessibility] ハイコントラストモード無効");
         }
 

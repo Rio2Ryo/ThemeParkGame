@@ -318,15 +318,22 @@ namespace ThemeParkGame.Attraction
         {
             _cycleTimer += Time.deltaTime;
 
-            // 運転中の故障判定（毎秒チェック）
-            if (UnityEngine.Random.value < currentBreakdownProbability * Time.deltaTime)
+            // 運転中の故障判定（毎フレームチェック）
+            // currentBreakdownProbability は「1回の運行サイクルあたりの故障確率」なので、
+            // RideDurationで割って「1秒あたりの故障率」に変換してからdeltaTimeを掛ける。
+            // これにより BaseBreakdownRate=0.02 は「1回の運行で2%の故障確率」として正しく動作する。
+            float rideDuration = attractionData.RideDuration;
+            float perSecondRate = rideDuration > 0f
+                ? currentBreakdownProbability / rideDuration
+                : currentBreakdownProbability;
+            if (UnityEngine.Random.value < perSecondRate * Time.deltaTime)
             {
                 TriggerBreakdown();
                 return;
             }
 
             // 運転時間が経過したら降車フェーズへ
-            if (_cycleTimer >= attractionData.RideDuration)
+            if (_cycleTimer >= rideDuration)
             {
                 TransitionTo(RideCycleState.Unloading);
             }
@@ -491,6 +498,9 @@ namespace ThemeParkGame.Attraction
         /// 故障確率を時間経過に応じて更新する。
         /// 前回のメカニック点検からの経過時間が長いほど故障確率が上昇する。
         /// アップグレードによる故障率軽減も反映する。
+        ///
+        /// 単位: 1回の運行サイクルあたりの故障確率（0.0～1.0）。
+        /// UpdateRunning()でRideDurationで割って秒単位レートに変換して使用する。
         /// </summary>
         private void UpdateBreakdownProbability()
         {
