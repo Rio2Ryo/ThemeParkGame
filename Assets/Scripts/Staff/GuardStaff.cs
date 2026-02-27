@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using ThemeParkGame.Core;
+using ThemeParkGame.Visitor;
 
 namespace ThemeParkGame.Staff
 {
@@ -281,14 +282,25 @@ namespace ThemeParkGame.Staff
             // フーリガンを退場させる
             if (currentTarget != null)
             {
-                var vm = GameManager.Instance?.VisitorManager;
-                if (vm != null)
+                // Hooliganコンポーネントがあればマネージャーに通知
+                var hooligan = currentTarget.GetComponent<Hooligan>();
+                if (hooligan != null)
                 {
-                    vm.EjectVisitor(currentTarget);
+                    hooligan.OnApprehended();
+                    Object.Destroy(currentTarget);
                 }
                 else
                 {
-                    Object.Destroy(currentTarget);
+                    // 従来のVisitorAIベースの退場処理
+                    var vm = GameManager.Instance?.VisitorManager;
+                    if (vm != null)
+                    {
+                        vm.EjectVisitor(currentTarget);
+                    }
+                    else
+                    {
+                        Object.Destroy(currentTarget);
+                    }
                 }
                 WebGLOptimizer.LogVerbose($"[Guard] フーリガンをパークから退場させました");
             }

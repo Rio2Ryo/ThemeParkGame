@@ -60,6 +60,7 @@ namespace ThemeParkGame.Core
             EnsureRivalParkSystem();
             EnsureSaleCampaignSystem();
             EnsureNPCDialogueSystem();
+            EnsureHooliganManager();
 
             // ランタイムゲームセットアップ（ゲーム開始後にワールドを構築）
             EnsureRuntimeGameSetup();
@@ -326,6 +327,14 @@ namespace ThemeParkGame.Core
             var go = new GameObject("NPCDialogueSystem");
             go.AddComponent<NPCDialogueSystem>();
             WebGLOptimizer.LogVerbose("[GameBootstrapper] NPCDialogueSystem を生成");
+        }
+
+        private static void EnsureHooliganManager()
+        {
+            if (HooliganManager.Instance != null) return;
+            var go = new GameObject("HooliganManager");
+            go.AddComponent<HooliganManager>();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] HooliganManager を生成");
         }
 
         // ================================================================
