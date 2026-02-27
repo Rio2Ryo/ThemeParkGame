@@ -411,6 +411,19 @@ namespace ThemeParkGame.Attraction
             stateObj.Enter(context);
 
             UpdateStateCounts();
+
+            // PricingSystemに登録（価格最適化を有効化）
+            var pricing = GameManager.Instance?.EconomyManager?.Pricing;
+            if (pricing != null)
+            {
+                pricing.RegisterFacility(
+                    id,
+                    FacilityType.Attraction,
+                    attraction.DisplayName,
+                    attraction.BuildCost,
+                    attraction.TicketPrice);
+            }
+
             WebGLOptimizer.LogVerbose($"[AttractionManager] 登録: {attraction.DisplayName} (ID={id}, " +
                       $"初期状態={initialState})");
         }
@@ -429,6 +442,9 @@ namespace ThemeParkGame.Attraction
             _contexts.Remove(facilityId);
             _currentStates.Remove(facilityId);
             UpdateStateCounts();
+
+            // PricingSystemから解除
+            GameManager.Instance?.EconomyManager?.Pricing?.UnregisterFacility(facilityId);
 
             // 施設キャッシュをクリア
             VisitorAI.InvalidateFacilityCache();

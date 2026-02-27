@@ -204,6 +204,24 @@ namespace ThemeParkGame.Attraction
             base.Start();
             if (currentStock <= 0) currentStock = maxStock;
             _restockTimer = 0f;
+
+            // PricingSystemに登録（価格最適化を有効化）
+            RegisterWithPricingSystem();
+        }
+
+        /// <summary>PricingSystemにこのショップの価格情報を登録する</summary>
+        private void RegisterWithPricingSystem()
+        {
+            var pricing = GameManager.Instance?.EconomyManager?.Pricing;
+            if (pricing != null)
+            {
+                pricing.RegisterFacility(
+                    FacilityId,
+                    FacilityType,
+                    DisplayName,
+                    wholesalePrice,
+                    sellingPrice);
+            }
         }
 
         // ---- メインループ ----
@@ -482,6 +500,9 @@ namespace ThemeParkGame.Attraction
         {
             _customerQueue.Clear();
             _currentServingVisitorId = -1;
+
+            // PricingSystemから解除
+            GameManager.Instance?.EconomyManager?.Pricing?.UnregisterFacility(FacilityId);
         }
     }
 
