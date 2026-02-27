@@ -69,6 +69,40 @@ namespace ThemeParkGame.Core
         [Serializable] private class LeaveRequest { public string roomCode; public string playerId; }
         [Serializable] private class ActionData { public string type; public string data; }
 
+        /// <summary>
+        /// ホストが定期的にブロードキャストするパーク状態。
+        /// 他プレイヤーはこの情報をもとにホストのパーク状況を把握する。
+        /// </summary>
+        [Serializable]
+        public class CoopState
+        {
+            // 経済
+            public float funds;
+            public float monthRevenue;
+            public float monthExpenses;
+            public float totalLoanBalance;
+
+            // 来場者
+            public int activeVisitorCount;
+            public int totalVisitorsToday;
+            public float averageHappiness;
+
+            // パーク
+            public float parkRating;
+            public int totalAttractions;
+            public int totalShops;
+            public int totalStaff;
+            public float cleanliness;
+            public float safetyRating;
+
+            // 時間・天候
+            public int year;
+            public int month;
+            public int day;
+            public float hour;
+            public string weather;
+        }
+
         [Serializable] private class CreateResponse { public bool success; public string roomCode; }
         [Serializable] private class JoinResponse { public bool success; }
         [Serializable] private class StateResponse
@@ -158,8 +192,7 @@ namespace ThemeParkGame.Core
             if (_stateSyncTimer >= STATE_SYNC_INTERVAL && _isHost)
             {
                 _stateSyncTimer = 0f;
-                // ホストはパーク状態を定期的に同期
-                SendAction("park_state_update", "{}");
+                BroadcastState();
             }
         }
 
@@ -355,6 +388,96 @@ namespace ThemeParkGame.Core
                 www.downloadHandler = new DownloadHandlerBuffer();
                 www.SetRequestHeader("Content-Type", "application/json");
                 yield return www.SendWebRequest();
+            }
+        }
+
+        // ============================================================
+        // パーク状態同期
+        // ============================================================
+
+        /// <summary>
+        /// ホストがパーク状態を収集してブロードキャストする。
+        /// GameManager配下の各マネージャーから現在値を取得し、
+        /// JSON化してアクションとして送信する。
+        /// </summary>
+        private void BroadcastState()
+        {
+            var gm = GameManager.Instance;
+            if (gm == null) return;
+
+            var state = new CoopState();
+
+            // 経済情報
+            var economy = gm.EconomyManager;
+            if (economy != null)
+            {
+                state.funds = economy.CurrentBalance;
+                state.monthRevenue = economy.CurrentMonthRevenue;
+                state.monthExpenses = economy.CurrentMonthExpenses;
+                state.totalLoanBalance = economy.TotalLoanBalance;
+            }
+
+            // 来場者情報
+            var visitors = gm.VisitorManager;
+            if (visitors != null)
+            {
+                state.activeVisitorCount = visitors.ActiveVisitorCount;
+                state.totalVisitorsToday = visitors.TotalVisitorsToday;
+            }
+
+            // パーク情報
+            var park = gm.ParkManager;
+            if (park != null)
+            {
+                state.parkRating = park.GetOverallRating();
+                var stats = park.Stats;
+                if (stats != null)
+                {
+                    state.totalAttractions = stats.TotalAttractions;
+                    state.totalShops = stats.TotalShops;
+                    state.totalStaff = stats.TotalStaff;
+                    state.averageHappiness = stats.AverageHappiness;
+                    state.cleanliness = stats.Cleanliness;
+                    state.safetyRating = stats.SafetyRating;
+                }
+            }
+
+            // 時間情報
+            var time = gm.TimeManager;
+            if (time != null)
+            {
+                state.year = time.CurrentYear;
+                state.month = time.CurrentMonth;
+                state.day = time.CurrentDay;
+                state.hour = time.CurrentHour;
+            }
+
+            // 天候情報
+            var weather = gm.WeatherSystem;
+            if (weather != null)
+            {
+                state.weather = weather.CurrentWeather.ToString();
+            }
+
+            string json = JsonUtility.ToJson(state);
+            SendAction("park_state_update", json);
+        }
+
+        /// <summary>
+        /// ゲスト側がホストから受信したパーク状態を処理するための公開メソッド。
+        /// OnActionReceivedイベントから呼び出す想定。
+        /// </summary>
+        public CoopState ParseParkState(string json)
+        {
+            if (string.IsNullOrEmpty(json)) return null;
+            try
+            {
+                return JsonUtility.FromJson<CoopState>(json);
+            }
+            catch (System.Exception e)
+            {
+                WebGLOptimizer.LogVerbose($"[Coop] パーク状態のパースに失敗: {e.Message}");
+                return null;
             }
         }
 
