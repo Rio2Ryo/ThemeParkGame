@@ -169,6 +169,7 @@ namespace ThemeParkGame.Visitor
             foreach (var kvp in _activeVIPs)
             {
                 int vipId = kvp.Key;
+                var vipData = kvp.Value;
                 var visitor = FindVisitor(vipId);
 
                 if (visitor == null || !visitor.IsActive)
@@ -177,12 +178,15 @@ namespace ThemeParkGame.Visitor
                     continue;
                 }
 
+                // 状態遷移を追跡してショップ利用・エンタメ鑑賞・行列待ちを記録
+                TrackVIPActivity(visitor, vipData);
+
                 // VIPリクエスト進捗チェック
-                if (!kvp.Value.IsRequestCompleted)
+                if (!vipData.IsRequestCompleted)
                 {
-                    if (CheckRequestProgress(visitor, kvp.Value))
+                    if (CheckRequestProgress(visitor, vipData))
                     {
-                        kvp.Value.IsRequestCompleted = true;
+                        vipData.IsRequestCompleted = true;
 
                         // リクエスト達成で幸福度ブースト
                         if (visitor.Parameters != null)
@@ -190,11 +194,34 @@ namespace ThemeParkGame.Visitor
                             visitor.Parameters.ModifyHappiness(20f);
                         }
 
+                        // ゴールデンチケット報酬
+                        GameManager.Instance?.AwardGoldenTicket();
+
                         if (NotificationSystem.Instance != null)
                         {
                             NotificationSystem.Instance.Notify(
-                                "VIPのリクエストが達成されました！",
+                                "VIPのリクエストが達成されました！ ゴールデンチケット獲得！",
                                 NotifLevel.Success);
+                        }
+
+                        WebGLOptimizer.LogVerbose(
+                            $"[VIPSystem] VIP #{vipId} request fulfilled: {vipData.RequestType}");
+                    }
+                    else
+                    {
+                        // リクエスト未達の場合、時間経過で幸福度にペナルティ
+                        // （VIPは待たされることを嫌う）
+                        float elapsed = Time.time - vipData.ArrivalTime;
+                        if (elapsed > 60f && vipData.PenaltyCount < 5)
+                        {
+                            // 60秒以降、チェックごとにペナルティ（最大5回）
+                            vipData.PenaltyCount++;
+                            if (visitor.Parameters != null)
+                            {
+                                visitor.Parameters.ModifyHappiness(-5f);
+                            }
+                            WebGLOptimizer.LogVerbose(
+                                $"[VIPSystem] VIP #{vipId} growing impatient (penalty #{vipData.PenaltyCount})");
                         }
                     }
                 }
@@ -204,6 +231,54 @@ namespace ThemeParkGame.Visitor
             {
                 _activeVIPs.Remove(id);
             }
+        }
+
+        /// <summary>
+        /// VIPの行動を追跡して、ショップ利用・エンタメ鑑賞・行列待ちを記録する。
+        /// 状態遷移を検出して累積データを更新する。
+        /// </summary>
+        private void TrackVIPActivity(VisitorAI visitor, VIPData data)
+        {
+            var currentState = visitor.CurrentState;
+            var prevState = data.LastState;
+
+            // 食事完了を検出（Eating → 他の状態）
+            if (prevState == VisitorBehaviorState.Eating && currentState != VisitorBehaviorState.Eating)
+            {
+                data.HasPurchasedFood = true;
+                data.ShopPurchaseCount++;
+            }
+
+            // 飲料完了を検出（Drinking → 他の状態）
+            if (prevState == VisitorBehaviorState.Drinking && currentState != VisitorBehaviorState.Drinking)
+            {
+                data.HasPurchasedDrink = true;
+                data.ShopPurchaseCount++;
+            }
+
+            // エンタメ鑑賞完了を検出
+            if (prevState == VisitorBehaviorState.WatchingEntertainment
+                && currentState != VisitorBehaviorState.WatchingEntertainment)
+            {
+                data.HasWatchedEntertainment = true;
+            }
+
+            // 行列待ち時間の追跡
+            if (currentState == VisitorBehaviorState.WaitingInQueue)
+            {
+                if (prevState != VisitorBehaviorState.WaitingInQueue)
+                {
+                    // 行列に入った
+                    data.QueueStartTime = Time.time;
+                }
+            }
+            else if (prevState == VisitorBehaviorState.WaitingInQueue)
+            {
+                // 行列から出た
+                data.TotalWaitTime += Time.time - data.QueueStartTime;
+            }
+
+            data.LastState = currentState;
         }
 
         // ================================================================
@@ -244,30 +319,34 @@ namespace ThemeParkGame.Visitor
             switch (data.RequestType)
             {
                 case VIPRequestType.RideTopAttraction:
-                    // アトラクションに1回以上乗ったか
-                    return visitor.Profile?.AttractionMemories != null
-                        && visitor.Profile.AttractionMemories.Count >= 1;
+                    // 興奮度5以上のアトラクションに乗り、満足度が高い体験をしたか
+                    if (visitor.Profile?.AttractionMemories == null) return false;
+                    foreach (var memory in visitor.Profile.AttractionMemories)
+                    {
+                        if (memory.SatisfactionScore >= 60f) return true;
+                    }
+                    return false;
 
                 case VIPRequestType.TryAllShops:
-                    // 食事または飲み物を購入したか
-                    return visitor.CurrentState == VisitorBehaviorState.Eating
-                        || visitor.CurrentState == VisitorBehaviorState.Drinking
-                        || (visitor.Profile?.AttractionMemories != null
-                            && visitor.Profile.AttractionMemories.Count >= 1);
+                    // 食事と飲料の両方を購入したか（状態遷移追跡で記録）
+                    return data.HasPurchasedFood && data.HasPurchasedDrink;
 
                 case VIPRequestType.HighSatisfaction:
-                    // 幸福度が80以上か
-                    return visitor.Happiness >= 80f;
+                    // 幸福度85以上かつ満足度が高い
+                    return visitor.Happiness >= 85f
+                        && visitor.Parameters != null
+                        && visitor.Parameters.Satisfaction >= 70f;
 
                 case VIPRequestType.ShortWaitTimes:
-                    // 行列待ち状態でないか
-                    return visitor.CurrentState != VisitorBehaviorState.WaitingInQueue;
+                    // アトラクションに1回以上乗り、累計待ち時間が30秒以内
+                    if (visitor.Profile?.AttractionMemories == null
+                        || visitor.Profile.AttractionMemories.Count == 0)
+                        return false;
+                    return data.TotalWaitTime <= 30f;
 
                 case VIPRequestType.MeetEntertainer:
-                    // エンターテイメントを見たか
-                    return visitor.CurrentState == VisitorBehaviorState.WatchingEntertainment
-                        || (visitor.Profile?.AttractionMemories != null
-                            && visitor.Profile.AttractionMemories.Count >= 1);
+                    // エンターテイナーのショーを実際に鑑賞した
+                    return data.HasWatchedEntertainment;
 
                 default:
                     return false;
@@ -337,6 +416,23 @@ namespace ThemeParkGame.Visitor
             public VIPRequestType RequestType;
             public bool IsRequestCompleted;
             public float InitialHappiness;
+
+            /// <summary>ショップ購入回数追跡（TryAllShops用）</summary>
+            public int ShopPurchaseCount;
+            /// <summary>食事購入済みフラグ</summary>
+            public bool HasPurchasedFood;
+            /// <summary>飲料購入済みフラグ</summary>
+            public bool HasPurchasedDrink;
+            /// <summary>エンターテイナー鑑賞済みフラグ</summary>
+            public bool HasWatchedEntertainment;
+            /// <summary>累計行列待ち時間（秒）</summary>
+            public float TotalWaitTime;
+            /// <summary>行列待ち開始時刻</summary>
+            public float QueueStartTime;
+            /// <summary>前回の状態（状態遷移検出用）</summary>
+            public VisitorBehaviorState LastState;
+            /// <summary>未達ペナルティ適用回数（際限なく下がるのを防ぐ）</summary>
+            public int PenaltyCount;
         }
 
         private enum VIPRequestType

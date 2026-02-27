@@ -5,6 +5,7 @@
 // ============================================================
 
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using ThemeParkGame.Core;
 
@@ -93,12 +94,38 @@ namespace ThemeParkGame.Visitor
 
         // ---- Unity ライフサイクル ----
 
+        /// <summary>感情タイプごとのプロシージャルスプライトキャッシュ</summary>
+        private static readonly Dictionary<EmotionBubbleType, Sprite> s_spriteCache
+            = new Dictionary<EmotionBubbleType, Sprite>();
+
+        /// <summary>バブル背景用のデフォルトスプライト</summary>
+        private static Sprite s_bubbleBackgroundSprite;
+
         private void Awake()
         {
             visitorTransform = transform.parent;
+
+            // プロシージャル環境ではSerializeFieldが未設定のため自動生成する
+            if (bubbleRenderer == null)
+            {
+                bubbleRenderer = GetComponent<SpriteRenderer>();
+                if (bubbleRenderer == null)
+                {
+                    bubbleRenderer = gameObject.AddComponent<SpriteRenderer>();
+                }
+                bubbleRenderer.sortingOrder = 100; // 手前に表示
+            }
+
             if (bubbleTransform == null)
             {
                 bubbleTransform = transform;
+            }
+
+            // デフォルトスプライトを設定（白い丸）
+            if (bubbleRenderer.sprite == null)
+            {
+                bubbleRenderer.sprite = GetBubbleBackgroundSprite();
+                bubbleTransform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
             }
 
             HideBubble();
@@ -323,9 +350,8 @@ namespace ThemeParkGame.Visitor
             Color tint = GetBubbleColor(color);
             bubbleRenderer.color = tint;
 
-            // スプライト切り替えは将来SpriteAtlasから取得する想定
-            // 現時点では色変更のみ
-            // bubbleRenderer.sprite = EmotionSpriteAtlas.GetSprite(type);
+            // プロシージャルスプライトを取得して設定
+            bubbleRenderer.sprite = GetEmotionSprite(type);
         }
 
         /// <summary>EmotionBubbleColorからUnityのColorを取得する</summary>
@@ -404,6 +430,315 @@ namespace ThemeParkGame.Visitor
                 targetPos.y += bubbleHeightOffset;
                 bubbleTransform.position = targetPos;
             }
+        }
+
+        // ============================================================
+        // プロシージャルスプライト生成
+        // ============================================================
+
+        /// <summary>バブル背景用の白い円スプライトを取得（キャッシュ付き）</summary>
+        private static Sprite GetBubbleBackgroundSprite()
+        {
+            if (s_bubbleBackgroundSprite != null) return s_bubbleBackgroundSprite;
+
+            int size = 32;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            tex.filterMode = FilterMode.Bilinear;
+            float center = size / 2f;
+            float radius = center - 1f;
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dist = Mathf.Sqrt((x - center) * (x - center) + (y - center) * (y - center));
+                    float alpha = Mathf.Clamp01((radius - dist) / 1.5f);
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+                }
+            }
+            tex.Apply();
+
+            s_bubbleBackgroundSprite = Sprite.Create(
+                tex, new Rect(0, 0, size, size),
+                new Vector2(0.5f, 0.5f), size);
+
+            return s_bubbleBackgroundSprite;
+        }
+
+        /// <summary>
+        /// 感情タイプごとのプロシージャルスプライトを取得する（キャッシュ付き）。
+        /// 各感情を表す簡易アイコンを32x32テクスチャ上に描画する。
+        /// </summary>
+        private static Sprite GetEmotionSprite(EmotionBubbleType type)
+        {
+            if (s_spriteCache.TryGetValue(type, out Sprite cached))
+                return cached;
+
+            int size = 32;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            tex.filterMode = FilterMode.Bilinear;
+            float center = size / 2f;
+            float radius = center - 1f;
+
+            // 背景：白い円
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dist = Mathf.Sqrt((x - center) * (x - center) + (y - center) * (y - center));
+                    float bgAlpha = Mathf.Clamp01((radius - dist) / 1.5f);
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, bgAlpha * 0.85f));
+                }
+            }
+
+            // 前景：感情タイプ別のアイコンシンボルを描画
+            Color iconColor = GetIconColor(type);
+            DrawEmotionIcon(tex, type, iconColor, size);
+
+            tex.Apply();
+
+            var sprite = Sprite.Create(
+                tex, new Rect(0, 0, size, size),
+                new Vector2(0.5f, 0.5f), size);
+
+            s_spriteCache[type] = sprite;
+            return sprite;
+        }
+
+        /// <summary>感情タイプに応じたアイコン色を返す</summary>
+        private static Color GetIconColor(EmotionBubbleType type)
+        {
+            switch (type)
+            {
+                // ポジティブ系
+                case EmotionBubbleType.LovingIt:
+                case EmotionBubbleType.Interesting:
+                    return new Color(1f, 0.3f, 0.3f); // 赤（ハート）
+
+                // 食欲系
+                case EmotionBubbleType.Hungry:
+                case EmotionBubbleType.LookingForFood:
+                case EmotionBubbleType.CurrentlyEating:
+                    return new Color(0.9f, 0.6f, 0.1f); // オレンジ
+
+                // 渇き系
+                case EmotionBubbleType.Thirsty:
+                    return new Color(0.2f, 0.6f, 1f); // 青
+
+                // 不満系
+                case EmotionBubbleType.FoodTastesBad:
+                case EmotionBubbleType.NotExcitingEnough:
+                case EmotionBubbleType.LongWait:
+                case EmotionBubbleType.Boring:
+                    return new Color(0.3f, 0.3f, 0.3f); // 暗灰
+
+                // 探索系
+                case EmotionBubbleType.LookingForToilet:
+                case EmotionBubbleType.LookingForExit:
+                case EmotionBubbleType.Lost:
+                    return new Color(0.1f, 0.7f, 0.2f); // 緑
+
+                // 金欠
+                case EmotionBubbleType.NoMoney:
+                    return new Color(0.8f, 0.7f, 0.1f); // 金色
+
+                // 休憩
+                case EmotionBubbleType.Resting:
+                    return new Color(0.5f, 0.7f, 0.9f); // 水色
+
+                default:
+                    return new Color(0.4f, 0.4f, 0.4f);
+            }
+        }
+
+        /// <summary>
+        /// テクスチャ上にシンプルなアイコンシンボルを描画する。
+        /// 各感情タイプに応じた幾何学的形状（ハート、矢印、×、!、?等）を描画。
+        /// </summary>
+        private static void DrawEmotionIcon(Texture2D tex, EmotionBubbleType type, Color color, int size)
+        {
+            switch (type)
+            {
+                case EmotionBubbleType.LovingIt:
+                case EmotionBubbleType.Interesting:
+                    DrawHeart(tex, color, size);
+                    break;
+
+                case EmotionBubbleType.Hungry:
+                case EmotionBubbleType.LookingForFood:
+                case EmotionBubbleType.CurrentlyEating:
+                    DrawCircleFilled(tex, color, size, 6); // 小さい丸（食べ物）
+                    break;
+
+                case EmotionBubbleType.Thirsty:
+                    DrawDroplet(tex, color, size);
+                    break;
+
+                case EmotionBubbleType.FoodTastesBad:
+                case EmotionBubbleType.NotExcitingEnough:
+                    DrawCross(tex, color, size);
+                    break;
+
+                case EmotionBubbleType.LongWait:
+                case EmotionBubbleType.Boring:
+                    DrawEllipsis(tex, color, size);
+                    break;
+
+                case EmotionBubbleType.LookingForToilet:
+                case EmotionBubbleType.LookingForExit:
+                case EmotionBubbleType.Lost:
+                    DrawQuestionMark(tex, color, size);
+                    break;
+
+                case EmotionBubbleType.NoMoney:
+                    DrawDollarSign(tex, color, size);
+                    break;
+
+                case EmotionBubbleType.Resting:
+                    DrawZzz(tex, color, size);
+                    break;
+
+                default:
+                    DrawExclamation(tex, color, size);
+                    break;
+            }
+        }
+
+        // ---- 個別アイコン描画ヘルパー ----
+
+        private static void DrawPixel(Texture2D tex, int x, int y, Color c, int size)
+        {
+            if (x >= 0 && x < size && y >= 0 && y < size)
+                tex.SetPixel(x, y, c);
+        }
+
+        private static void DrawRect(Texture2D tex, Color c, int size, int x0, int y0, int w, int h)
+        {
+            for (int dy = 0; dy < h; dy++)
+                for (int dx = 0; dx < w; dx++)
+                    DrawPixel(tex, x0 + dx, y0 + dy, c, size);
+        }
+
+        private static void DrawCircleFilled(Texture2D tex, Color c, int size, int r)
+        {
+            int cx = size / 2, cy = size / 2;
+            for (int y = -r; y <= r; y++)
+                for (int x = -r; x <= r; x++)
+                    if (x * x + y * y <= r * r)
+                        DrawPixel(tex, cx + x, cy + y, c, size);
+        }
+
+        private static void DrawHeart(Texture2D tex, Color c, int size)
+        {
+            int cx = size / 2;
+            // 左右の丸
+            for (int a = 0; a < 360; a += 5)
+            {
+                float rad = a * Mathf.Deg2Rad;
+                int r = 4;
+                int lx = cx - 3 + Mathf.RoundToInt(Mathf.Cos(rad) * r);
+                int ly = cx + 2 + Mathf.RoundToInt(Mathf.Sin(rad) * r);
+                DrawPixel(tex, lx, ly, c, size);
+                int rx = cx + 3 + Mathf.RoundToInt(Mathf.Cos(rad) * r);
+                DrawPixel(tex, rx, ly, c, size);
+            }
+            // 下の三角
+            for (int row = 0; row < 7; row++)
+            {
+                int w = 12 - row * 2;
+                int x0 = cx - w / 2;
+                int y = cx - 1 - row;
+                for (int dx = 0; dx < w; dx++)
+                    DrawPixel(tex, x0 + dx, y, c, size);
+            }
+        }
+
+        private static void DrawDroplet(Texture2D tex, Color c, int size)
+        {
+            int cx = size / 2;
+            // 丸い下部
+            for (int a = 0; a < 360; a += 5)
+            {
+                float rad = a * Mathf.Deg2Rad;
+                int r = 5;
+                int px = cx + Mathf.RoundToInt(Mathf.Cos(rad) * r);
+                int py = cx - 2 + Mathf.RoundToInt(Mathf.Sin(rad) * r);
+                DrawPixel(tex, px, py, c, size);
+            }
+            // 上の尖り
+            for (int row = 0; row < 5; row++)
+            {
+                int w = Mathf.Max(1, 5 - row);
+                int x0 = cx - w / 2;
+                for (int dx = 0; dx < w; dx++)
+                    DrawPixel(tex, x0 + dx, cx + 4 + row, c, size);
+            }
+        }
+
+        private static void DrawCross(Texture2D tex, Color c, int size)
+        {
+            int cx = size / 2;
+            for (int i = -5; i <= 5; i++)
+            {
+                DrawPixel(tex, cx + i, cx + i, c, size);
+                DrawPixel(tex, cx + i, cx - i, c, size);
+                DrawPixel(tex, cx + 1 + i, cx + i, c, size);
+                DrawPixel(tex, cx + 1 + i, cx - i, c, size);
+            }
+        }
+
+        private static void DrawQuestionMark(Texture2D tex, Color c, int size)
+        {
+            int cx = size / 2;
+            // 上の弧
+            DrawRect(tex, c, size, cx - 3, cx + 4, 6, 2);
+            DrawRect(tex, c, size, cx + 2, cx + 1, 2, 3);
+            DrawRect(tex, c, size, cx - 1, cx - 1, 3, 2);
+            // ドット
+            DrawRect(tex, c, size, cx - 1, cx - 5, 2, 2);
+        }
+
+        private static void DrawExclamation(Texture2D tex, Color c, int size)
+        {
+            int cx = size / 2;
+            DrawRect(tex, c, size, cx - 1, cx, 2, 8);
+            DrawRect(tex, c, size, cx - 1, cx - 4, 2, 2);
+        }
+
+        private static void DrawEllipsis(Texture2D tex, Color c, int size)
+        {
+            int cy = size / 2;
+            DrawRect(tex, c, size, 8, cy - 1, 2, 2);
+            DrawRect(tex, c, size, 14, cy - 1, 2, 2);
+            DrawRect(tex, c, size, 20, cy - 1, 2, 2);
+        }
+
+        private static void DrawDollarSign(Texture2D tex, Color c, int size)
+        {
+            int cx = size / 2;
+            // S字
+            DrawRect(tex, c, size, cx - 3, cx + 4, 6, 2);
+            DrawRect(tex, c, size, cx - 3, cx + 2, 2, 2);
+            DrawRect(tex, c, size, cx - 3, cx, 6, 2);
+            DrawRect(tex, c, size, cx + 1, cx - 2, 2, 2);
+            DrawRect(tex, c, size, cx - 3, cx - 4, 6, 2);
+            // 縦棒
+            DrawRect(tex, c, size, cx - 1, cx - 5, 2, 12);
+        }
+
+        private static void DrawZzz(Texture2D tex, Color c, int size)
+        {
+            int cx = size / 2;
+            // 大Z
+            DrawRect(tex, c, size, cx - 2, cx + 3, 6, 1);
+            DrawRect(tex, c, size, cx + 2, cx + 2, 2, 1);
+            DrawRect(tex, c, size, cx, cx + 1, 2, 1);
+            DrawRect(tex, c, size, cx - 2, cx, 2, 1);
+            DrawRect(tex, c, size, cx - 2, cx - 1, 6, 1);
+            // 小z
+            DrawRect(tex, c, size, cx + 3, cx - 3, 4, 1);
+            DrawRect(tex, c, size, cx + 5, cx - 4, 2, 1);
+            DrawRect(tex, c, size, cx + 3, cx - 5, 4, 1);
         }
     }
 }
