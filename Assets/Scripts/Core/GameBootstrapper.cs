@@ -59,6 +59,7 @@ namespace ThemeParkGame.Core
             EnsureWordOfMouthSystem();
             EnsureRivalParkSystem();
             EnsureSaleCampaignSystem();
+            EnsureNPCDialogueSystem();
 
             // ランタイムゲームセットアップ（ゲーム開始後にワールドを構築）
             EnsureRuntimeGameSetup();
@@ -317,6 +318,14 @@ namespace ThemeParkGame.Core
             var go = new GameObject("SaleCampaignSystem");
             go.AddComponent<SaleCampaignSystem>();
             WebGLOptimizer.LogVerbose("[GameBootstrapper] SaleCampaignSystem を生成");
+        }
+
+        private static void EnsureNPCDialogueSystem()
+        {
+            if (NPCDialogueSystem.Instance != null) return;
+            var go = new GameObject("NPCDialogueSystem");
+            go.AddComponent<NPCDialogueSystem>();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] NPCDialogueSystem を生成");
         }
 
         // ================================================================

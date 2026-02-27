@@ -51,6 +51,7 @@ namespace ThemeParkGame.AI
         private DynamicQuestSystem _questSystem;
         private SNSReputationSystem _snsSystem;
         private ConversationUI _conversationUI;
+        private NPCDialogueSystem _dialogueSystem;
 
         // ---- Public Properties ----
 
@@ -99,6 +100,7 @@ namespace ThemeParkGame.AI
                 _snsSystem = gameObject.AddComponent<SNSReputationSystem>();
 
             _conversationUI = FindObjectOfType<ConversationUI>();
+            _dialogueSystem = NPCDialogueSystem.Instance;
 
             WebGLOptimizer.LogVerbose($"[AIConversationManager] 初期化完了 (Provider: {preferredProvider}, " +
                       $"API Available: {!string.IsNullOrEmpty(apiKey)})");
@@ -205,8 +207,17 @@ namespace ThemeParkGame.AI
             }
             else
             {
-                // API利用不可時はテンプレート応答
-                string greeting = GetFallbackGreeting(personality);
+                // API利用不可時はNPCDialogueSystemのテンプレート応答
+                string greeting;
+                if (_dialogueSystem != null && personality != null)
+                {
+                    greeting = _dialogueSystem.GetDialogue(
+                        visitorId, personality.Style, DialogueCategory.Greeting).Text;
+                }
+                else
+                {
+                    greeting = GetFallbackGreeting(personality);
+                }
                 HandleNPCResponse(visitorId, greeting);
             }
 
@@ -233,7 +244,16 @@ namespace ThemeParkGame.AI
             }
             else
             {
-                string fallback = "うーん、ちょっと考え中...";
+                // NPCDialogueSystemでコンテキスト応答を生成
+                string fallback;
+                if (_dialogueSystem != null && TryGetPersonality(visitorId, out NPCPersonality p2))
+                {
+                    fallback = _dialogueSystem.GetFallbackResponse(visitorId, p2.Style, message, 50f);
+                }
+                else
+                {
+                    fallback = "うーん、ちょっと考え中...";
+                }
                 HandleNPCResponse(visitorId, fallback);
             }
         }
