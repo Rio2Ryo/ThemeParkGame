@@ -126,6 +126,9 @@ namespace ThemeParkGame.UI
         /// <summary>タブボタンとカウントテキストのマッピング</summary>
         private Dictionary<StaffType, (Button button, TextMeshProUGUI countText)> _tabMapping;
 
+        /// <summary>ボタンバインド済みフラグ（多重バインド防止）</summary>
+        private bool _buttonsAreBound;
+
         /// <summary>各スタッフタイプの基本給与テーブル</summary>
         private static readonly Dictionary<StaffType, int> BaseSalaryTable = new()
         {
@@ -169,6 +172,7 @@ namespace ThemeParkGame.UI
 
         private void OnDisable()
         {
+            UnbindButtons();
             UnsubscribeFromEvents();
         }
 
@@ -189,31 +193,66 @@ namespace ThemeParkGame.UI
             };
         }
 
-        /// <summary>ボタンのイベントをバインドする</summary>
+        /// <summary>ボタンのイベントをバインドする（多重バインド防止付き）</summary>
         private void BindButtons()
         {
-            // タブボタン
-            mechanicTabButton?.onClick.AddListener(() => SelectStaffType(StaffType.Mechanic));
-            cleanerTabButton?.onClick.AddListener(() => SelectStaffType(StaffType.Cleaner));
-            entertainerTabButton?.onClick.AddListener(() => SelectStaffType(StaffType.Entertainer));
-            guardTabButton?.onClick.AddListener(() => SelectStaffType(StaffType.Guard));
-            scientistTabButton?.onClick.AddListener(() => SelectStaffType(StaffType.Scientist));
+            if (_buttonsAreBound) return;
+            _buttonsAreBound = true;
+
+            // タブボタン（ラムダのため RemoveAllListeners で一括クリア後に追加）
+            if (mechanicTabButton != null)    { mechanicTabButton.onClick.RemoveAllListeners();    mechanicTabButton.onClick.AddListener(() => SelectStaffType(StaffType.Mechanic)); }
+            if (cleanerTabButton != null)     { cleanerTabButton.onClick.RemoveAllListeners();     cleanerTabButton.onClick.AddListener(() => SelectStaffType(StaffType.Cleaner)); }
+            if (entertainerTabButton != null) { entertainerTabButton.onClick.RemoveAllListeners(); entertainerTabButton.onClick.AddListener(() => SelectStaffType(StaffType.Entertainer)); }
+            if (guardTabButton != null)       { guardTabButton.onClick.RemoveAllListeners();       guardTabButton.onClick.AddListener(() => SelectStaffType(StaffType.Guard)); }
+            if (scientistTabButton != null)   { scientistTabButton.onClick.RemoveAllListeners();   scientistTabButton.onClick.AddListener(() => SelectStaffType(StaffType.Scientist)); }
 
             // 雇用ボタン
+            hireButton?.onClick.RemoveListener(OnHireClicked);
             hireButton?.onClick.AddListener(OnHireClicked);
 
             // アクションボタン
+            trainButton?.onClick.RemoveListener(OnTrainClicked);
             trainButton?.onClick.AddListener(OnTrainClicked);
+            fireButton?.onClick.RemoveListener(OnFireClicked);
             fireButton?.onClick.AddListener(OnFireClicked);
+            assignPatrolButton?.onClick.RemoveListener(OnAssignPatrolClicked);
             assignPatrolButton?.onClick.AddListener(OnAssignPatrolClicked);
+            restButton?.onClick.RemoveListener(OnRestClicked);
             restButton?.onClick.AddListener(OnRestClicked);
 
             // 解雇確認ダイアログ
+            fireConfirmYesButton?.onClick.RemoveListener(OnFireConfirmed);
             fireConfirmYesButton?.onClick.AddListener(OnFireConfirmed);
+            fireConfirmNoButton?.onClick.RemoveListener(HideFireConfirmDialog);
             fireConfirmNoButton?.onClick.AddListener(HideFireConfirmDialog);
 
             // 閉じる
+            closeButton?.onClick.RemoveListener(OnCloseClicked);
             closeButton?.onClick.AddListener(OnCloseClicked);
+        }
+
+        /// <summary>ボタンのイベントを解除する</summary>
+        private void UnbindButtons()
+        {
+            if (!_buttonsAreBound) return;
+            _buttonsAreBound = false;
+
+            // タブボタン（ラムダなので RemoveAllListeners）
+            mechanicTabButton?.onClick.RemoveAllListeners();
+            cleanerTabButton?.onClick.RemoveAllListeners();
+            entertainerTabButton?.onClick.RemoveAllListeners();
+            guardTabButton?.onClick.RemoveAllListeners();
+            scientistTabButton?.onClick.RemoveAllListeners();
+
+            // 名前付きメソッドは RemoveListener で解除
+            hireButton?.onClick.RemoveListener(OnHireClicked);
+            trainButton?.onClick.RemoveListener(OnTrainClicked);
+            fireButton?.onClick.RemoveListener(OnFireClicked);
+            assignPatrolButton?.onClick.RemoveListener(OnAssignPatrolClicked);
+            restButton?.onClick.RemoveListener(OnRestClicked);
+            fireConfirmYesButton?.onClick.RemoveListener(OnFireConfirmed);
+            fireConfirmNoButton?.onClick.RemoveListener(HideFireConfirmDialog);
+            closeButton?.onClick.RemoveListener(OnCloseClicked);
         }
 
         // ============================================================

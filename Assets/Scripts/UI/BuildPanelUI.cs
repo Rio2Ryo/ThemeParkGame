@@ -11,6 +11,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using ThemeParkGame.Core;
+using ThemeParkGame.Attraction;
 
 namespace ThemeParkGame.UI
 {
@@ -170,6 +171,7 @@ namespace ThemeParkGame.UI
 
         private void OnDisable()
         {
+            UnbindButtons();
             CancelPlacement();
         }
 
@@ -189,9 +191,23 @@ namespace ThemeParkGame.UI
         /// <summary>ボタンのイベントをバインドする</summary>
         private void BindButtons()
         {
+            // 既存リスナーを除去してから追加（蓄積防止）
+            confirmButton?.onClick.RemoveListener(OnConfirmClicked);
+            cancelButton?.onClick.RemoveListener(OnCancelClicked);
+            rotateButton?.onClick.RemoveListener(OnRotateClicked);
+
             confirmButton?.onClick.AddListener(OnConfirmClicked);
             cancelButton?.onClick.AddListener(OnCancelClicked);
             rotateButton?.onClick.AddListener(OnRotateClicked);
+        }
+
+        /// <summary>ボタンのイベントを解除する</summary>
+        private void UnbindButtons()
+        {
+            confirmButton?.onClick.RemoveListener(OnConfirmClicked);
+            cancelButton?.onClick.RemoveListener(OnCancelClicked);
+            rotateButton?.onClick.RemoveListener(OnRotateClicked);
+            themeZoneDropdown?.onValueChanged.RemoveListener(OnThemeZoneFilterChanged);
         }
 
         /// <summary>カテゴリタブを生成する</summary>
@@ -271,6 +287,7 @@ namespace ThemeParkGame.UI
             options.Add("スペースゾーン");
 
             themeZoneDropdown.AddOptions(options);
+            themeZoneDropdown.onValueChanged.RemoveListener(OnThemeZoneFilterChanged);
             themeZoneDropdown.onValueChanged.AddListener(OnThemeZoneFilterChanged);
         }
 
@@ -557,8 +574,14 @@ namespace ThemeParkGame.UI
             if (itemData.PreviewPrefab != null)
             {
                 _placementPreview = Instantiate(itemData.PreviewPrefab);
-                ApplyPreviewMaterial(_placementPreview, validPlacementMaterial);
             }
+            else
+            {
+                // PreviewPrefabがnullの場合はプロシージャルメッシュでフォールバック
+                _placementPreview = CreateProceduralPreview(itemData);
+            }
+
+            ApplyPreviewMaterial(_placementPreview, validPlacementMaterial);
 
             WebGLOptimizer.LogVerbose($"[BuildPanelUI] 配置モード開始: {itemData.DisplayName}");
         }
@@ -675,13 +698,31 @@ namespace ThemeParkGame.UI
             _isInPlacementMode = false;
 
             // 実際のオブジェクトを配置
+            GameObject placed;
             if (_selectedItem.ActualPrefab != null)
             {
-                Instantiate(_selectedItem.ActualPrefab, position, rotation);
+                placed = Instantiate(_selectedItem.ActualPrefab, position, rotation);
+            }
+            else
+            {
+                // ActualPrefabがnullの場合はプロシージャル生成でフォールバック
+                placed = CreateProceduralFacility(_selectedItem, position, rotation);
             }
 
             // コスト支払い
             GameManager.Instance?.EconomyManager?.SpendMoney(_selectedItem.Cost);
+
+            // ParkManagerに配置を通知
+            var parkManager = GameManager.Instance?.ParkManager;
+            var facility = placed?.GetComponent<FacilityBase>();
+            if (facility != null && parkManager != null)
+            {
+                Vector2Int gridPos = new Vector2Int(
+                    Mathf.RoundToInt(position.x / gridSize),
+                    Mathf.RoundToInt(position.z / gridSize));
+                ThemeZone zone = _currentZoneFilter ?? ThemeZone.LostKingdom;
+                facility.Place(gridPos, zone);
+            }
 
             // 建設イベント発火
             GameEvents.FireAttractionBuilt(_selectedItem.ItemId);
@@ -702,6 +743,198 @@ namespace ThemeParkGame.UI
             }
             _isInPlacementMode = false;
             _isPlacementValid = false;
+        }
+
+        // ============================================================
+        // プロシージャル生成フォールバック
+        // ============================================================
+
+        /// <summary>プレビュー用のプロシージャルメッシュを生成する</summary>
+        private GameObject CreateProceduralPreview(BuildItemData itemData)
+        {
+            PrimitiveType shape = IsAttractionCategory(itemData.Category)
+                ? PrimitiveType.Cylinder : PrimitiveType.Cube;
+            GameObject obj = GameObject.CreatePrimitive(shape);
+            obj.name = $"Preview_{itemData.DisplayName}";
+            obj.transform.localScale = itemData.PlacementSize;
+            return obj;
+        }
+
+        /// <summary>
+        /// ActualPrefabがnullの場合にプロシージャルメッシュで施設を生成する。
+        /// カテゴリに応じた色・タグ・コンポーネントを付与する。
+        /// </summary>
+        private GameObject CreateProceduralFacility(BuildItemData itemData, Vector3 position, Quaternion rotation)
+        {
+            string objName = itemData.DisplayName ?? $"Facility_{itemData.Category}";
+            PrimitiveType shape = IsAttractionCategory(itemData.Category)
+                ? PrimitiveType.Cylinder : PrimitiveType.Cube;
+
+            GameObject obj = GameObject.CreatePrimitive(shape);
+            obj.name = objName;
+            obj.transform.position = position;
+            obj.transform.rotation = rotation;
+            obj.transform.localScale = itemData.PlacementSize;
+
+            // タグ設定
+            string tag = GetTagForCategory(itemData.Category);
+            try { obj.tag = tag; }
+            catch (UnityException) { /* タグが未登録の場合は無視 */ }
+
+            // マテリアル設定
+            var renderer = obj.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                var mat = new Material(Shader.Find("Standard") ?? Shader.Find("Sprites/Default"));
+                mat.color = GetColorForCategory(itemData.Category);
+                renderer.material = mat;
+            }
+
+            // カテゴリに応じたコンポーネントのアタッチ
+            AttachComponentsForCategory(obj, itemData);
+
+            return obj;
+        }
+
+        /// <summary>カテゴリに応じたゲームコンポーネントをアタッチする</summary>
+        private void AttachComponentsForCategory(GameObject obj, BuildItemData itemData)
+        {
+            switch (itemData.Category)
+            {
+                case BuildCategory.GForce:
+                case BuildCategory.VerticalRotation:
+                case BuildCategory.HorizontalRotation:
+                case BuildCategory.Observation:
+                case BuildCategory.ShowAttraction:
+                case BuildCategory.RideAttraction:
+                    obj.AddComponent<ThemeParkGame.Attraction.Attraction>();
+                    obj.AddComponent<FacilityDirt>();
+                    break;
+
+                case BuildCategory.FoodShop:
+                {
+                    var shop = obj.AddComponent<Shop>();
+                    shop.ConfigureRuntime(itemData.DisplayName ?? "フードショップ",
+                        ShopType.FoodShop, 50, 120, 30);
+                    obj.AddComponent<FacilityDirt>();
+                    break;
+                }
+                case BuildCategory.DrinkShop:
+                {
+                    var shop = obj.AddComponent<Shop>();
+                    shop.ConfigureRuntime(itemData.DisplayName ?? "ドリンクショップ",
+                        ShopType.DrinkShop, 30, 80, 40);
+                    obj.AddComponent<FacilityDirt>();
+                    break;
+                }
+                case BuildCategory.SouvenirShop:
+                {
+                    var shop = obj.AddComponent<Shop>();
+                    shop.ConfigureRuntime(itemData.DisplayName ?? "お土産ショップ",
+                        ShopType.SouvenirShop, 100, 250, 20);
+                    obj.AddComponent<FacilityDirt>();
+                    break;
+                }
+
+                case BuildCategory.Toilet:
+                    obj.AddComponent<ToiletFacility>();
+                    obj.AddComponent<FacilityDirt>();
+                    break;
+                case BuildCategory.Bench:
+                    obj.AddComponent<BenchFacility>();
+                    break;
+                case BuildCategory.TrashCan:
+                case BuildCategory.InfoBoard:
+                case BuildCategory.StaffRoom:
+                case BuildCategory.ResearchLab:
+                case BuildCategory.Pathway:
+                case BuildCategory.Decoration:
+                {
+                    var generic = obj.AddComponent<GenericFacility>();
+                    generic.SetFacilityType(GetFacilityTypeForCategory(itemData.Category));
+                    generic.SetDisplayName(itemData.DisplayName ?? itemData.Category.ToString());
+                    break;
+                }
+            }
+        }
+
+        /// <summary>カテゴリがアトラクション系かどうか判定する</summary>
+        private static bool IsAttractionCategory(BuildCategory category)
+        {
+            return category == BuildCategory.GForce
+                || category == BuildCategory.VerticalRotation
+                || category == BuildCategory.HorizontalRotation
+                || category == BuildCategory.Observation
+                || category == BuildCategory.ShowAttraction
+                || category == BuildCategory.RideAttraction;
+        }
+
+        /// <summary>カテゴリに対応するタグ名を返す</summary>
+        private static string GetTagForCategory(BuildCategory category)
+        {
+            switch (category)
+            {
+                case BuildCategory.GForce:
+                case BuildCategory.VerticalRotation:
+                case BuildCategory.HorizontalRotation:
+                case BuildCategory.Observation:
+                case BuildCategory.ShowAttraction:
+                case BuildCategory.RideAttraction:
+                    return "Attraction";
+                case BuildCategory.FoodShop:    return "FoodShop";
+                case BuildCategory.DrinkShop:   return "DrinkShop";
+                case BuildCategory.SouvenirShop: return "SouvenirShop";
+                case BuildCategory.Toilet:      return "Toilet";
+                case BuildCategory.Bench:       return "Bench";
+                case BuildCategory.TrashCan:    return "TrashCan";
+                case BuildCategory.InfoBoard:   return "InfoBoard";
+                case BuildCategory.StaffRoom:   return "StaffRoom";
+                case BuildCategory.ResearchLab: return "ResearchLab";
+                case BuildCategory.Pathway:     return "Pathway";
+                case BuildCategory.Decoration:  return "Untagged";
+                default: return "Untagged";
+            }
+        }
+
+        /// <summary>カテゴリに対応するFacilityTypeを返す</summary>
+        private static FacilityType GetFacilityTypeForCategory(BuildCategory category)
+        {
+            switch (category)
+            {
+                case BuildCategory.TrashCan:    return FacilityType.TrashCan;
+                case BuildCategory.InfoBoard:   return FacilityType.InfoBoard;
+                case BuildCategory.StaffRoom:   return FacilityType.StaffRoom;
+                case BuildCategory.ResearchLab: return FacilityType.ResearchLab;
+                case BuildCategory.Pathway:     return FacilityType.Pathway;
+                case BuildCategory.Decoration:  return FacilityType.Decoration;
+                default: return FacilityType.TrashCan;
+            }
+        }
+
+        /// <summary>カテゴリに対応するプロシージャル色を返す</summary>
+        private static Color GetColorForCategory(BuildCategory category)
+        {
+            switch (category)
+            {
+                case BuildCategory.GForce:             return new Color(0.9f, 0.2f, 0.2f);
+                case BuildCategory.VerticalRotation:   return new Color(0.8f, 0.3f, 0.1f);
+                case BuildCategory.HorizontalRotation: return new Color(0.9f, 0.5f, 0.1f);
+                case BuildCategory.Observation:        return new Color(0.2f, 0.6f, 0.9f);
+                case BuildCategory.ShowAttraction:     return new Color(0.8f, 0.2f, 0.8f);
+                case BuildCategory.RideAttraction:     return new Color(0.3f, 0.8f, 0.3f);
+                case BuildCategory.FoodShop:           return new Color(1.0f, 0.7f, 0.2f);
+                case BuildCategory.DrinkShop:          return new Color(0.3f, 0.7f, 1.0f);
+                case BuildCategory.SouvenirShop:       return new Color(0.9f, 0.4f, 0.7f);
+                case BuildCategory.Toilet:             return new Color(0.8f, 0.8f, 0.9f);
+                case BuildCategory.Bench:              return new Color(0.6f, 0.4f, 0.2f);
+                case BuildCategory.TrashCan:           return new Color(0.4f, 0.5f, 0.4f);
+                case BuildCategory.InfoBoard:          return new Color(0.3f, 0.5f, 0.8f);
+                case BuildCategory.Pathway:            return new Color(0.7f, 0.7f, 0.7f);
+                case BuildCategory.Decoration:         return new Color(0.5f, 0.8f, 0.5f);
+                case BuildCategory.StaffRoom:          return new Color(0.6f, 0.6f, 0.7f);
+                case BuildCategory.ResearchLab:        return new Color(0.3f, 0.9f, 0.9f);
+                default: return Color.gray;
+            }
         }
     }
 

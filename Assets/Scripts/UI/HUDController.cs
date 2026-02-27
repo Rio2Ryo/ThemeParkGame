@@ -118,6 +118,9 @@ namespace ThemeParkGame.UI
         /// <summary>資金カウントアップ速度</summary>
         private const float MoneyLerpSpeed = 8f;
 
+        /// <summary>ボタンバインド済みフラグ（多重バインド防止）</summary>
+        private bool _buttonsAreBound;
+
         // ============================================================
         // Unity ライフサイクル
         // ============================================================
@@ -135,6 +138,7 @@ namespace ThemeParkGame.UI
 
         private void OnDisable()
         {
+            UnbindButtons();
             UnsubscribeFromEvents();
         }
 
@@ -223,20 +227,42 @@ namespace ThemeParkGame.UI
 
         private void BindButtons()
         {
-            // 速度制御ボタン
+            if (_buttonsAreBound) return;
+            _buttonsAreBound = true;
+
+            // 速度制御ボタン（ラムダのため RemoveAllListeners で一括クリア後に追加）
+            pauseButton?.onClick.RemoveListener(OnPauseClicked);
             pauseButton?.onClick.AddListener(OnPauseClicked);
-            speed1xButton?.onClick.AddListener(() => OnSpeedClicked(1));
-            speed2xButton?.onClick.AddListener(() => OnSpeedClicked(2));
-            speed3xButton?.onClick.AddListener(() => OnSpeedClicked(3));
+            if (speed1xButton != null) { speed1xButton.onClick.RemoveAllListeners(); speed1xButton.onClick.AddListener(() => OnSpeedClicked(1)); }
+            if (speed2xButton != null) { speed2xButton.onClick.RemoveAllListeners(); speed2xButton.onClick.AddListener(() => OnSpeedClicked(2)); }
+            if (speed3xButton != null) { speed3xButton.onClick.RemoveAllListeners(); speed3xButton.onClick.AddListener(() => OnSpeedClicked(3)); }
 
             // 通知ベル
+            notificationBellButton?.onClick.RemoveListener(OnNotificationBellClicked);
             notificationBellButton?.onClick.AddListener(OnNotificationBellClicked);
 
             // 視点切替
+            viewModeToggleButton?.onClick.RemoveListener(OnViewModeToggleClicked);
             viewModeToggleButton?.onClick.AddListener(OnViewModeToggleClicked);
 
             // 建設モード
+            buildModeButton?.onClick.RemoveListener(OnBuildModeClicked);
             buildModeButton?.onClick.AddListener(OnBuildModeClicked);
+        }
+
+        /// <summary>ボタンのイベントを解除する</summary>
+        private void UnbindButtons()
+        {
+            if (!_buttonsAreBound) return;
+            _buttonsAreBound = false;
+
+            pauseButton?.onClick.RemoveListener(OnPauseClicked);
+            speed1xButton?.onClick.RemoveAllListeners();
+            speed2xButton?.onClick.RemoveAllListeners();
+            speed3xButton?.onClick.RemoveAllListeners();
+            notificationBellButton?.onClick.RemoveListener(OnNotificationBellClicked);
+            viewModeToggleButton?.onClick.RemoveListener(OnViewModeToggleClicked);
+            buildModeButton?.onClick.RemoveListener(OnBuildModeClicked);
         }
 
         // ============================================================
