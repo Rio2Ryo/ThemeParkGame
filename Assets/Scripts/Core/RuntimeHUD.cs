@@ -265,10 +265,19 @@ namespace ThemeParkGame.Core
         // 初期化
         // ================================================================
 
+        // ---- お祝いエフェクト ----
+        private ParticleSystem _fireworksPS;
+        private GameObject _screenFlash;
+        private Image _screenFlashImage;
+        private float _screenFlashTimer;
+        private const float ScreenFlashDuration = 0.6f;
+
         private void Awake()
         {
             BuildCanvas();
             GameEvents.OnVisitorSatisfactionChanged += OnVisitorSatisfactionChanged;
+            GameEvents.OnGoldenTicketEarned += OnGoldenTicketCelebration;
+            GameEvents.OnCertificateAwarded += OnCertificateCelebration;
 
             // ツールチップシステムの初期化
             if (ThemeParkGame.UI.TooltipSystem.Instance == null)
@@ -285,6 +294,8 @@ namespace ThemeParkGame.Core
         private void OnDestroy()
         {
             GameEvents.OnVisitorSatisfactionChanged -= OnVisitorSatisfactionChanged;
+            GameEvents.OnGoldenTicketEarned -= OnGoldenTicketCelebration;
+            GameEvents.OnCertificateAwarded -= OnCertificateCelebration;
             if (GameManager.Instance != null && GameManager.Instance.TimeManager != null)
                 GameManager.Instance.TimeManager.OnMonthChanged -= ShowMonthlyReport;
         }
@@ -2619,20 +2630,26 @@ namespace ThemeParkGame.Core
         }
 
         /// <summary>
-        /// スコアを計算する。
-        /// = (来場者数 × 10) + (総収益 / 100) + (平均満足度 × 50) + (ゴールデンチケット × 500)
+        /// スコアを計算する（リバランス済み）。
+        /// 基本スコア = 来場者×15 + 収益/50 + 満足度×30 + パーク評価×20 + ゴールデンチケット×300
+        /// 最終スコア = 基本スコア × 難易度倍率(Easy:0.8 Normal:1.0 Hard:1.5)
         /// </summary>
         private int CalculateFinalScore()
         {
             var gm = GameManager.Instance;
             if (gm == null) return 0;
 
-            int visitorScore = (gm.VisitorManager != null) ? gm.VisitorManager.TotalVisitorsToday * 10 : 0;
-            int revenueScore = (gm.EconomyManager != null) ? (int)(gm.EconomyManager.TotalRevenueEarned / 100f) : 0;
-            int satisfactionScore = (gm.VisitorManager != null) ? (int)(gm.VisitorManager.AverageHappiness * 50f) : 0;
-            int ticketScore = gm.GoldenTickets * 500;
+            int visitorScore = (gm.VisitorManager != null) ? gm.VisitorManager.TotalVisitorsToday * 15 : 0;
+            int revenueScore = (gm.EconomyManager != null) ? (int)(gm.EconomyManager.TotalRevenueEarned / 50f) : 0;
+            int satisfactionScore = (gm.VisitorManager != null) ? (int)(gm.VisitorManager.AverageHappiness * 30f) : 0;
+            int ratingScore = (gm.ParkManager?.Rating != null) ? (int)(gm.ParkManager.Rating.OverallRating * 20f) : 0;
+            int ticketScore = gm.GoldenTickets * 300;
 
-            return visitorScore + revenueScore + satisfactionScore + ticketScore;
+            int baseScore = visitorScore + revenueScore + satisfactionScore + ratingScore + ticketScore;
+
+            // 難易度倍率適用
+            float difficultyMult = GameManager.GetScoreMultiplier(gm.CurrentDifficulty);
+            return (int)(baseScore * difficultyMult);
         }
 
         private void RefreshResults()
@@ -2732,10 +2749,12 @@ namespace ThemeParkGame.Core
                 $"  日付: {time}         実績: {achText}\n" +
                 $"\n" +
                 $"  スコア内訳:\n" +
-                $"    来場者 x10 = {(gm.VisitorManager != null ? gm.VisitorManager.TotalVisitorsToday * 10 : 0):N0}\n" +
-                $"    収益 / 100 = {(gm.EconomyManager != null ? (int)(gm.EconomyManager.TotalRevenueEarned / 100f) : 0):N0}\n" +
-                $"    満足度 x50 = {(int)(avgSatisfaction * 50f):N0}\n" +
-                $"    ゴールデンチケット x500 = {gm.GoldenTickets * 500:N0}";
+                $"    来場者 x15 = {(gm.VisitorManager != null ? gm.VisitorManager.TotalVisitorsToday * 15 : 0):N0}\n" +
+                $"    収益 / 50 = {(gm.EconomyManager != null ? (int)(gm.EconomyManager.TotalRevenueEarned / 50f) : 0):N0}\n" +
+                $"    満足度 x30 = {(int)(avgSatisfaction * 30f):N0}\n" +
+                $"    パーク評価 x20 = {(gm.ParkManager?.Rating != null ? (int)(gm.ParkManager.Rating.OverallRating * 20f) : 0):N0}\n" +
+                $"    ゴールデンチケット x300 = {gm.GoldenTickets * 300:N0}\n" +
+                $"    難易度倍率: x{GameManager.GetScoreMultiplier(gm.CurrentDifficulty):F1} ({gm.CurrentDifficulty})";
         }
 
         // ================================================================
@@ -3823,6 +3842,7 @@ namespace ThemeParkGame.Core
             }
 
             UpdateFloatingScores();
+            UpdateScreenFlash();
         }
 
         // ================================================================
@@ -4112,6 +4132,137 @@ namespace ThemeParkGame.Core
                     fs.Label.color = c;
                 }
             }
+        }
+
+        // ================================================================
+        // お祝いエフェクト（ゴールデンチケット・認定証取得時）
+        // ================================================================
+
+        private void OnGoldenTicketCelebration(int count)
+        {
+            TriggerScreenFlash(new Color(1f, 0.85f, 0.2f, 0.5f));
+            SpawnFireworks(new Color(1f, 0.9f, 0.3f), new Color(1f, 0.6f, 0.1f));
+        }
+
+        private void OnCertificateCelebration(CertificateCategory category)
+        {
+            TriggerScreenFlash(new Color(0.3f, 0.7f, 1f, 0.4f));
+            SpawnFireworks(new Color(0.4f, 0.8f, 1f), new Color(0.2f, 0.5f, 1f));
+        }
+
+        private void TriggerScreenFlash(Color flashColor)
+        {
+            if (_screenFlash == null && _canvasRoot != null)
+            {
+                _screenFlash = new GameObject("ScreenFlash");
+                _screenFlash.transform.SetParent(_canvasRoot, false);
+                var rt = _screenFlash.AddComponent<RectTransform>();
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.one;
+                rt.offsetMin = Vector2.zero;
+                rt.offsetMax = Vector2.zero;
+                _screenFlashImage = _screenFlash.AddComponent<Image>();
+                _screenFlashImage.raycastTarget = false;
+                _screenFlash.SetActive(false);
+            }
+
+            if (_screenFlashImage != null)
+            {
+                _screenFlashImage.color = flashColor;
+                _screenFlash.SetActive(true);
+                _screenFlash.transform.SetAsLastSibling();
+                _screenFlashTimer = ScreenFlashDuration;
+            }
+        }
+
+        private void UpdateScreenFlash()
+        {
+            if (_screenFlashTimer <= 0f) return;
+
+            _screenFlashTimer -= Time.unscaledDeltaTime;
+            if (_screenFlashTimer <= 0f)
+            {
+                if (_screenFlash != null) _screenFlash.SetActive(false);
+                return;
+            }
+
+            if (_screenFlashImage != null)
+            {
+                var c = _screenFlashImage.color;
+                c.a = Mathf.Clamp01(_screenFlashTimer / ScreenFlashDuration) * 0.5f;
+                _screenFlashImage.color = c;
+            }
+        }
+
+        private void SpawnFireworks(Color colorA, Color colorB)
+        {
+            if (_fireworksPS == null)
+            {
+                var go = new GameObject("FireworksEffect");
+                go.transform.SetParent(transform, false);
+                _fireworksPS = go.AddComponent<ParticleSystem>();
+
+                var main = _fireworksPS.main;
+                main.duration = 2f;
+                main.loop = false;
+                main.startLifetime = 1.5f;
+                main.startSpeed = 12f;
+                main.startSize = new ParticleSystem.MinMaxCurve(0.2f, 0.5f);
+                main.maxParticles = 200;
+                main.simulationSpace = ParticleSystemSimulationSpace.World;
+                main.gravityModifier = 0.5f;
+
+                var emission = _fireworksPS.emission;
+                emission.rateOverTime = 0f;
+                emission.SetBursts(new[]
+                {
+                    new ParticleSystem.Burst(0f, 60),
+                    new ParticleSystem.Burst(0.3f, 50),
+                    new ParticleSystem.Burst(0.6f, 40)
+                });
+
+                var shape = _fireworksPS.shape;
+                shape.shapeType = ParticleSystemShapeType.Sphere;
+                shape.radius = 2f;
+
+                var colorOverLifetime = _fireworksPS.colorOverLifetime;
+                colorOverLifetime.enabled = true;
+                var gradient = new Gradient();
+                gradient.SetKeys(
+                    new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                    new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0f, 1f) }
+                );
+                colorOverLifetime.color = gradient;
+
+                var sizeOverLifetime = _fireworksPS.sizeOverLifetime;
+                sizeOverLifetime.enabled = true;
+                sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(1f,
+                    AnimationCurve.EaseInOut(0f, 1f, 1f, 0.1f));
+
+                // レンダラー設定
+                var renderer = go.GetComponent<ParticleSystemRenderer>();
+                renderer.material = new Material(Shader.Find("Particles/Standard Unlit"))
+                {
+                    color = Color.white
+                };
+                renderer.renderMode = ParticleSystemRenderMode.Billboard;
+
+                _fireworksPS.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            }
+
+            // 色を更新してカメラ前で発射
+            var m = _fireworksPS.main;
+            m.startColor = new ParticleSystem.MinMaxGradient(colorA, colorB);
+
+            if (Camera.main != null)
+            {
+                _fireworksPS.transform.position = Camera.main.transform.position
+                    + Camera.main.transform.forward * 20f
+                    + Vector3.up * 5f;
+            }
+
+            _fireworksPS.Clear();
+            _fireworksPS.Play();
         }
 
         // ================================================================

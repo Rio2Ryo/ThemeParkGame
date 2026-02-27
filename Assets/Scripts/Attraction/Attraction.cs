@@ -511,6 +511,10 @@ namespace ThemeParkGame.Attraction
                 if (upgrade != null)
                     currentBreakdownProbability *= upgrade.BreakdownRateMultiplier;
             }
+
+            // 難易度による故障率補正（Easy:0.6 Normal:1.0 Hard:1.5）
+            currentBreakdownProbability *= GameManager.GetBreakdownRateMultiplier(
+                GameManager.Instance != null ? GameManager.Instance.CurrentDifficulty : GameDifficulty.Normal);
         }
 
         /// <summary>

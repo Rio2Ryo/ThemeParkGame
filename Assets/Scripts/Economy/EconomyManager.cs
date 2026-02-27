@@ -425,17 +425,10 @@ namespace ThemeParkGame.Economy
         {
             float totalMaintenance = 0f;
 
-            // 難易度に応じた維持費倍率（Easy: 0.8, Normal: 1.0, Hard: 1.3）
-            float difficultyMult = 1f;
-            if (GameManager.Instance != null)
-            {
-                difficultyMult = GameManager.Instance.CurrentDifficulty switch
-                {
-                    GameDifficulty.Easy => 0.8f,
-                    GameDifficulty.Hard => 1.3f,
-                    _ => 1f
-                };
-            }
+            // 難易度に応じた維持費倍率（Easy: 0.7, Normal: 1.0, Hard: 1.4）
+            float difficultyMult = GameManager.Instance != null
+                ? GameManager.GetMaintenanceCostMultiplier(GameManager.Instance.CurrentDifficulty)
+                : 1f;
 
             // アトラクションの維持費
             var attractions = UnityEngine.Object.FindObjectsOfType<Attraction.Attraction>();

@@ -65,6 +65,18 @@ namespace ThemeParkGame.Visitor
         /// <summary>暑い天候での喉の渇き倍率</summary>
         private const float HotWeatherThirstMultiplier = 1.5f;
 
+        /// <summary>雨天時の幸福度減少レート（毎秒）</summary>
+        private const float RainHappinessPenaltyRate = 0.15f;
+
+        /// <summary>雪天時の幸福度減少レート（毎秒）- 雨よりやや強い</summary>
+        private const float SnowHappinessPenaltyRate = 0.20f;
+
+        /// <summary>雨天時の空腹加速倍率（体が冷えて空腹になりやすい）</summary>
+        private const float RainHungerMultiplier = 1.3f;
+
+        /// <summary>暑い天候での幸福度減少レート（毎秒）</summary>
+        private const float HotHappinessPenaltyRate = 0.10f;
+
         /// <summary>トイレ欲求の自然増加レート（毎秒）。飲食後に加速するので基本は控えめ</summary>
         private const float ToiletNeedIncreaseRate = 0.4f;
 
@@ -292,6 +304,11 @@ namespace ThemeParkGame.Visitor
                     break;
             }
 
+            // 難易度に応じた所持金補正（Easy:1.3 Normal:1.0 Hard:0.8）
+            float cashMult = GameManager.GetVisitorCashMultiplier(
+                GameManager.Instance != null ? GameManager.Instance.CurrentDifficulty : GameDifficulty.Normal);
+            Cash *= cashMult;
+
             // 共通初期値
             Satisfaction = 50f;
             Nausea = 0f;
@@ -314,15 +331,23 @@ namespace ThemeParkGame.Visitor
             // 難易度に応じた忍耐度補正（Easyはパラメータ増加が遅い、Hardは速い）
             float patienceMultiplier = GetDifficultyPatienceMultiplier();
 
-            // 空腹: 自然増加
+            // 天候影響倍率（難易度で調整）
+            float weatherImpact = GameManager.GetWeatherImpactMultiplier(
+                GameManager.Instance != null ? GameManager.Instance.CurrentDifficulty : GameDifficulty.Normal);
+
+            // 空腹: 自然増加（雨天で加速 - 体が冷えて空腹に）
             float hungerRate = HungerIncreaseRate * GetHungerMultiplier(visitorType) * patienceMultiplier;
+            if (currentWeather == Weather.Rainy)
+            {
+                hungerRate *= Mathf.Lerp(1f, RainHungerMultiplier, weatherImpact);
+            }
             Hunger += hungerRate * deltaTime;
 
             // 喉の渇き: 自然増加（暑い天候で加速）
             float thirstRate = ThirstIncreaseRate * patienceMultiplier;
             if (currentWeather == Weather.Hot)
             {
-                thirstRate *= HotWeatherThirstMultiplier;
+                thirstRate *= Mathf.Lerp(1f, HotWeatherThirstMultiplier, weatherImpact);
             }
             Thirst += thirstRate * deltaTime;
 
@@ -347,6 +372,20 @@ namespace ThemeParkGame.Visitor
             if (discomfortLevel > 0f)
             {
                 Happiness -= HappinessDecayFromDiscomfort * discomfortLevel * deltaTime;
+            }
+
+            // 天候による幸福度への直接影響
+            switch (currentWeather)
+            {
+                case Weather.Rainy:
+                    Happiness -= RainHappinessPenaltyRate * weatherImpact * deltaTime;
+                    break;
+                case Weather.Snowy:
+                    Happiness -= SnowHappinessPenaltyRate * weatherImpact * deltaTime;
+                    break;
+                case Weather.Hot:
+                    Happiness -= HotHappinessPenaltyRate * weatherImpact * deltaTime;
+                    break;
             }
 
             // パークイベントボーナス: 開催中イベントの幸福度/満足度パッシブ加算

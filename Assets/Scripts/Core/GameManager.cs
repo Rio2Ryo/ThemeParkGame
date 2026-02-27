@@ -173,6 +173,65 @@ namespace ThemeParkGame.Core
             }
         }
 
+        // ================================================================
+        // 拡張難易度パラメータ
+        // ================================================================
+
+        /// <summary>難易度に応じた維持費倍率（Easy:0.7 Normal:1.0 Hard:1.4）</summary>
+        public static float GetMaintenanceCostMultiplier(GameDifficulty difficulty)
+        {
+            switch (difficulty)
+            {
+                case GameDifficulty.Easy:   return 0.7f;
+                case GameDifficulty.Hard:   return 1.4f;
+                default:                    return 1.0f;
+            }
+        }
+
+        /// <summary>難易度に応じたスコア倍率（Easy:0.8 Normal:1.0 Hard:1.5）</summary>
+        public static float GetScoreMultiplier(GameDifficulty difficulty)
+        {
+            switch (difficulty)
+            {
+                case GameDifficulty.Easy:   return 0.8f;
+                case GameDifficulty.Hard:   return 1.5f;
+                default:                    return 1.0f;
+            }
+        }
+
+        /// <summary>難易度に応じた天候影響倍率（Easy:0.5 Normal:1.0 Hard:1.5）</summary>
+        public static float GetWeatherImpactMultiplier(GameDifficulty difficulty)
+        {
+            switch (difficulty)
+            {
+                case GameDifficulty.Easy:   return 0.5f;
+                case GameDifficulty.Hard:   return 1.5f;
+                default:                    return 1.0f;
+            }
+        }
+
+        /// <summary>難易度に応じた故障率倍率（Easy:0.6 Normal:1.0 Hard:1.5）</summary>
+        public static float GetBreakdownRateMultiplier(GameDifficulty difficulty)
+        {
+            switch (difficulty)
+            {
+                case GameDifficulty.Easy:   return 0.6f;
+                case GameDifficulty.Hard:   return 1.5f;
+                default:                    return 1.0f;
+            }
+        }
+
+        /// <summary>難易度に応じた来場者初期所持金倍率（Easy:1.3 Normal:1.0 Hard:0.8）</summary>
+        public static float GetVisitorCashMultiplier(GameDifficulty difficulty)
+        {
+            switch (difficulty)
+            {
+                case GameDifficulty.Easy:   return 1.3f;
+                case GameDifficulty.Hard:   return 0.8f;
+                default:                    return 1.0f;
+            }
+        }
+
         /// <summary>シナリオモードを開始する</summary>
         public void StartScenario(ScenarioCountry country)
         {
