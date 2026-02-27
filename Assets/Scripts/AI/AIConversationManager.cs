@@ -115,6 +115,9 @@ namespace ThemeParkGame.AI
             GameEvents.OnVisitorLeavePark += OnVisitorLeavePark;
             GameEvents.OnNPCConversationStarted += OnConversationStarted;
             GameEvents.OnNPCConversationEnded += OnConversationEnded;
+
+            // ConversationUI → AIConversationManager 接続
+            WireConversationUI();
         }
 
         private void OnDestroy()
@@ -123,6 +126,48 @@ namespace ThemeParkGame.AI
             GameEvents.OnVisitorLeavePark -= OnVisitorLeavePark;
             GameEvents.OnNPCConversationStarted -= OnConversationStarted;
             GameEvents.OnNPCConversationEnded -= OnConversationEnded;
+
+            UnwireConversationUI();
+        }
+
+        /// <summary>ConversationUIのイベントを購読してメッセージを中継する</summary>
+        private void WireConversationUI()
+        {
+            if (_conversationUI == null)
+                _conversationUI = FindObjectOfType<ConversationUI>();
+
+            if (_conversationUI != null)
+            {
+                _conversationUI.OnPlayerMessageSent += HandlePlayerMessageFromUI;
+                _conversationUI.OnConversationClosed += HandleConversationClosedFromUI;
+                WebGLOptimizer.LogVerbose("[AIConversationManager] ConversationUI 接続完了");
+            }
+        }
+
+        private void UnwireConversationUI()
+        {
+            if (_conversationUI != null)
+            {
+                _conversationUI.OnPlayerMessageSent -= HandlePlayerMessageFromUI;
+                _conversationUI.OnConversationClosed -= HandleConversationClosedFromUI;
+            }
+        }
+
+        /// <summary>ConversationUIからのプレイヤーメッセージをSendPlayerMessageに中継</summary>
+        private void HandlePlayerMessageFromUI(int visitorId, string message)
+        {
+            // セッションが未開始なら自動開始
+            if (!_activeSessions.ContainsKey(visitorId))
+            {
+                StartPlayerConversation(visitorId);
+            }
+            SendPlayerMessage(visitorId, message);
+        }
+
+        /// <summary>ConversationUIからの会話終了をEndConversationに中継</summary>
+        private void HandleConversationClosedFromUI(int visitorId)
+        {
+            EndConversation(visitorId);
         }
 
         // ================================================================
