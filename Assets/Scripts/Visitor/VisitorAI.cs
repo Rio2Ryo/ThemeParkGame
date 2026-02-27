@@ -779,6 +779,13 @@ namespace ThemeParkGame.Visitor
                 qualityBonus: UnityEngine.Random.Range(3f, 8f)
             );
             parameters.ModifyHappiness(5f);
+
+            // 30%の確率でゴミをポイ捨て（マナーの悪い来場者）
+            if (UnityEngine.Random.value < 0.3f)
+            {
+                SpawnMessObject("Litter", transform.position);
+            }
+
             WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} finished eating. {parameters}");
             TransitionTo(VisitorBehaviorState.Idle);
         }
@@ -790,6 +797,13 @@ namespace ThemeParkGame.Visitor
                 thirstReduction: UnityEngine.Random.Range(50f, 70f),
                 qualityBonus: UnityEngine.Random.Range(2f, 5f)
             );
+
+            // 20%の確率でゴミをポイ捨て（容器のポイ捨て）
+            if (UnityEngine.Random.value < 0.2f)
+            {
+                SpawnMessObject("Litter", transform.position);
+            }
+
             WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} finished drinking. {parameters}");
             TransitionTo(VisitorBehaviorState.Idle);
         }
@@ -829,6 +843,7 @@ namespace ThemeParkGame.Visitor
         private void OnFinishVomiting()
         {
             parameters.ApplyVomitEffect();
+            SpawnMessObject("Vomit", transform.position);
             GameEvents.FireVisitorVomited(visitorId);
             WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} vomited! {parameters}");
             TransitionTo(VisitorBehaviorState.Idle);
@@ -1202,6 +1217,84 @@ namespace ThemeParkGame.Visitor
         {
             s_facilityCache.Clear();
             s_facilityCacheTime = -1f;
+        }
+
+        // ---- ゴミ・嘔吐物生成 ----
+
+        /// <summary>
+        /// シーン上にゴミ・嘔吐物のGameObjectを生成する。
+        /// CleanerStaffがタグ（"Vomit"/"Litter"）で検索して清掃する。
+        /// プロシージャルメッシュで小さなオブジェクトを生成し、
+        /// SphereColliderを付与して物理検索（OverlapSphere）に対応する。
+        /// </summary>
+        /// <param name="tag">"Vomit" or "Litter"</param>
+        /// <param name="position">生成位置</param>
+        private static void SpawnMessObject(string tag, Vector3 position)
+        {
+            var obj = new GameObject($"Mess_{tag}");
+            obj.tag = tag;
+
+            // 地面に接する位置に微調整
+            Vector3 spawnPos = position + new Vector3(
+                UnityEngine.Random.Range(-0.5f, 0.5f), 0f,
+                UnityEngine.Random.Range(-0.5f, 0.5f));
+            spawnPos.y = 0.05f; // 地面すれすれ
+            obj.transform.position = spawnPos;
+
+            // 検知用コライダー
+            var collider = obj.AddComponent<SphereCollider>();
+            collider.radius = 0.3f;
+            collider.isTrigger = true;
+
+            // プロシージャルメッシュ（小さな塊）
+            var meshFilter = obj.AddComponent<MeshFilter>();
+            var meshRenderer = obj.AddComponent<MeshRenderer>();
+
+            var mesh = new Mesh();
+            if (tag == "Vomit")
+            {
+                // 嘔吐物: 平たい円盤状
+                mesh.vertices = new[]
+                {
+                    new Vector3(0f, 0f, 0f),
+                    new Vector3(-0.2f, 0.02f, -0.15f),
+                    new Vector3(0.2f, 0.02f, -0.15f),
+                    new Vector3(0.25f, 0.01f, 0.1f),
+                    new Vector3(-0.1f, 0.02f, 0.2f),
+                    new Vector3(-0.25f, 0.01f, 0.05f)
+                };
+                mesh.triangles = new[] { 0,1,2, 0,2,3, 0,3,4, 0,4,5, 0,5,1 };
+            }
+            else
+            {
+                // ゴミ: 小さなキューブ状
+                float s = 0.08f;
+                mesh.vertices = new[]
+                {
+                    new Vector3(-s, 0, -s), new Vector3(s, 0, -s),
+                    new Vector3(s, 0, s), new Vector3(-s, 0, s),
+                    new Vector3(-s, s*2, -s), new Vector3(s, s*2, -s),
+                    new Vector3(s, s*2, s), new Vector3(-s, s*2, s)
+                };
+                mesh.triangles = new[]
+                {
+                    0,2,1, 0,3,2, // bottom
+                    4,5,6, 4,6,7, // top
+                    0,1,5, 0,5,4, // front
+                    2,3,7, 2,7,6, // back
+                    1,2,6, 1,6,5, // right
+                    0,4,7, 0,7,3  // left
+                };
+            }
+            mesh.RecalculateNormals();
+            meshFilter.mesh = mesh;
+
+            // マテリアル
+            var mat = new Material(Shader.Find("Sprites/Default"));
+            mat.color = tag == "Vomit"
+                ? new Color(0.6f, 0.75f, 0.2f, 0.9f) // 黄緑（嘔吐物）
+                : new Color(0.55f, 0.45f, 0.3f, 0.9f); // 茶色（ゴミ）
+            meshRenderer.material = mat;
         }
 
         private Transform FindNearestFacility(FacilityType facilityType)

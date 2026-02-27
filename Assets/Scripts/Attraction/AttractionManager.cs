@@ -124,7 +124,8 @@ namespace ThemeParkGame.Attraction
         public void Enter(AttractionContext context)
         {
             context.Attraction.SetActive(true);
-            GameEvents.FireAttractionBuilt(context.Attraction.FacilityId);
+            // 注: FireAttractionBuilt は Attraction.OnPlaced() から発火されるため、
+            // ここでは重複発火しない（修理復帰時にも呼ばれるため）
             WebGLOptimizer.LogVerbose($"[AttractionState] 稼働開始: {context.Attraction.DisplayName}");
         }
 
@@ -157,8 +158,9 @@ namespace ThemeParkGame.Attraction
         public void Enter(AttractionContext context)
         {
             context.StateTimer = 0f;
-            GameEvents.FireAttractionBrokenDown(context.Attraction.FacilityId);
-            WebGLOptimizer.LogVerbose($"[AttractionState] 故障発生: {context.Attraction.DisplayName}");
+            // 注: FireAttractionBrokenDown は Attraction.TriggerBreakdown() から発火済み。
+            // ここでは重複発火しない。
+            WebGLOptimizer.LogVerbose($"[AttractionState] 故障検知: {context.Attraction.DisplayName}");
 
             // メカニックへの修理リクエストを発行
             context.Manager.RequestRepair(context.Attraction);
@@ -207,9 +209,10 @@ namespace ThemeParkGame.Attraction
 
             if (context.StateTimer >= repairDuration)
             {
-                context.Attraction.OnRepaired();
-                context.Manager.TransitionState(
-                    context.Attraction.FacilityId, AttractionLifecycleState.Operational);
+                // Attractionの内部FSMに修理完了を委譲する。
+                // RequestStateChangeがFireAttractionRepairedを発火し、
+                // OnAttractionRepairedHandlerがライフサイクル遷移を処理する。
+                context.Attraction.RequestStateChange(RideCycleState.WaitingForRiders);
             }
         }
 
@@ -231,20 +234,21 @@ namespace ThemeParkGame.Attraction
         {
             context.StateTimer = 0f;
             context.Attraction.SetActive(false);
-            GameEvents.FireAttractionAccident(context.Attraction.FacilityId);
-            Debug.LogWarning($"[AttractionState] 事故発生! {context.Attraction.DisplayName}");
+            // 注: FireAttractionAccident は Attraction.TriggerAccident() から発火済み。
+            // ここでは重複発火しない。
+            Debug.LogWarning($"[AttractionState] 事故検知! {context.Attraction.DisplayName}");
         }
 
         public void Update(AttractionContext context, float deltaTime)
         {
             context.StateTimer += deltaTime;
 
-            // 調査完了後、修理状態へ
+            // 調査完了後、Attractionの内部FSMに修理完了を委譲する。
+            // RequestStateChangeがFireAttractionRepairedを発火し、
+            // OnAttractionRepairedHandlerがライフサイクル遷移を処理する。
             if (context.StateTimer >= InvestigationDuration)
             {
-                context.Attraction.OnRepaired(); // 内部状態リセット
-                context.Manager.TransitionState(
-                    context.Attraction.FacilityId, AttractionLifecycleState.Repairing);
+                context.Attraction.RequestStateChange(RideCycleState.WaitingForRiders);
             }
         }
 
@@ -739,9 +743,12 @@ namespace ThemeParkGame.Attraction
         private void OnAttractionRepairedHandler(int facilityId)
         {
             // 修理完了イベント→Operational状態へ
+            // Attraction.RequestStateChange()から発火されるため、
+            // ライフサイクル状態をAttractionの内部状態に同期させる。
             var currentState = GetLifecycleState(facilityId);
             if (currentState == AttractionLifecycleState.Repairing ||
-                currentState == AttractionLifecycleState.BrokenDown)
+                currentState == AttractionLifecycleState.BrokenDown ||
+                currentState == AttractionLifecycleState.Accident)
             {
                 TransitionState(facilityId, AttractionLifecycleState.Operational);
             }

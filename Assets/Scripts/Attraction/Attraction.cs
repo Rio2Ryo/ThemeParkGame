@@ -576,18 +576,47 @@ namespace ThemeParkGame.Attraction
 
         /// <summary>
         /// メカニックが修理を完了した時に呼ばれる。
-        /// 故障状態を解除し、故障確率をリセットする。
+        /// 内部的にRequestStateChangeへ委譲する。
         /// </summary>
         public void OnRepaired()
         {
-            if (!IsBrokenDown && !HasAccident) return;
+            RequestStateChange(RideCycleState.WaitingForRiders);
+        }
 
-            currentCycleState = RideCycleState.WaitingForRiders;
-            _lastMaintenanceTime = Time.time;
-            currentBreakdownProbability = attractionData.BaseBreakdownRate;
+        /// <summary>
+        /// 外部システム（AttractionManager等）からの状態変更リクエスト。
+        /// Attractionの内部FSMが遷移の妥当性を検証し、実行する。
+        /// AttractionManagerが直接状態を操作する代わりに、このメソッドを経由することで
+        /// 二重ステートマシンの競合を防止する。
+        /// </summary>
+        /// <returns>遷移が実行された場合true</returns>
+        public bool RequestStateChange(RideCycleState requestedState)
+        {
+            switch (requestedState)
+            {
+                case RideCycleState.WaitingForRiders:
+                    // 修理完了による復旧
+                    if (!IsBrokenDown && !HasAccident) return false;
+                    currentCycleState = RideCycleState.WaitingForRiders;
+                    _cycleTimer = 0f;
+                    _lastMaintenanceTime = Time.time;
+                    if (attractionData != null)
+                        currentBreakdownProbability = attractionData.BaseBreakdownRate;
+                    GameEvents.FireAttractionRepaired(FacilityId);
+                    WebGLOptimizer.LogVerbose($"[Attraction] 修理完了: {DisplayName} (ID: {FacilityId})");
+                    return true;
 
-            GameEvents.FireAttractionRepaired(FacilityId);
-            WebGLOptimizer.LogVerbose($"[Attraction] 修理完了: {DisplayName} (ID: {FacilityId})");
+                case RideCycleState.BrokenDown:
+                    // 外部からの故障トリガー
+                    if (IsBrokenDown || HasAccident) return false;
+                    TriggerBreakdown();
+                    return true;
+
+                default:
+                    WebGLOptimizer.LogVerbose(
+                        $"[Attraction] 未対応の状態変更リクエスト: {requestedState} (ID: {FacilityId})");
+                    return false;
+            }
         }
 
         /// <summary>
