@@ -171,12 +171,14 @@ namespace ThemeParkGame.Staff
 
             foreach (var hit in hits)
             {
-                // IInspectable インターフェース等で点検対象を判定する想定
-                // ここでは "Attraction" タグで簡易判定
                 if (!hit.CompareTag("Attraction")) continue;
                 if (!IsWithinPatrolArea(hit.transform.position)) continue;
 
-                int attrId = hit.GetInstanceID();
+                // 論理FacilityIdで管理する
+                var facility = hit.GetComponent<Attraction.FacilityBase>();
+                if (facility == null) continue;
+
+                int attrId = facility.FacilityId;
                 if (claimedAttractions.Contains(attrId)) continue;
 
                 float dist = Vector3.Distance(transform.position, hit.transform.position);
@@ -317,16 +319,16 @@ namespace ThemeParkGame.Staff
         // ============================================================
 
         /// <summary>
-        /// IDからアトラクションのGameObjectを検索する。
-        /// 本来はAttractionManagerを通じて取得するが、ここでは簡易実装。
+        /// 論理FacilityIdからアトラクションのGameObjectを検索する。
+        /// FacilityBase.FacilityIdと一致するオブジェクトを返す。
         /// </summary>
-        private GameObject FindAttractionById(int attractionId)
+        private GameObject FindAttractionById(int facilityId)
         {
-            // タグベースでアトラクションを検索
             var attractions = GameObject.FindGameObjectsWithTag("Attraction");
             foreach (var attraction in attractions)
             {
-                if (attraction.GetInstanceID() == attractionId)
+                var facility = attraction.GetComponent<Attraction.FacilityBase>();
+                if (facility != null && facility.FacilityId == facilityId)
                 {
                     return attraction;
                 }
