@@ -323,6 +323,36 @@ namespace ThemeParkGame.Park
             return _zones.Where(kvp => kvp.Value.IsUnlocked).Select(kvp => kvp.Key).ToList();
         }
 
+        /// <summary>
+        /// カメラ位置に最も近い施設が属するテーマゾーンを返す。
+        /// 施設がない場合はnull。AudioManagerのゾーンBGM自動切替で使用。
+        /// </summary>
+        public ThemeZone? GetZoneAtCameraPosition()
+        {
+            Camera cam = Camera.main;
+            if (cam == null) return null;
+
+            Vector3 camPos = cam.transform.position;
+            float bestDist = float.MaxValue;
+            ThemeZone? bestZone = null;
+
+            foreach (var kvp in _placedFacilities)
+            {
+                var fac = kvp.Value;
+                // グリッド座標からワールド座標を概算（1グリッド=1ユニット）
+                float fx = fac.GridX;
+                float fz = fac.GridY;
+                float dist = (camPos.x - fx) * (camPos.x - fx) + (camPos.z - fz) * (camPos.z - fz);
+                if (dist < bestDist)
+                {
+                    bestDist = dist;
+                    bestZone = fac.Zone;
+                }
+            }
+
+            return bestZone;
+        }
+
         // ================================================================
         // グリッド配置システム
         // ================================================================

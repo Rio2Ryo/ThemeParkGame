@@ -717,6 +717,13 @@ namespace ThemeParkGame.Visitor
             // 忍耐力に応じた最大待ち時間
             float maxWait = maxQueueWaitTime * GetPatienceMultiplier();
 
+            // キューテーマ効果: テーマ化されたキューは忍耐限界を延長
+            float queueReduction = GetCurrentAttractionQueueReduction();
+            if (queueReduction > 0f)
+            {
+                maxWait *= (1f + queueReduction);
+            }
+
             if (queueWaitTimer >= maxWait)
             {
                 // 我慢の限界 → 行列離脱
@@ -733,11 +740,21 @@ namespace ThemeParkGame.Visitor
                 return;
             }
 
-            // 待ち時間に応じた幸福度減少（緩やかに）
+            // 待ち時間に応じた幸福度減少（テーマ化で軽減）
             if (queueWaitTimer > maxWait * 0.5f)
             {
-                parameters.ModifyHappiness(-0.5f * deltaTime);
+                float penalty = -0.5f * deltaTime * (1f - queueReduction);
+                parameters.ModifyHappiness(penalty);
             }
+        }
+
+        /// <summary>現在並んでいるアトラクションのキューペナルティ軽減率を取得</summary>
+        private float GetCurrentAttractionQueueReduction()
+        {
+            if (currentTarget == null) return 0f;
+            var attraction = currentTarget.GetComponent<ThemeParkGame.Attraction.Attraction>();
+            if (attraction == null) return 0f;
+            return attraction.QueuePenaltyReduction;
         }
 
         /// <summary>汎用タイマー付きアクション実行</summary>
@@ -1431,6 +1448,16 @@ namespace ThemeParkGame.Visitor
                 // 待ち行列の短さボーナス
                 float queueRatio = (float)attractionComp.QueueLength / attractionComp.MaxQueueLength;
                 score -= queueRatio * 20f;
+
+                // キューテーマ化ボーナス: テーマ化されていれば長い列でも許容
+                if (attractionComp.QueueThemeLevel > 0)
+                    score += attractionComp.QueueThemeLevel * 5f;
+
+                // 推定待ち時間で忍耐力の低い来場者はフィルタ
+                float estWait = attractionComp.EstimatedWaitTime;
+                float maxTolerable = maxQueueWaitTime * GetPatienceMultiplier();
+                if (estWait > maxTolerable)
+                    score -= 30f; // 推定待ちが忍耐限界を超えるなら大きく減点
 
                 // 価格妥当性ボーナス
                 float priceTolerance = GetPriceToleranceMultiplier();

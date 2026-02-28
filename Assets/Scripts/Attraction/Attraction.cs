@@ -93,6 +93,73 @@ namespace ThemeParkGame.Attraction
             set => maxQueueLength = Mathf.Max(1, value);
         }
 
+        /// <summary>
+        /// キューテーマレベル。投資で待ち列体験を改善する。
+        /// 0=なし, 1=基本テーマ化(ペナルティ30%軽減), 2=フル演出(ペナルティ70%軽減)
+        /// </summary>
+        [Header("Queue Entertainment")]
+        [SerializeField] private int queueThemeLevel;
+        public int QueueThemeLevel
+        {
+            get => queueThemeLevel;
+            set => queueThemeLevel = Mathf.Clamp(value, 0, 2);
+        }
+
+        /// <summary>キューエンターテイナーが配置されているか</summary>
+        public bool HasQueueEntertainer { get; set; }
+
+        /// <summary>待ち列のペナルティ軽減率（0.0～1.0）。テーマ化+エンターテイナー効果の合算。</summary>
+        public float QueuePenaltyReduction
+        {
+            get
+            {
+                float reduction = queueThemeLevel switch
+                {
+                    1 => 0.3f,  // 基本テーマ化: 30%軽減
+                    2 => 0.7f,  // フル演出: 70%軽減
+                    _ => 0f
+                };
+                if (HasQueueEntertainer) reduction = Mathf.Min(1f, reduction + 0.25f);
+                return reduction;
+            }
+        }
+
+        /// <summary>推定待ち時間（秒）。来場者がキュー選択の参考にする。</summary>
+        public float EstimatedWaitTime
+        {
+            get
+            {
+                if (attractionData == null || !IsOperating) return float.MaxValue;
+                int capacity = EffectiveCapacity;
+                if (capacity <= 0) return float.MaxValue;
+                float cyclesNeeded = (float)QueueLength / capacity;
+                return cyclesNeeded * (attractionData.RideDuration + LoadUnloadDuration * 2f);
+            }
+        }
+
+        /// <summary>
+        /// キューテーマをアップグレードする。
+        /// </summary>
+        /// <returns>成功ならtrue</returns>
+        public bool TryUpgradeQueueTheme()
+        {
+            if (queueThemeLevel >= 2) return false;
+            queueThemeLevel++;
+            WebGLOptimizer.LogVerbose($"[Attraction] キューテーマ Lv.{queueThemeLevel}: {DisplayName}");
+            return true;
+        }
+
+        /// <summary>キューテーマのアップグレードコスト</summary>
+        public int GetQueueThemeUpgradeCost()
+        {
+            return queueThemeLevel switch
+            {
+                0 => 500,   // なし → 基本テーマ化
+                1 => 1500,  // 基本 → フル演出
+                _ => -1     // 最大レベル
+            };
+        }
+
         // ---- チケット・収益 ----
 
         /// <summary>

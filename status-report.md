@@ -277,3 +277,90 @@
 | 18 | `Assets/Scripts/AI/NPCDialogueSystem.cs` | 天候コメント+天候名に台風/雷雨追加 |
 | 19 | `Assets/Scripts/AI/PromptTemplates.cs` | AI天候説明テンプレート追加 |
 | 20 | `status-report.md` | 本レポート |
+
+---
+
+# Part C: Phase 1 実装完了レポート（2026-02-28）
+
+## Phase 1: L3(実績拡充) + L1(ゾーン別BGM) + L9(待ち列演出) — 完了
+
+### L3. 実績拡充 — AchievementSystem 新実績12件追加（計95件 → 107件）
+
+**来場者系 (+4件)**
+| ID | タイトル | 条件 |
+|---|---|---|
+| `peak_200` | 超超満員 | 同時来場者200人以上 |
+| `vip_platinum` | プラチナの信頼 | PlatinumランクVIPを満足させた |
+| `vip_5_platinum` | プラチナクラブ | PlatinumVIPを5人満足させた |
+| `vip_all_ranks` | VIPマスター | 全VIPランク(Silver/Gold/Platinum)を満足 |
+
+**経済系 (+1件)**
+| ID | タイトル | 条件 |
+|---|---|---|
+| `revenue_10m` | テーマパーク王 | 総収益$10,000,000達成 |
+
+**パーク系 (+3件)**
+| ID | タイトル | 条件 |
+|---|---|---|
+| `all_zones_built` | 五大陸制覇 | 全5ゾーンにアトラクション建設 |
+| `attraction_all_categories` | カテゴリーマスター | 全6カテゴリのアトラクション建設 |
+| `expansion_max` | 大帝国 | パーク拡張を最大まで実行 |
+
+**特殊系 (+4件、うち隠し実績2件)**
+| ID | タイトル | 条件 |
+|---|---|---|
+| `typhoon_survive_3` | 台風サバイバー | 台風を3回乗り越えた |
+| `thunderstorm_survive_5` | 雷雨の勇者 | 雷雨を5回乗り越えた |
+| `weather_all_types` | 全天候体験 | 全7種類の天候を経験 |
+| `hidden_typhoon_happy` | 嵐の中の幸せ | 台風中に平均幸福度80以上(隠し) |
+| `hidden_no_breakdown_30` | 完璧なパーク | 30日間故障ゼロ(隠し) |
+
+**VIPVisitorSystem拡張**: ランク別満足トラッキング(`PlatinumVIPsServed`, `HasServedAllRanks`)を追加
+
+### L1. ゾーン別BGM — AudioManager全5ゾーン対応
+
+**新規BGMクリップ (4曲)**
+| ゾーン | クリップ名 | 音楽スタイル |
+|---|---|---|
+| LostKingdom | LostKingdomBGM | 冒険オーケストラ（Dm調マーチ+英雄メロディ） |
+| HalloweenWorld | HalloweenWorldBGM | ホラーアンビエント（低音ドローン+ゴースト音+心拍リズム） |
+| Wonderland | WonderlandBGM | メルヘンワルツ（3拍子+オルゴール+鈴の音） |
+| SpaceZone | SpaceZoneBGM | 宇宙エレクトロニカ（LFOパッド+スターダストアルペジオ） |
+| FutureCity | FutureCityBGM | (既存) シンセウェーブ |
+
+**自動切替ロジック**
+- `AudioManager.UpdateZoneBGMFromCamera()`: カメラ位置に最も近い施設のゾーンを判定し、BGMを自動切替（2秒間隔チェック）
+- `ParkManager.GetZoneAtCameraPosition()`: 配置済み施設との距離から最寄りゾーンを返す新メソッド
+- Playing状態でのみゾーンBGM切替が有効
+
+### L9. 待ち列エンターテイメント — キューテーマ化+エンターテイナー配置+待ち時間表示
+
+**Attraction.cs拡張**
+| プロパティ | 説明 |
+|---|---|
+| `QueueThemeLevel` | 0=なし, 1=基本テーマ化(30%軽減), 2=フル演出(70%軽減) |
+| `HasQueueEntertainer` | エンターテイナーが付近でパフォーマンス中なら+25%軽減 |
+| `QueuePenaltyReduction` | テーマ+エンターテイナーの合算ペナルティ軽減率 |
+| `EstimatedWaitTime` | 推定待ち時間（秒）。キュー人数÷定員×(稼働+乗降時間) |
+| `TryUpgradeQueueTheme()` | テーマレベルアップグレード（コスト500/1500） |
+
+**VisitorAI拡張**
+- `ExecuteQueueWaiting`: テーマ化キューで忍耐限界延長 + 幸福度ペナルティ軽減
+- アトラクション選択: `QueueThemeLevel`ボーナス + `EstimatedWaitTime`による忍耐限界フィルタ
+
+**EntertainerStaff拡張**
+- パフォーマンス中に近くのアトラクションの`HasQueueEntertainer`フラグを自動設定
+- パフォーマンス完了時にフラグをリセット
+
+## Phase 1 修正ファイル一覧
+
+| # | ファイル | 変更内容 |
+|---|---|---|
+| 1 | `Assets/Scripts/Core/AchievementSystem.cs` | 新実績12件+トラッキング変数+チェックロジック |
+| 2 | `Assets/Scripts/Visitor/VIPVisitorSystem.cs` | ランク別満足カウンター+公開プロパティ |
+| 3 | `Assets/Scripts/Core/ProceduralAudioLibrary.cs` | ゾーンBGM4曲のプロシージャル生成メソッド |
+| 4 | `Assets/Scripts/Core/AudioManager.cs` | ゾーンBGMクリップ+自動切替ロジック |
+| 5 | `Assets/Scripts/Park/ParkManager.cs` | GetZoneAtCameraPosition()追加 |
+| 6 | `Assets/Scripts/Attraction/Attraction.cs` | QueueThemeLevel+EstimatedWaitTime+アップグレード |
+| 7 | `Assets/Scripts/Visitor/VisitorAI.cs` | キューテーマ効果+推定待ち時間フィルタ |
+| 8 | `Assets/Scripts/Staff/EntertainerStaff.cs` | キューエンターテイナーフラグ自動管理 |

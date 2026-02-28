@@ -109,12 +109,19 @@ namespace ThemeParkGame.Visitor
         private int _totalVIPsServed;
         private int _satisfiedVIPs;
 
+        // ---- ランク別満足トラッキング ----
+        private int _platinumServed;
+        private int _goldServed;
+        private int _silverServed;
+
         // ---- 統計プロパティ ----
         public int TotalVIPsServed => _totalVIPsServed;
         public int SatisfiedVIPs => _satisfiedVIPs;
         public int ActiveVIPCount => _activeVIPs.Count;
         public float VIPSatisfactionRate => _totalVIPsServed > 0
             ? (float)_satisfiedVIPs / _totalVIPsServed * 100f : 0f;
+        public int PlatinumVIPsServed => _platinumServed;
+        public bool HasServedAllRanks => _silverServed > 0 && _goldServed > 0 && _platinumServed > 0;
 
         private void Awake()
         {
@@ -215,6 +222,14 @@ namespace ThemeParkGame.Visitor
             if (satisfied)
             {
                 _satisfiedVIPs++;
+
+                // ランク別カウント
+                switch (vipData.Rank)
+                {
+                    case VIPRank.Silver: _silverServed++; break;
+                    case VIPRank.Gold: _goldServed++; break;
+                    case VIPRank.Platinum: _platinumServed++; break;
+                }
 
                 float fameBonus = GetFameBonus(vipData.Rank);
                 ApplyRatingBonus(VIP_RATING_BONUS);

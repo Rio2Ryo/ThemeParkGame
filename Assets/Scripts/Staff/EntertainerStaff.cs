@@ -428,8 +428,12 @@ namespace ThemeParkGame.Staff
             }
         }
 
+        /// <summary>パフォーマンス中に効果範囲内の最寄りアトラクション（キュー対応用）</summary>
+        private ThemeParkGame.Attraction.Attraction _nearbyQueueAttraction;
+
         /// <summary>
         /// 効果範囲内の来場者に幸福度上昇とフラストレーション軽減を適用する。
+        /// 近くにアトラクションがあればキューエンターテイナーフラグを立てる。
         /// </summary>
         private void ApplyEntertainmentEffect(float deltaTime, float themeMultiplier)
         {
@@ -439,6 +443,20 @@ namespace ThemeParkGame.Staff
                                    * deltaTime;
 
             Collider[] hits = Physics.OverlapSphere(transform.position, EffectRadius);
+
+            // キュー付近のアトラクションにエンターテイナーフラグを設定
+            _nearbyQueueAttraction = null;
+            foreach (var hit in hits)
+            {
+                var attr = hit.GetComponent<ThemeParkGame.Attraction.Attraction>();
+                if (attr != null && attr.IsOperating)
+                {
+                    attr.HasQueueEntertainer = true;
+                    _nearbyQueueAttraction = attr;
+                    break;
+                }
+            }
+
             foreach (var hit in hits)
             {
                 if (!hit.CompareTag("Visitor")) continue;
@@ -462,6 +480,13 @@ namespace ThemeParkGame.Staff
         {
             isPerforming = false;
             cooldownTimer = PerformanceCooldown;
+
+            // キューエンターテイナーフラグをリセット
+            if (_nearbyQueueAttraction != null)
+            {
+                _nearbyQueueAttraction.HasQueueEntertainer = false;
+                _nearbyQueueAttraction = null;
+            }
 
             WebGLOptimizer.LogVerbose($"[Entertainer] {Name} がパフォーマンスを完了しました"
                       + $"（累計来場者数: {TotalVisitorsEntertained}）");

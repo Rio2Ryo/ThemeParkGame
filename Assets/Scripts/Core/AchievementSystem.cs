@@ -87,6 +87,16 @@ namespace ThemeParkGame.Core
         private bool _survivedStorm;
         private Weather _prevWeather = Weather.Sunny;
 
+        // 極端天候サバイバルトラッキング
+        private int _typhoonsSurvived;
+        private int _thunderstormsSurvived;
+        private readonly HashSet<Weather> _experiencedWeathers = new HashSet<Weather>();
+
+        // 故障ゼロ日数トラッキング
+        private int _noBreakdownDays;
+        private int _lastBreakdownCheckDay = -1;
+        private bool _hadBreakdownToday;
+
         // スタッフ解雇トラッキング
         private bool _hasFiredStaff;
 
@@ -141,6 +151,16 @@ namespace ThemeParkGame.Core
             {
                 _survivedStorm = true;
             }
+
+            // 台風・雷雨の個別サバイバルカウント
+            if (_prevWeather == Weather.Typhoon && newWeather != Weather.Typhoon)
+                _typhoonsSurvived++;
+            if (_prevWeather == Weather.Thunderstorm && newWeather != Weather.Thunderstorm)
+                _thunderstormsSurvived++;
+
+            // 経験した天候を記録
+            _experiencedWeathers.Add(newWeather);
+
             _prevWeather = newWeather;
         }
 
@@ -178,6 +198,10 @@ namespace ThemeParkGame.Core
             Reg("wom_score_80", "口コミ王", "口コミスコア80以上", AchievementCategory.Visitor, "[B]");
             Reg("wom_score_95", "インフルエンサー", "口コミスコア95以上", AchievementCategory.Visitor, "[B]");
             Reg("repeat_visitor", "リピーター獲得", "再来園者が発生した", AchievementCategory.Visitor, "[V]");
+            Reg("peak_200", "超超満員", "同時来場者200人以上", AchievementCategory.Visitor, "[P]");
+            Reg("vip_platinum", "プラチナの信頼", "PlatinumランクVIPを満足させた", AchievementCategory.Visitor, "[V]");
+            Reg("vip_5_platinum", "プラチナクラブ", "PlatinumVIPを5人満足させた", AchievementCategory.Visitor, "[V]");
+            Reg("vip_all_ranks", "VIPマスター", "全VIPランク(Silver/Gold/Platinum)を満足させた", AchievementCategory.Visitor, "[V]");
 
             // ================================================================
             // 経済系 (20)
@@ -202,6 +226,7 @@ namespace ThemeParkGame.Core
             Reg("ticket_price_high", "プレミアム路線", "入場料を$50以上に設定", AchievementCategory.Economy, "[$]");
             Reg("ticket_price_low", "庶民の味方", "入場料を$5以下に設定", AchievementCategory.Economy, "[$]");
             Reg("daily_revenue_10k", "大繁盛日", "1日の収益$10,000達成", AchievementCategory.Economy, "[$]");
+            Reg("revenue_10m", "テーマパーク王", "総収益$10,000,000達成", AchievementCategory.Economy, "[$]");
 
             // ================================================================
             // パーク建設系 (25)
@@ -231,6 +256,9 @@ namespace ThemeParkGame.Core
             Reg("toilet_5", "快適トイレ", "トイレを5基設置", AchievementCategory.Park, "[T]");
             Reg("bench_10", "憩いの場", "ベンチを10基設置", AchievementCategory.Park, "[T]");
             Reg("decoration_10", "美しいパーク", "装飾を10個設置", AchievementCategory.Park, "[D]");
+            Reg("all_zones_built", "五大陸制覇", "全5ゾーンにアトラクション建設", AchievementCategory.Park, "[E]");
+            Reg("attraction_all_categories", "カテゴリーマスター", "全6カテゴリのアトラクション建設", AchievementCategory.Park, "[A]");
+            Reg("expansion_max", "大帝国", "パーク拡張を最大まで実行", AchievementCategory.Park, "[E]");
 
             // ================================================================
             // スタッフ系 (15)
@@ -279,6 +307,11 @@ namespace ThemeParkGame.Core
             Reg("sns_reputation_80", "ネット人気者", "SNS評判80以上", AchievementCategory.Special, "[N]");
             Reg("coop_first", "協力プレイ", "Co-opで初めて協力", AchievementCategory.Special, "[M]");
             Reg("achievement_50", "コレクター", "実績を50個解除", AchievementCategory.Special, "[*]");
+            Reg("typhoon_survive_3", "台風サバイバー", "台風を3回乗り越えた", AchievementCategory.Special, "[W]");
+            Reg("thunderstorm_survive_5", "雷雨の勇者", "雷雨を5回乗り越えた", AchievementCategory.Special, "[W]");
+            Reg("weather_all_types", "全天候体験", "全7種類の天候を経験した", AchievementCategory.Special, "[W]");
+            Reg("hidden_typhoon_happy", "嵐の中の幸せ", "台風中に平均幸福度80以上を維持(隠し)", AchievementCategory.Special, "[*]");
+            Reg("hidden_no_breakdown_30", "完璧なパーク", "30日間故障ゼロを達成(隠し)", AchievementCategory.Special, "[*]");
         }
 
         private void Reg(string id, string title, string desc, AchievementCategory cat, string icon)
@@ -410,6 +443,7 @@ namespace ThemeParkGame.Core
                 if (peak >= 20f) Unlock("peak_20");
                 if (peak >= 50f) Unlock("peak_50");
                 if (peak >= 100f) Unlock("peak_100");
+                if (peak >= 200f) Unlock("peak_200");
             }
 
             // ---- VIP ----
@@ -418,6 +452,12 @@ namespace ThemeParkGame.Core
                 int vipCount = VIPVisitorSystem.Instance.TotalVIPsServed;
                 if (vipCount >= 1) Unlock("vip_welcome");
                 if (vipCount >= 10) Unlock("vip_10");
+
+                // VIPランク別実績
+                int platinumServed = VIPVisitorSystem.Instance.PlatinumVIPsServed;
+                if (platinumServed >= 1) Unlock("vip_platinum");
+                if (platinumServed >= 5) Unlock("vip_5_platinum");
+                if (VIPVisitorSystem.Instance.HasServedAllRanks) Unlock("vip_all_ranks");
             }
 
             // ---- 口コミ ----
@@ -445,6 +485,7 @@ namespace ThemeParkGame.Core
                 if (revenue >= 200000f) Unlock("revenue_200k");
                 if (revenue >= 1000000f) Unlock("revenue_1m");
                 if (revenue >= 5000000f) Unlock("revenue_5m");
+                if (revenue >= 10000000f) Unlock("revenue_10m");
 
                 if (balance >= 100000f) Unlock("balance_100k");
                 if (balance >= 500000f) Unlock("balance_500k");
@@ -526,11 +567,21 @@ namespace ThemeParkGame.Core
 
                 // アップグレードチェック
                 var allAttractions = UnityEngine.Object.FindObjectsOfType<ThemeParkGame.Attraction.Attraction>();
+                var builtZones = new HashSet<ThemeZone>();
+                var builtCategories = new HashSet<AttractionCategory>();
                 foreach (var attr in allAttractions)
                 {
                     if (attr.UpgradeLevel >= 1) Unlock("attraction_upgrade");
                     if (attr.UpgradeLevel >= 3) Unlock("attraction_maxlevel");
+
+                    if (attr.Data != null)
+                    {
+                        builtZones.Add(attr.Data.Zone);
+                        builtCategories.Add(attr.Data.Category);
+                    }
                 }
+                if (builtZones.Count >= 5) Unlock("all_zones_built");
+                if (builtCategories.Count >= 6) Unlock("attraction_all_categories");
             }
 
             // ---- 研究 ----
@@ -571,6 +622,10 @@ namespace ThemeParkGame.Core
             {
                 if (ParkExpansionSystem.Instance.PurchasedPlotCount >= 1) Unlock("expansion_first");
                 if (ParkExpansionSystem.Instance.PurchasedPlotCount >= 3) Unlock("expansion_3");
+                if (ParkExpansionSystem.Instance.AllPlots != null &&
+                    ParkExpansionSystem.Instance.PurchasedPlotCount >= ParkExpansionSystem.Instance.AllPlots.Count &&
+                    ParkExpansionSystem.Instance.AllPlots.Count > 0)
+                    Unlock("expansion_max");
             }
 
             // ---- ショップ ----
@@ -682,6 +737,22 @@ namespace ThemeParkGame.Core
 
                 if (_sunnyStreak >= 5) Unlock("weather_sunny_streak");
                 if (_survivedStorm) Unlock("weather_survive_storm");
+
+                // 極端天候サバイバル
+                if (_typhoonsSurvived >= 3) Unlock("typhoon_survive_3");
+                if (_thunderstormsSurvived >= 5) Unlock("thunderstorm_survive_5");
+
+                // 全天候体験
+                _experiencedWeathers.Add(gm.WeatherSystem.CurrentWeather);
+                if (_experiencedWeathers.Count >= 7) Unlock("weather_all_types");
+
+                // 隠し: 台風中に幸福度80以上維持
+                if (gm.WeatherSystem.CurrentWeather == Weather.Typhoon &&
+                    gm.VisitorManager != null && gm.VisitorManager.ActiveVisitorCount >= 3 &&
+                    gm.VisitorManager.AverageHappiness >= 80f)
+                {
+                    Unlock("hidden_typhoon_happy");
+                }
             }
 
             // ---- ライバルパーク ----
@@ -731,6 +802,34 @@ namespace ThemeParkGame.Core
             if (ScenarioManager.Instance != null && ScenarioManager.Instance.IsScenarioCleared)
             {
                 Unlock("scenario_clear");
+            }
+
+            // ---- 故障ゼロ連続日数 (隠し実績) ----
+            if (gm.TimeManager != null)
+            {
+                int currentDay = gm.TimeManager.CurrentDay + gm.TimeManager.CurrentYear * 365;
+                if (currentDay != _lastBreakdownCheckDay)
+                {
+                    _lastBreakdownCheckDay = currentDay;
+                    if (!_hadBreakdownToday)
+                        _noBreakdownDays++;
+                    else
+                        _noBreakdownDays = 0;
+                    _hadBreakdownToday = false;
+                }
+
+                // アクティブな故障チェック
+                var allAttr = UnityEngine.Object.FindObjectsOfType<ThemeParkGame.Attraction.Attraction>();
+                foreach (var attr in allAttr)
+                {
+                    if (attr.IsBrokenDown || attr.HasAccident)
+                    {
+                        _hadBreakdownToday = true;
+                        break;
+                    }
+                }
+
+                if (_noBreakdownDays >= 30) Unlock("hidden_no_breakdown_30");
             }
 
             // ---- 実績数メタ実績 ----

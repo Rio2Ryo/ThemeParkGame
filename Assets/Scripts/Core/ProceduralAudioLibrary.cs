@@ -583,6 +583,258 @@ namespace ThemeParkGame.Core
             return CreateClip("FutureCityBGM", data, duration);
         }
 
+        /// <summary>ロストキングダムBGM（冒険オーケストラ風16秒ループ）</summary>
+        public static AudioClip GenerateLostKingdomBGM()
+        {
+            float duration = 16f;
+            int samples = (int)(SampleRate * duration);
+            float[] data = new float[samples];
+
+            // 勇壮なコード進行: Dm -> Bb -> C -> Dm
+            float[][] chords = new float[][]
+            {
+                new float[] { 146.83f, 174.61f, 220.00f },  // Dm
+                new float[] { 116.54f, 146.83f, 174.61f },  // Bb
+                new float[] { 130.81f, 164.81f, 196.00f },  // C
+                new float[] { 146.83f, 174.61f, 220.00f },  // Dm
+            };
+
+            float[] heroMelody = {
+                440.00f, 523.25f, 587.33f, 440.00f,
+                349.23f, 392.00f, 440.00f, 0f
+            };
+
+            for (int i = 0; i < samples; i++)
+            {
+                float t = (float)i / SampleRate;
+                int chordIndex = Mathf.FloorToInt(t / 4f) % chords.Length;
+                float[] chord = chords[chordIndex];
+                float localT = t % 4f;
+
+                float val = 0f;
+
+                // ティンパニ風ベース
+                float bassFreq = chord[0] * 0.5f;
+                val += Mathf.Sin(2f * Mathf.PI * bassFreq * t) * 0.1f;
+
+                // ブラス風コード（矩形波+正弦波）
+                for (int n = 0; n < chord.Length; n++)
+                {
+                    float sw = Mathf.Sin(2f * Mathf.PI * chord[n] * t) > 0f ? 1f : -1f;
+                    val += (Mathf.Sin(2f * Mathf.PI * chord[n] * t) * 0.6f + sw * 0.4f) * 0.04f;
+                }
+
+                // マーチ風リズム（4分音符強拍）
+                float quarterBeat = (t * 2f) % 1f;
+                float marchEnv = quarterBeat < 0.05f ? 1f : Mathf.Exp(-(quarterBeat - 0.05f) * 8f);
+                val += PseudoNoise(i) * marchEnv * 0.04f;
+
+                // 英雄的メロディ
+                int noteIdx = Mathf.FloorToInt(localT / 0.5f) % heroMelody.Length;
+                float melNote = heroMelody[noteIdx];
+                if (melNote > 0f)
+                {
+                    float melT = localT % 0.5f;
+                    float melEnv = Mathf.Exp(-melT * 2.5f);
+                    val += Mathf.Sin(2f * Mathf.PI * melNote * t) * melEnv * 0.12f;
+                }
+
+                data[i] = Mathf.Clamp(val, -1f, 1f);
+            }
+
+            CrossFade(data, SampleRate / 2);
+            return CreateClip("LostKingdomBGM", data, duration);
+        }
+
+        /// <summary>ハロウィーンワールドBGM（ホラーアンビエント風16秒ループ）</summary>
+        public static AudioClip GenerateHalloweenWorldBGM()
+        {
+            float duration = 16f;
+            int samples = (int)(SampleRate * duration);
+            float[] data = new float[samples];
+
+            // 不気味なコード: Ebm -> Bbm -> Abm -> Ebm
+            float[][] chords = new float[][]
+            {
+                new float[] { 155.56f, 185.00f, 233.08f },  // Ebm
+                new float[] { 116.54f, 138.59f, 174.61f },  // Bbm
+                new float[] { 103.83f, 123.47f, 155.56f },  // Abm
+                new float[] { 155.56f, 185.00f, 233.08f },  // Ebm
+            };
+
+            for (int i = 0; i < samples; i++)
+            {
+                float t = (float)i / SampleRate;
+                int chordIndex = Mathf.FloorToInt(t / 4f) % chords.Length;
+                float[] chord = chords[chordIndex];
+
+                float val = 0f;
+
+                // 低音ドローン
+                float droneFreq = chord[0] * 0.25f;
+                val += Mathf.Sin(2f * Mathf.PI * droneFreq * t) * 0.12f;
+
+                // 不安を煽るデチューンパッド
+                for (int n = 0; n < chord.Length; n++)
+                {
+                    float detune = 1f + 0.005f * Mathf.Sin(2f * Mathf.PI * 0.5f * t + n);
+                    val += Mathf.Sin(2f * Mathf.PI * chord[n] * detune * t) * 0.04f;
+                }
+
+                // 不定期の「ゴースト音」（高周波の減衰音）
+                float ghostPhase = (t * 0.3f) % 1f;
+                if (ghostPhase < 0.15f)
+                {
+                    float ghostEnv = Mathf.Exp(-ghostPhase * 12f);
+                    val += Mathf.Sin(2f * Mathf.PI * 880f * t) * ghostEnv * 0.06f;
+                }
+
+                // 心臓の鼓動風リズム
+                float heartbeat = t % 1.5f;
+                if (heartbeat < 0.05f || (heartbeat > 0.2f && heartbeat < 0.25f))
+                {
+                    float hbEnv = Mathf.Exp(-(heartbeat % 0.25f) * 30f);
+                    val += Mathf.Sin(2f * Mathf.PI * 50f * t) * hbEnv * 0.08f;
+                }
+
+                data[i] = Mathf.Clamp(val, -1f, 1f);
+            }
+
+            CrossFade(data, SampleRate / 2);
+            return CreateClip("HalloweenWorldBGM", data, duration);
+        }
+
+        /// <summary>ワンダーランドBGM（メルヘンワルツ風16秒ループ）</summary>
+        public static AudioClip GenerateWonderlandBGM()
+        {
+            float duration = 16f;
+            int samples = (int)(SampleRate * duration);
+            float[] data = new float[samples];
+
+            // 明るいワルツコード: F -> Dm -> Bb -> C
+            float[][] chords = new float[][]
+            {
+                new float[] { 174.61f, 220.00f, 261.63f },  // F
+                new float[] { 146.83f, 174.61f, 220.00f },  // Dm
+                new float[] { 116.54f, 146.83f, 174.61f },  // Bb
+                new float[] { 130.81f, 164.81f, 196.00f },  // C
+            };
+
+            float[] waltzMelody = {
+                523.25f, 659.25f, 783.99f, 659.25f,
+                587.33f, 698.46f, 523.25f, 0f
+            };
+
+            for (int i = 0; i < samples; i++)
+            {
+                float t = (float)i / SampleRate;
+                int chordIndex = Mathf.FloorToInt(t / 4f) % chords.Length;
+                float[] chord = chords[chordIndex];
+                float localT = t % 4f;
+
+                float val = 0f;
+
+                // 3拍子ワルツベース（ズン・チャッ・チャッ）
+                float waltzBeat = (t * 3f) % 3f;
+                float beatNum = Mathf.Floor(waltzBeat);
+                float beatFrac = waltzBeat - beatNum;
+                if (beatNum < 0.5f)
+                {
+                    // 強拍: ルート音
+                    float env = Mathf.Exp(-beatFrac * 4f);
+                    val += Mathf.Sin(2f * Mathf.PI * chord[0] * 0.5f * t) * env * 0.1f;
+                }
+                else
+                {
+                    // 弱拍: コードトーン
+                    float env = Mathf.Exp(-beatFrac * 6f);
+                    for (int n = 0; n < chord.Length; n++)
+                        val += Mathf.Sin(2f * Mathf.PI * chord[n] * t) * env * 0.03f;
+                }
+
+                // オルゴール風メロディ（高い正弦波+減衰）
+                int noteIdx = Mathf.FloorToInt(localT / 0.5f) % waltzMelody.Length;
+                float melNote = waltzMelody[noteIdx];
+                if (melNote > 0f)
+                {
+                    float melT = localT % 0.5f;
+                    float melEnv = Mathf.Exp(-melT * 4f);
+                    val += Mathf.Sin(2f * Mathf.PI * melNote * t) * melEnv * 0.1f;
+                    // 倍音でキラキラ感
+                    val += Mathf.Sin(2f * Mathf.PI * melNote * 3f * t) * melEnv * 0.02f;
+                }
+
+                // 鈴の音風アクセント
+                float bellPhase = (t * 1.5f) % 1f;
+                if (bellPhase < 0.02f)
+                {
+                    val += Mathf.Sin(2f * Mathf.PI * 2093f * t) * 0.04f;
+                }
+
+                data[i] = Mathf.Clamp(val, -1f, 1f);
+            }
+
+            CrossFade(data, SampleRate / 2);
+            return CreateClip("WonderlandBGM", data, duration);
+        }
+
+        /// <summary>スペースゾーンBGM（宇宙エレクトロニカ風16秒ループ）</summary>
+        public static AudioClip GenerateSpaceZoneBGM()
+        {
+            float duration = 16f;
+            int samples = (int)(SampleRate * duration);
+            float[] data = new float[samples];
+
+            // 宇宙的コード: Em -> Bm -> Cm -> Em
+            float[][] chords = new float[][]
+            {
+                new float[] { 164.81f, 196.00f, 246.94f },  // Em
+                new float[] { 123.47f, 146.83f, 185.00f },  // Bm
+                new float[] { 130.81f, 155.56f, 196.00f },  // Cm
+                new float[] { 164.81f, 196.00f, 246.94f },  // Em
+            };
+
+            for (int i = 0; i < samples; i++)
+            {
+                float t = (float)i / SampleRate;
+                int chordIndex = Mathf.FloorToInt(t / 4f) % chords.Length;
+                float[] chord = chords[chordIndex];
+
+                float val = 0f;
+
+                // サブベース（超低音正弦波）
+                val += Mathf.Sin(2f * Mathf.PI * chord[0] * 0.25f * t) * 0.08f;
+
+                // 宇宙パッド（LFO変調のコード）
+                float lfo1 = 1f + 0.4f * Mathf.Sin(2f * Mathf.PI * 0.15f * t);
+                float lfo2 = 1f + 0.2f * Mathf.Sin(2f * Mathf.PI * 0.22f * t);
+                for (int n = 0; n < chord.Length; n++)
+                {
+                    float mod = n == 0 ? lfo1 : lfo2;
+                    val += Mathf.Sin(2f * Mathf.PI * chord[n] * mod * t) * 0.04f;
+                }
+
+                // スターダスト風アルペジオ（32分音符）
+                float arpT = (t * 8f) % 1f;
+                int arpIdx = Mathf.FloorToInt(arpT * 4f) % 3;
+                float arpFreq = chord[arpIdx] * 4f;
+                float arpEnv = Mathf.Exp(-((arpT * 4f) % 1f) * 10f);
+                val += Mathf.Sin(2f * Mathf.PI * arpFreq * t) * arpEnv * 0.06f;
+
+                // コスミックノイズ（フィルター風）
+                float noiseGate = Mathf.Sin(2f * Mathf.PI * 0.5f * t);
+                if (noiseGate > 0.7f)
+                {
+                    val += PseudoNoise(i) * 0.02f * (noiseGate - 0.7f) / 0.3f;
+                }
+
+                data[i] = Mathf.Clamp(val, -1f, 1f);
+            }
+
+            CrossFade(data, SampleRate / 2);
+            return CreateClip("SpaceZoneBGM", data, duration);
+        }
+
         // ================================================================
         // ヘルパー
         // ================================================================

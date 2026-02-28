@@ -33,6 +33,10 @@ namespace ThemeParkGame.Core
         private AudioClip clipGameplayBGM;
         private AudioClip clipGameOverBGM;
         private AudioClip clipFutureCityBGM;
+        private AudioClip clipLostKingdomBGM;
+        private AudioClip clipHalloweenWorldBGM;
+        private AudioClip clipWonderlandBGM;
+        private AudioClip clipSpaceZoneBGM;
         private AudioClip clipCrowdAmbient;
         private AudioClip clipRainAmbient;
         private AudioClip clipCheer;
@@ -56,6 +60,10 @@ namespace ThemeParkGame.Core
 
         // ---- 前回のゲーム状態（BGM切替用） ----
         private GameState lastBGMState = GameState.MainMenu;
+
+        // ---- ゾーンBGM追跡 ----
+        private ThemeZone _currentZone = ThemeZone.LostKingdom;
+        private ThemeZone _lastZone = (ThemeZone)(-1);
 
         // ---- プロパティ ----
 
@@ -113,6 +121,10 @@ namespace ThemeParkGame.Core
             if (Instance == this) Instance = null;
         }
 
+        // ---- ゾーンBGM切替チェック間隔 ----
+        private float _zoneBGMCheckTimer;
+        private const float ZoneBGMCheckInterval = 2f;
+
         private void Update()
         {
             // ゲーム状態に応じたBGM自動切替
@@ -123,6 +135,17 @@ namespace ThemeParkGame.Core
                 {
                     lastBGMState = current;
                     OnGameStateChanged(current);
+                }
+
+                // ゾーンBGM定期チェック（Playing状態のみ）
+                if (current == GameState.Playing)
+                {
+                    _zoneBGMCheckTimer -= Time.deltaTime;
+                    if (_zoneBGMCheckTimer <= 0f)
+                    {
+                        _zoneBGMCheckTimer = ZoneBGMCheckInterval;
+                        UpdateZoneBGMFromCamera();
+                    }
                 }
             }
         }
@@ -161,6 +184,10 @@ namespace ThemeParkGame.Core
             clipGameplayBGM = ProceduralAudioLibrary.GenerateGameplayBGM();
             clipGameOverBGM = ProceduralAudioLibrary.GenerateGameOverBGM();
             clipFutureCityBGM = ProceduralAudioLibrary.GenerateFutureCityBGM();
+            clipLostKingdomBGM = ProceduralAudioLibrary.GenerateLostKingdomBGM();
+            clipHalloweenWorldBGM = ProceduralAudioLibrary.GenerateHalloweenWorldBGM();
+            clipWonderlandBGM = ProceduralAudioLibrary.GenerateWonderlandBGM();
+            clipSpaceZoneBGM = ProceduralAudioLibrary.GenerateSpaceZoneBGM();
 
             // 環境音
             clipCrowdAmbient = ProceduralAudioLibrary.GenerateCrowdAmbient();
@@ -220,14 +247,45 @@ namespace ThemeParkGame.Core
         /// <summary>テーマゾーンに応じたBGMに切り替える</summary>
         public void PlayZoneBGM(ThemeZone zone)
         {
+            _currentZone = zone;
+            _lastZone = zone;
             switch (zone)
             {
+                case ThemeZone.LostKingdom:
+                    PlayBGM(clipLostKingdomBGM);
+                    break;
+                case ThemeZone.HalloweenWorld:
+                    PlayBGM(clipHalloweenWorldBGM);
+                    break;
+                case ThemeZone.Wonderland:
+                    PlayBGM(clipWonderlandBGM);
+                    break;
+                case ThemeZone.SpaceZone:
+                    PlayBGM(clipSpaceZoneBGM);
+                    break;
                 case ThemeZone.FutureCity:
                     PlayBGM(clipFutureCityBGM);
                     break;
                 default:
                     PlayBGM(clipGameplayBGM);
                     break;
+            }
+        }
+
+        /// <summary>現在のカメラ位置からゾーンを判定してBGMを自動切替する</summary>
+        public void UpdateZoneBGMFromCamera()
+        {
+            if (GameManager.Instance == null ||
+                GameManager.Instance.CurrentState != GameState.Playing)
+                return;
+
+            // ParkManagerからカメラ位置のゾーンを取得
+            if (GameManager.Instance.ParkManager == null) return;
+
+            ThemeZone? zone = GameManager.Instance.ParkManager.GetZoneAtCameraPosition();
+            if (zone.HasValue && zone.Value != _lastZone)
+            {
+                PlayZoneBGM(zone.Value);
             }
         }
 
