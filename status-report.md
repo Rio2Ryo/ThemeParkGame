@@ -45,10 +45,17 @@
 **工数目安**: 特大
 
 ### H5. リアルタイム対戦モード（パーク経営バトル）
+
 **概要**: CoopManager基盤を拡張し、2人のプレイヤーが同一マップ内で隣接するパークをそれぞれ経営して競い合う対戦モード。共通の来場者プール（同じ客を取り合う）、相手パークの価格・評判が自パークに影響、期間終了時の総合スコアで勝敗決定。妨害アクション（広告攻勢で相手の客を奪う、スタッフ引き抜き）あり。
 **理由**: CoopManagerにポーリングベースの同期・ルーム管理・アクション送信の基盤がすべて揃っているが、協力モードのみで対戦がない。RivalParkSystemのAI対戦を「対人」に昇格させるだけでゲームの寿命が飛躍的に延びる。LeaderboardManagerとの連動でランキング戦も可能。WebGL環境でもポーリング同期で実現可能。
 **影響範囲**: CoopManager拡張(対戦ルーム・勝敗判定) / RivalParkSystem(人間プレイヤー対応) / VisitorManager(共有来場者プール) / LeaderboardManager(対戦ランキング) / 新規 PvPMatchSystem.cs / RuntimeHUD(対戦スコアボード)
 **工数目安**: 特大
+
+### H6. アトラクション経年劣化＆メンテナンスサイクルシステム
+**概要**: アトラクションに「状態(Condition)」パラメータ(0-100%)を導入。稼働時間の累積で自然劣化し、Conditionが下がるほど故障率UP・興奮度DOWN・安全性DOWN。メカニックによる定期点検（軽整備:30分停止/Condition+20）と大規模オーバーホール（半日停止/Condition全回復+寿命延長）の2段階メンテナンスを選択可能。放置するとCondition 20%以下で強制停止→修理費3倍。アトラクションごとに耐久性パラメータ（安価なものほど劣化が速い）を持たせ、アップグレードで耐久性も向上。
+**理由**: AccidentEventSystemに事故イベントがあるが「ランダム発生」で戦略性がない。経年劣化の概念を入れることで、メカニック配置・メンテナンス計画・建て替え判断という持続的な経営判断が生まれる。テーマパーク経営シムの中核メカニクスの一つ（Planet Coaster/OpenRCT2が実装済み）。現在のAttraction.csにUpgradeLevel/MaintenanceCostは既にあり、Conditionパラメータの追加で自然に拡張可能。
+**影響範囲**: Attraction.cs拡張(Condition,Durability,LastMaintenance) / MechanicStaff拡張(点検/オーバーホール行動) / StaffManager(メンテナンススケジュール) / AccidentEventSystem(Condition依存事故率) / RuntimeBuildPanel(状態表示) / NotificationSystem(劣化アラート)
+**工数目安**: 大
 
 ---
 
@@ -102,6 +109,18 @@
 **影響範囲**: AttractionCategory追加(Interactive) / AttractionDatabase(3-4種追加) / attractions.json / Attraction.cs(スコアシステム) / VisitorAI(参加行動) / DynamicQuestSystem連携(トレジャーハント) / SNSReputationSystem(スコアシェア)
 **工数目安**: 大
 
+### M9. マーケティング＆広告キャンペーンシステム
+**概要**: パークの集客を能動的に行うマーケティングシステム。TV CM(高コスト・全VisitorType集客ブースト)、Web広告(中コスト・Young/Couple特化)、チラシ配布(低コスト・Family/Kids特化)、インフルエンサー招待(M7連動・SNS拡散倍増)の4チャネル。キャンペーン期間(1日/3日/7日)を選択し、予算投下で来場者スポーン率・特定VisitorType比率を操作。費用対効果はパーク評価とキャンペーン組み合わせで変動（高評価パークのTV CMは効果2倍）。過剰広告は「期待値インフレ」を起こし、実体験とのギャップで満足度ペナルティ。
+**理由**: SaleCampaignSystemは値引きキャンペーンのみで「客を呼ぶ」能動的手段がない。来場者スポーンはWeather/ParkEvent/ParkRatingの受動要因のみに依存しており、プレイヤーが戦略的に集客をコントロールできない。テーマパーク経営の重要な柱である「マーケティング」が完全に欠落。EconomyManagerの支出カテゴリにMarketing枠を追加し、FinancialReportのExpenseBreakdownで可視化。
+**影響範囲**: 新規 MarketingSystem.cs / SaleCampaignSystem連携 / EconomyManager拡張(Marketing支出) / VisitorManager(キャンペーンスポーンブースト) / FinancialReport拡張 / SNSReputationSystem連携 / RuntimeHUD(キャンペーンパネル)
+**工数目安**: 中
+
+### M10. 園内交通システム（モノレール・パークトレイン）
+**概要**: 大規模パーク向けの内部交通手段。モノレール(高コスト・高速・高定員・駅2-4箇所設置)とパークトレイン(低コスト・低速・8駅まで・景観ルート)の2種。来場者はゾーン間移動時に疲労度(Fatigue)閾値を超えると自動的に乗車を選択。乗車中は疲労度回復＋幸福度微増（車窓パーク観覧効果）。路線はPathwaySystem上にプレイヤーが設定。混雑セグメントを通る路線は利用率が高く、混雑緩和に貢献。建設コスト・維持費はあるが、来場者の滞在時間延長（疲労で早期退園を防ぐ）→収益増のリターンあり。
+**理由**: PathwaySystemが混雑度をリアルタイム追跡しているが、混雑緩和手段がゼロ。広大なパーク（ParkExpansionで3段階拡張済み）では端から端への移動で疲労度が限界に達し、まだ体験していないゾーンを諦めて退園する来場者が発生する。VisitorParametersの疲労度ペナルティが厳しいため、交通システムは「疲労対策」として経営上の意味を持つ。FirstPersonCameraで乗車ビューも提供でき没入感もUP。
+**影響範囲**: 新規 ParkTransitSystem.cs, TransitRoute.cs / PathwaySystem連携(路線設定) / VisitorAI拡張(乗車判断・疲労回復行動) / VisitorParameters(乗車中の疲労回復) / ParkExpansionSystem連携 / RuntimeBuildPanel(路線建設UI) / FirstPersonCamera(乗車ビュー)
+**工数目安**: 大
+
 ---
 
 ## LOW優先度（ポリッシュ・没入感向上）
@@ -148,24 +167,36 @@
 **影響範囲**: RuntimeHUD全partial(レスポンシブ化) / InputManager(ジェスチャー拡張) / CanvasScaler設定 / RuntimeBuildPanel(タッチ最適化) / RuntimeStaffPanel
 **工数目安**: 中
 
+### L8. 来場者リピートシステム＆長期記憶
+**概要**: 退園した来場者の体験データ（訪問回数、乗ったアトラクション、満足度履歴、LLM会話サマリー）をVisitorProfileに永続保存。高満足度(80+)の来場者は30-60日後にリピーター(再来園)として登場し、前回の記憶を持つ。リピーターは「前回楽しかったアトラクションにまた乗りたい」「前回食べたフードを再注文」などの再訪行動を取る。リピート回数に応じて「常連ボーナス」（所持金UP・SNS口コミ効果UP）。逆に前回不満だった点が改善されていないと即退園リスク。NPCDialogueSystemの会話サマリー（ConversationSummaryPrompt）を来場者の長期記憶として活用し、再来園時に「前回○○の話をしたのを覚えてる？」のような会話が可能。
+**理由**: 現在の来場者は退園後に消滅し二度と戻らない「使い捨て」。パーク改善の成果を実感できる「リピーター増加」という指標がなく、経営の長期的な意味付けが弱い。VisitorProfile/SaveSystem/NPCDialogueのConversationSummaryPromptの基盤はすべて揃っており、永続化レイヤーの追加が主な作業。
+**影響範囲**: VisitorProfile拡張(訪問履歴・記憶データ) / VisitorManager(リピーター生成ロジック) / VisitorAI(再訪行動パターン) / SaveSystem(来場者永続データ) / NPCDialogueSystem(記憶参照会話) / WordOfMouthSystem(リピーター口コミ) / RuntimeHUD(リピート率表示)
+**工数目安**: 中
+
+### L9. 待ち列エンターテイメント＆キューイング演出
+**概要**: アトラクションの待ち列(WaitingInQueue状態)をゲームプレイ要素として強化。①キューエリアテーマ装飾（投資で行列空間をテーマ化→待ち幸福度ペナルティ軽減）、②キューエンターテイナー配置（Entertainerの新任務として行列横で芸を披露→待ち幸福度ペナルティをゼロ近くに）、③推定待ち時間ディスプレイ（待ち時間表示→忍耐力(Patience)の低い来場者が長い列を避けて別のアトラクションへ→混雑自動分散）。投資レベル(なし/基本テーマ化/フル演出)の3段階。
+**理由**: VisitorBehaviorState.WaitingInQueueは行列待ちの幸福度ペナルティが常に一定（VisitorParametersで毎時減少）で、プレイヤーが改善する手段がない。Entertainerは広場での芸しかなく、行列整理という現実のテーマパークの重要業務がない。PersonalityTraitsのPatience軸が行列判断に未使用（M7で行動全般に反映予定だが、キュー特化の演出はここで独立）。混雑緩和と満足度維持の両方に効く費用対効果の高い投資となる。
+**影響範囲**: Attraction.cs拡張(QueueThemeLevel,QueueEntertainment) / VisitorAI(待ち行動改善・列選択AI) / VisitorParameters(テーマ化による待ちペナルティ係数) / EntertainerStaff拡張(キュー配置行動) / RuntimeBuildPanel(キューアップグレードUI)
+**工数目安**: 中
+
 ---
 
-## 推奨実装ロードマップ（改訂版）
+## 推奨実装ロードマップ（改訂版 v3）
 
 | フェーズ | 内容 | 工期目安 |
 |---|---|---|
-| Phase 1 | L3(実績拡充) + L6(アクセシビリティ) + L1(ゾーンBGM) + L7(モバイルUI) | 小〜中 |
-| Phase 2 | M3(ファストパス) + M4(シフト管理) + L4(チュートリアル拡張) | 中 |
-| Phase 3 | H1(ナイトパレード) + M2(デコレーション) + L2(フォトスポット) | 中〜大 |
-| Phase 4 | H2(スタッフ育成) + M7(AIパーソナリティ＆インフルエンサー) + M5(レビュー) | 大 |
-| Phase 5 | H3(災害イベント) + M8(インタラクティブアトラクション) + M1(グループ行動) | 大 |
-| Phase 6 | M6(ライバル強化) + L5(Co-op) + H5(対戦モード) | 大（マルチ統合） |
+| Phase 1 | L3(実績拡充) + L6(アクセシビリティ) + L1(ゾーンBGM) + L9(待ち列演出) | 小〜中 |
+| Phase 2 | H6(経年劣化) + M3(ファストパス) + M4(シフト管理) + L4(チュートリアル) | 中〜大 |
+| Phase 3 | H1(ナイトパレード) + M2(デコレーション) + L2(フォトスポット) + L8(リピーター) | 中〜大 |
+| Phase 4 | H2(スタッフ育成) + M7(AIパーソナリティ) + M5(レビュー) + M9(マーケティング) | 大 |
+| Phase 5 | H3(災害イベント) + M8(インタラクティブ) + M1(グループ行動) + M10(園内交通) | 大 |
+| Phase 6 | M6(ライバル強化) + L5(Co-op) + H5(対戦モード) + L7(モバイルUI) | 大（マルチ統合） |
 | Phase 7 | H4(コースター設計) | 特大（独立開発） |
 
-### 提案サマリー（全20件）
-- **HIGH**: 5件（H1〜H5）— パレード / スタッフ育成 / 災害 / コースター設計 / 対戦モード
-- **MEDIUM**: 8件（M1〜M8）— グループ行動 / デコ / チケット / シフト / レビュー / ライバル / AIパーソナリティ / 参加型アトラクション
-- **LOW**: 7件（L1〜L7）— BGM / フォトスポット / 実績 / チュートリアル / Co-op / アクセシビリティ / モバイルUI
+### 提案サマリー（全25件）
+- **HIGH**: 6件（H1〜H6）— パレード / スタッフ育成 / 災害 / コースター設計 / 対戦モード / **経年劣化メンテナンス**
+- **MEDIUM**: 10件（M1〜M10）— グループ行動 / デコ / チケット / シフト / レビュー / ライバル / AIパーソナリティ / 参加型アトラクション / **マーケティング** / **園内交通**
+- **LOW**: 9件（L1〜L9）— BGM / フォトスポット / 実績 / チュートリアル / Co-op / アクセシビリティ / モバイルUI / **リピーター** / **待ち列演出**
 
 ---
 
