@@ -167,7 +167,7 @@ namespace ThemeParkGame.Staff
         /// <summary>ストライキ発生時のハンドラ</summary>
         private void HandleStaffStrike(int staffId)
         {
-            Debug.LogWarning($"[StaffManager] スタッフ (ID:{staffId}) がストライキに入りました！"
+            WebGLOptimizer.LogWarning($"[StaffManager] スタッフ (ID:{staffId}) がストライキに入りました！"
                              + $" 現在のストライキ人数: {StrikingStaffCount}");
 
             // ストライキ発生を通知
@@ -222,14 +222,14 @@ namespace ThemeParkGame.Staff
         {
             if (!isInitialized)
             {
-                Debug.LogError("[StaffManager] 未初期化です。Initialize()を先に呼んでください");
+                WebGLOptimizer.LogError("[StaffManager] 未初期化です。Initialize()を先に呼んでください");
                 return null;
             }
 
             // 上限チェック
             if (GetStaffCountByType(type) >= maxStaffPerType)
             {
-                Debug.LogWarning($"[StaffManager] {type} の雇用上限 ({maxStaffPerType}) に達しています");
+                WebGLOptimizer.LogWarning($"[StaffManager] {type} の雇用上限 ({maxStaffPerType}) に達しています");
                 return null;
             }
 
@@ -239,7 +239,7 @@ namespace ThemeParkGame.Staff
             {
                 if (!GameManager.Instance.EconomyManager.CanAfford(hiringCost))
                 {
-                    Debug.LogWarning($"[StaffManager] 資金不足。雇用コスト: {hiringCost:F0}");
+                    WebGLOptimizer.LogWarning($"[StaffManager] 資金不足。雇用コスト: {hiringCost:F0}");
                     return null;
                 }
                 GameManager.Instance.EconomyManager.PayExpense(hiringCost, Economy.ExpenseCategory.Other);
@@ -249,7 +249,7 @@ namespace ThemeParkGame.Staff
             GameObject prefab = GetPrefabForType(type);
             if (prefab == null)
             {
-                Debug.LogError($"[StaffManager] {type} のプレハブが設定されていません");
+                WebGLOptimizer.LogError($"[StaffManager] {type} のプレハブが設定されていません");
                 return null;
             }
 
@@ -257,7 +257,7 @@ namespace ThemeParkGame.Staff
             StaffMember staff = staffObj.GetComponent<StaffMember>();
             if (staff == null)
             {
-                Debug.LogError($"[StaffManager] プレハブにStaffMemberコンポーネントがありません: {type}");
+                WebGLOptimizer.LogError($"[StaffManager] プレハブにStaffMemberコンポーネントがありません: {type}");
                 Destroy(staffObj);
                 return null;
             }
@@ -310,7 +310,7 @@ namespace ThemeParkGame.Staff
         {
             if (!allStaff.TryGetValue(staffId, out StaffMember staff))
             {
-                Debug.LogWarning($"[StaffManager] スタッフ (ID:{staffId}) が見つかりません");
+                WebGLOptimizer.LogWarning($"[StaffManager] スタッフ (ID:{staffId}) が見つかりません");
                 return false;
             }
 
@@ -415,7 +415,7 @@ namespace ThemeParkGame.Staff
         {
             if (!allStaff.TryGetValue(staffId, out StaffMember staff))
             {
-                Debug.LogWarning($"[StaffManager] スタッフ (ID:{staffId}) が見つかりません");
+                WebGLOptimizer.LogWarning($"[StaffManager] スタッフ (ID:{staffId}) が見つかりません");
                 return false;
             }
 
@@ -431,7 +431,7 @@ namespace ThemeParkGame.Staff
             {
                 if (!GameManager.Instance.EconomyManager.CanAfford(cost))
                 {
-                    Debug.LogWarning($"[StaffManager] 訓練資金不足。コスト: {cost:F0}");
+                    WebGLOptimizer.LogWarning($"[StaffManager] 訓練資金不足。コスト: {cost:F0}");
                     return false;
                 }
                 GameManager.Instance.EconomyManager.PayExpense(cost, Economy.ExpenseCategory.Other);
@@ -580,7 +580,7 @@ namespace ThemeParkGame.Staff
                 return true;
             }
 
-            Debug.LogWarning($"[StaffManager] スタッフ (ID:{staffId}) はサイエンティストではありません");
+            WebGLOptimizer.LogWarning($"[StaffManager] スタッフ (ID:{staffId}) はサイエンティストではありません");
             return false;
         }
 
@@ -722,7 +722,7 @@ namespace ThemeParkGame.Staff
         {
             if (!allStaff.TryGetValue(staffId, out StaffMember staff))
             {
-                Debug.LogWarning($"[StaffManager] スタッフ (ID:{staffId}) が見つかりません");
+                WebGLOptimizer.LogWarning($"[StaffManager] スタッフ (ID:{staffId}) が見つかりません");
                 return;
             }
 
@@ -744,13 +744,13 @@ namespace ThemeParkGame.Staff
         {
             if (!allStaff.TryGetValue(staffId, out StaffMember staff))
             {
-                Debug.LogWarning($"[StaffManager] スタッフ (ID:{staffId}) が見つかりません");
+                WebGLOptimizer.LogWarning($"[StaffManager] スタッフ (ID:{staffId}) が見つかりません");
                 return;
             }
 
             if (staff.IsOnStrike)
             {
-                Debug.LogWarning($"[StaffManager] {staff.Name} はストライキ中のため休憩指示できません");
+                WebGLOptimizer.LogWarning($"[StaffManager] {staff.Name} はストライキ中のため休憩指示できません");
                 return;
             }
 

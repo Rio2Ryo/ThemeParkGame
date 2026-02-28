@@ -63,9 +63,9 @@ namespace ThemeParkGame.Core
             _isBusy = true;
             SetStatus("クラウドに保存中...");
 
-            // ローカルセーブからJSONを取得
-            string saveKey = $"SaveSlot_{slot}";
-            string localJson = PlayerPrefs.GetString(saveKey, "");
+            // WebGLStorageHelper経由でローカルセーブJSONを取得（SaveSystemと同じキー規則）
+            string saveKey = SaveSystem.GetSaveKey(slot);
+            string localJson = WebGLStorageHelper.GetItem(saveKey);
 
             if (string.IsNullOrEmpty(localJson))
             {
@@ -77,7 +77,7 @@ namespace ThemeParkGame.Core
                     onComplete?.Invoke(false);
                     yield break;
                 }
-                localJson = PlayerPrefs.GetString(saveKey, "");
+                localJson = WebGLStorageHelper.GetItem(saveKey);
             }
 
             // チェックサム計算
@@ -159,10 +159,9 @@ namespace ThemeParkGame.Core
                             yield break;
                         }
 
-                        // ローカルのPlayerPrefsに書き込んでからLoad
-                        string saveKey = $"SaveSlot_{slot}";
-                        PlayerPrefs.SetString(saveKey, resp.saveDataRaw);
-                        PlayerPrefs.Save();
+                        // WebGLStorageHelper経由でローカルストレージに書き込んでからLoad
+                        string saveKey = SaveSystem.GetSaveKey(slot);
+                        WebGLStorageHelper.SetItem(saveKey, resp.saveDataRaw);
 
                         if (SaveSystem.Load(slot))
                         {
@@ -188,9 +187,8 @@ namespace ThemeParkGame.Core
                             if (saveDataJson.EndsWith("}"))
                                 saveDataJson = saveDataJson.Substring(0, saveDataJson.Length - 1);
 
-                            string saveKey = $"SaveSlot_{slot}";
-                            PlayerPrefs.SetString(saveKey, saveDataJson);
-                            PlayerPrefs.Save();
+                            string saveKey = SaveSystem.GetSaveKey(slot);
+                            WebGLStorageHelper.SetItem(saveKey, saveDataJson);
 
                             if (SaveSystem.Load(slot))
                             {

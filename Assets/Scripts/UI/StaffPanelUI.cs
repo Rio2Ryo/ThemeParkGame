@@ -360,7 +360,7 @@ namespace ThemeParkGame.UI
             float hireCost = gm.StaffManager.GetHiringCost(_selectedStaffType);
             if (!gm.EconomyManager.CanAfford(hireCost))
             {
-                Debug.LogWarning("[StaffPanelUI] 雇用資金が不足しています");
+                WebGLOptimizer.LogWarning("[StaffPanelUI] 雇用資金が不足しています");
                 return;
             }
 
@@ -640,7 +640,7 @@ namespace ThemeParkGame.UI
             int cost = CalculateTrainingCost(data.SkillLevel);
             if (gm.EconomyManager.CurrentMoney < cost)
             {
-                Debug.LogWarning("[StaffPanelUI] 訓練資金が不足しています");
+                WebGLOptimizer.LogWarning("[StaffPanelUI] 訓練資金が不足しています");
                 return;
             }
 

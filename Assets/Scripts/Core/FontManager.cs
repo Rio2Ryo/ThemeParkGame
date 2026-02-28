@@ -63,7 +63,7 @@ namespace ThemeParkGame.Core
                 _regular = Resources.GetBuiltinResource<Font>("Arial.ttf");
                 if (_regular == null)
                     _regular = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                Debug.LogWarning("[FontManager] Noto Sans JP Regular が見つかりません。フォールバックフォントを使用します。");
+                WebGLOptimizer.LogWarning("[FontManager] Noto Sans JP Regular が見つかりません。フォールバックフォントを使用します。");
             }
             else
             {

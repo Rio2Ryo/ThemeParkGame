@@ -221,7 +221,7 @@ namespace ThemeParkGame.AI
         {
             if (_activeSessions.ContainsKey(visitorId))
             {
-                Debug.LogWarning($"[AIConversation] 既に会話中: Visitor {visitorId}");
+                WebGLOptimizer.LogWarning($"[AIConversation] 既に会話中: Visitor {visitorId}");
                 return;
             }
 
@@ -275,7 +275,7 @@ namespace ThemeParkGame.AI
         {
             if (!_activeSessions.TryGetValue(visitorId, out ConversationSession session))
             {
-                Debug.LogWarning($"[AIConversation] アクティブセッションなし: Visitor {visitorId}");
+                WebGLOptimizer.LogWarning($"[AIConversation] アクティブセッションなし: Visitor {visitorId}");
                 return;
             }
 
@@ -384,7 +384,7 @@ namespace ThemeParkGame.AI
                 }
                 else
                 {
-                    Debug.LogWarning($"[AIConversation] LLM応答失敗: {response.ErrorMessage}");
+                    WebGLOptimizer.LogWarning($"[AIConversation] LLM応答失敗: {response.ErrorMessage}");
                     HandleNPCResponse(visitorId, "あ、ちょっと考え中...えっと...");
                 }
             }

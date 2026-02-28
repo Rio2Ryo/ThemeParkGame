@@ -196,6 +196,9 @@ namespace ThemeParkGame.Core
         private const int MAX_SAVE_SLOTS = 3;
         private static bool _autoSaveSubscribed;
 
+        /// <summary>指定スロットのストレージキーを返す（CloudSaveManager等の外部からも統一キーでアクセスするため公開）</summary>
+        public static string GetSaveKey(int slot) => SAVE_KEY_PREFIX + slot;
+
         /// <summary>セーブスロットにデータが存在するか確認する</summary>
         public static bool HasSaveData(int slot)
         {
@@ -222,13 +225,13 @@ namespace ThemeParkGame.Core
         {
             if (slot < 0 || slot >= MAX_SAVE_SLOTS)
             {
-                Debug.LogError($"[SaveSystem] Invalid slot: {slot}");
+                WebGLOptimizer.LogError($"[SaveSystem] Invalid slot: {slot}");
                 return false;
             }
 
             if (GameManager.Instance == null)
             {
-                Debug.LogError("[SaveSystem] GameManager not found");
+                WebGLOptimizer.LogError("[SaveSystem] GameManager not found");
                 return false;
             }
 
@@ -244,7 +247,7 @@ namespace ThemeParkGame.Core
             }
             catch (Exception e)
             {
-                Debug.LogError($"[SaveSystem] Save failed: {e.Message}");
+                WebGLOptimizer.LogError($"[SaveSystem] Save failed: {e.Message}");
                 return false;
             }
         }
@@ -258,7 +261,7 @@ namespace ThemeParkGame.Core
         {
             if (!HasSaveData(slot))
             {
-                Debug.LogWarning($"[SaveSystem] No save data in slot {slot}");
+                WebGLOptimizer.LogWarning($"[SaveSystem] No save data in slot {slot}");
                 return false;
             }
 
@@ -270,7 +273,7 @@ namespace ThemeParkGame.Core
 
                 if (!ValidateSaveData(data))
                 {
-                    Debug.LogError($"[SaveSystem] Save data in slot {slot} is corrupted");
+                    WebGLOptimizer.LogError($"[SaveSystem] Save data in slot {slot} is corrupted");
                     return false;
                 }
 
@@ -283,7 +286,7 @@ namespace ThemeParkGame.Core
             }
             catch (Exception e)
             {
-                Debug.LogError($"[SaveSystem] Load failed: {e.Message}");
+                WebGLOptimizer.LogError($"[SaveSystem] Load failed: {e.Message}");
                 return false;
             }
         }
@@ -306,8 +309,9 @@ namespace ThemeParkGame.Core
                 string json = WebGLStorageHelper.GetItem(SAVE_KEY_PREFIX + slot);
                 return JsonUtility.FromJson<SaveData>(json);
             }
-            catch
+            catch (System.Exception ex)
             {
+                WebGLOptimizer.LogWarning($"[SaveSystem] GetSaveInfo failed for slot {slot}: {ex.Message}");
                 return null;
             }
         }
@@ -564,7 +568,7 @@ namespace ThemeParkGame.Core
             {
                 GameObject[] tagged;
                 try { tagged = GameObject.FindGameObjectsWithTag(tag); }
-                catch { continue; }
+                catch (System.Exception ex) { WebGLOptimizer.LogWarning($"[SaveSystem] Tag '{tag}' not found: {ex.Message}"); continue; }
 
                 foreach (var go in tagged)
                 {
@@ -954,7 +958,7 @@ namespace ThemeParkGame.Core
             }
             catch (Exception e)
             {
-                Debug.LogError($"[SaveSystem] AutoSave failed: {e.Message}");
+                WebGLOptimizer.LogError($"[SaveSystem] AutoSave failed: {e.Message}");
             }
         }
 
@@ -976,7 +980,7 @@ namespace ThemeParkGame.Core
                 return $"[AUTO] Y{info.CurrentYear} M{info.CurrentMonth} D{info.CurrentDay}  " +
                        $"${info.CurrentBalance:N0}  {info.SaveDate}";
             }
-            catch { return "--- AUTOSAVE CORRUPTED ---"; }
+            catch (System.Exception ex) { WebGLOptimizer.LogWarning($"[SaveSystem] AutoSave data corrupted: {ex.Message}"); return "--- AUTOSAVE CORRUPTED ---"; }
         }
 
         /// <summary>オートセーブデータをロードする</summary>
@@ -992,7 +996,7 @@ namespace ThemeParkGame.Core
 
                 if (!ValidateSaveData(data))
                 {
-                    Debug.LogError("[SaveSystem] AutoSave data is corrupted");
+                    WebGLOptimizer.LogError("[SaveSystem] AutoSave data is corrupted");
                     return false;
                 }
 
@@ -1003,7 +1007,7 @@ namespace ThemeParkGame.Core
             }
             catch (Exception e)
             {
-                Debug.LogError($"[SaveSystem] AutoSave load failed: {e.Message}");
+                WebGLOptimizer.LogError($"[SaveSystem] AutoSave load failed: {e.Message}");
                 return false;
             }
         }

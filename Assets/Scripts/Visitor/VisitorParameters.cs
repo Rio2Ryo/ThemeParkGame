@@ -463,7 +463,7 @@ namespace ThemeParkGame.Visitor
         {
             if (amount < 0f)
             {
-                Debug.LogWarning("[VisitorParameters] SpendCash called with negative amount.");
+                WebGLOptimizer.LogWarning("[VisitorParameters] SpendCash called with negative amount.");
                 return false;
             }
             if (Cash < amount) return false;
@@ -476,7 +476,7 @@ namespace ThemeParkGame.Visitor
         {
             if (amount < 0f)
             {
-                Debug.LogWarning("[VisitorParameters] AddCash called with negative amount.");
+                WebGLOptimizer.LogWarning("[VisitorParameters] AddCash called with negative amount.");
                 return;
             }
             Cash += amount;

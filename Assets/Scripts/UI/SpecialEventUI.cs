@@ -215,7 +215,7 @@ namespace ThemeParkGame.UI
         private void BuildUI()
         {
             if (_cachedCanvas == null)
-                _cachedCanvas = FindObjectOfType<Canvas>();
+                _cachedCanvas = CanvasCache.Get();
             var canvas = _cachedCanvas;
             if (canvas == null) return;
 

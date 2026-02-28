@@ -344,6 +344,68 @@ namespace ThemeParkGame.Core
         public const string LabelPercent = "%";
 
         // ============================================================
+        // 来場者情報パネル（詳細）
+        // ============================================================
+        public const string LabelEnergy = "体力";
+        public const string LabelNauseaShort = "酔い";
+        public const string LabelHungerShort = "空腹";
+        public const string LabelThirstShort = "のどの渇き";
+        public const string VisitHistoryEmpty = "訪問履歴: まだありません";
+        public const string VisitHistoryCount = "訪問履歴: {0}件";
+        public const string BtnFollow = "フォローする";
+        public const string BtnUnfollow = "フォロー解除";
+        public const string BtnTalkUnavailable = "会話不可";
+        public const string LabelCashFormat = "{0}: {1}{2}";
+        public const string VisitorTypeUnknown = "不明";
+
+        // 満足度評価
+        public const string RatingExcellent = "最高！";
+        public const string RatingGood = "楽しい";
+        public const string RatingNormal = "普通";
+        public const string RatingPoor = "微妙…";
+        public const string RatingBad = "つまらない";
+
+        // 感情バブル表示
+        public const string EmotionLookingForExit = "出口を探している";
+        public const string EmotionLookingForToilet = "トイレを探している";
+        public const string EmotionLookingForFood = "食べ物を探している";
+        public const string EmotionLost = "迷子になっている";
+        public const string EmotionHungry = "お腹がすいた";
+        public const string EmotionThirsty = "のどが渇いた";
+        public const string EmotionEating = "食事中";
+        public const string EmotionRodeAll = "全部乗った！";
+        public const string EmotionNoMoney = "お金がない…";
+        public const string EmotionResting = "休憩中";
+        public const string EmotionFoodBad = "まずい！";
+        public const string EmotionExpensive = "高すぎる！";
+        public const string EmotionDirty = "汚い！";
+        public const string EmotionBoring = "つまらない";
+        public const string EmotionLongWait = "待ち時間が長い";
+        public const string EmotionInteresting = "面白い！";
+        public const string EmotionAverage = "まあまあ";
+        public const string EmotionBoredState = "退屈…";
+        public const string EmotionBestRide = "最高の乗り物！";
+        public const string EmotionBestShop = "最高のお店！";
+        public const string EmotionLovingIt = "大満足！";
+
+        // 行動状態表示
+        public const string BehaviorIdle = "うろうろしている";
+        public const string BehaviorWalkToAttraction = "アトラクションへ移動中";
+        public const string BehaviorQueueing = "並んでいる";
+        public const string BehaviorRiding = "搭乗中";
+        public const string BehaviorWalkToShop = "お店へ移動中";
+        public const string BehaviorEating = "食事中";
+        public const string BehaviorDrinking = "飲み物を飲んでいる";
+        public const string BehaviorWalkToToilet = "トイレへ急いでいる";
+        public const string BehaviorUsingToilet = "トイレ使用中";
+        public const string BehaviorResting = "ベンチで休憩中";
+        public const string BehaviorWatchingShow = "ショーを見ている";
+        public const string BehaviorLookingAtMap = "地図を見ている";
+        public const string BehaviorVomiting = "気分が悪い…";
+        public const string BehaviorLeaving = "帰宅中";
+        public const string BehaviorTalkingToPlayer = "プレイヤーと会話中";
+
+        // ============================================================
         // エラー/警告
         // ============================================================
         public const string ErrInsufficientFunds = "資金が不足しています";
@@ -413,6 +475,73 @@ namespace ThemeParkGame.Core
                 ThemeZone.Wonderland => ZoneWonderland,
                 ThemeZone.SpaceZone => ZoneSpaceZone,
                 _ => zone.ToString()
+            };
+        }
+
+        /// <summary>感情バブルタイプの表示テキストを取得</summary>
+        public static string GetEmotionText(EmotionBubbleType emotion)
+        {
+            return emotion switch
+            {
+                EmotionBubbleType.LookingForExit    => EmotionLookingForExit,
+                EmotionBubbleType.LookingForToilet  => EmotionLookingForToilet,
+                EmotionBubbleType.LookingForFood    => EmotionLookingForFood,
+                EmotionBubbleType.Lost              => EmotionLost,
+                EmotionBubbleType.Hungry            => EmotionHungry,
+                EmotionBubbleType.Thirsty           => EmotionThirsty,
+                EmotionBubbleType.CurrentlyEating   => EmotionEating,
+                EmotionBubbleType.RodeAllRides      => EmotionRodeAll,
+                EmotionBubbleType.NoMoney           => EmotionNoMoney,
+                EmotionBubbleType.Resting           => EmotionResting,
+                EmotionBubbleType.FoodTastesBad     => EmotionFoodBad,
+                EmotionBubbleType.TooExpensive      => EmotionExpensive,
+                EmotionBubbleType.TooDirty          => EmotionDirty,
+                EmotionBubbleType.NotExcitingEnough => EmotionBoring,
+                EmotionBubbleType.LongWait          => EmotionLongWait,
+                EmotionBubbleType.Interesting       => EmotionInteresting,
+                EmotionBubbleType.Average           => EmotionAverage,
+                EmotionBubbleType.Boring            => EmotionBoredState,
+                EmotionBubbleType.BestRide          => EmotionBestRide,
+                EmotionBubbleType.BestShop          => EmotionBestShop,
+                EmotionBubbleType.LovingIt          => EmotionLovingIt,
+                _                                   => ""
+            };
+        }
+
+        /// <summary>来場者行動状態の表示テキストを取得</summary>
+        public static string GetBehaviorStateText(VisitorBehaviorState state)
+        {
+            return state switch
+            {
+                VisitorBehaviorState.Idle                  => BehaviorIdle,
+                VisitorBehaviorState.WalkingToAttraction   => BehaviorWalkToAttraction,
+                VisitorBehaviorState.WaitingInQueue        => BehaviorQueueing,
+                VisitorBehaviorState.RidingAttraction      => BehaviorRiding,
+                VisitorBehaviorState.WalkingToShop         => BehaviorWalkToShop,
+                VisitorBehaviorState.Eating                => BehaviorEating,
+                VisitorBehaviorState.Drinking              => BehaviorDrinking,
+                VisitorBehaviorState.WalkingToToilet       => BehaviorWalkToToilet,
+                VisitorBehaviorState.UsingToilet           => BehaviorUsingToilet,
+                VisitorBehaviorState.Resting               => BehaviorResting,
+                VisitorBehaviorState.WatchingEntertainment => BehaviorWatchingShow,
+                VisitorBehaviorState.LookingAtMap          => BehaviorLookingAtMap,
+                VisitorBehaviorState.Vomiting              => BehaviorVomiting,
+                VisitorBehaviorState.LeavingPark           => BehaviorLeaving,
+                VisitorBehaviorState.TalkingToPlayer       => BehaviorTalkingToPlayer,
+                _                                          => VisitorTypeUnknown
+            };
+        }
+
+        /// <summary>満足度評価テキストを取得</summary>
+        public static string GetSatisfactionRating(float rating)
+        {
+            return rating switch
+            {
+                >= 0.8f => RatingExcellent,
+                >= 0.6f => RatingGood,
+                >= 0.4f => RatingNormal,
+                >= 0.2f => RatingPoor,
+                _       => RatingBad
             };
         }
 

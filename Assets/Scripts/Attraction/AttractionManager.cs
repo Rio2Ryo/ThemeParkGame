@@ -236,7 +236,7 @@ namespace ThemeParkGame.Attraction
             context.Attraction.SetActive(false);
             // 注: FireAttractionAccident は Attraction.TriggerAccident() から発火済み。
             // ここでは重複発火しない。
-            Debug.LogWarning($"[AttractionState] 事故検知! {context.Attraction.DisplayName}");
+            WebGLOptimizer.LogWarning($"[AttractionState] 事故検知! {context.Attraction.DisplayName}");
         }
 
         public void Update(AttractionContext context, float deltaTime)
@@ -399,7 +399,7 @@ namespace ThemeParkGame.Attraction
 
             if (_contexts.ContainsKey(id))
             {
-                Debug.LogWarning($"[AttractionManager] アトラクション ID={id} は既に登録済み");
+                WebGLOptimizer.LogWarning($"[AttractionManager] アトラクション ID={id} は既に登録済み");
                 return;
             }
 
@@ -468,7 +468,7 @@ namespace ThemeParkGame.Attraction
         {
             if (!_contexts.TryGetValue(facilityId, out AttractionContext context))
             {
-                Debug.LogWarning($"[AttractionManager] 遷移失敗: ID={facilityId} は未登録");
+                WebGLOptimizer.LogWarning($"[AttractionManager] 遷移失敗: ID={facilityId} は未登録");
                 return;
             }
 

@@ -534,7 +534,7 @@ namespace ThemeParkGame.UI
             float currentMoney = GameManager.Instance?.EconomyManager?.CurrentMoney ?? 0f;
             if (currentMoney < _selectedItem.Cost)
             {
-                Debug.LogWarning("[BuildPanelUI] 資金が不足しています");
+                WebGLOptimizer.LogWarning("[BuildPanelUI] 資金が不足しています");
                 return;
             }
 

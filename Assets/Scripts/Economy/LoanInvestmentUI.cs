@@ -128,7 +128,7 @@ namespace ThemeParkGame.Economy
 
         private void CreateUI()
         {
-            var canvas = Object.FindObjectOfType<Canvas>();
+            var canvas = CanvasCache.Get();
             if (canvas == null) return;
 
             // メインパネル

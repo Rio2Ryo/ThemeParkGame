@@ -238,7 +238,7 @@ namespace ThemeParkGame.Core
             var scenarioData = ScenarioDatabase.GetScenario(country);
             if (scenarioData == null)
             {
-                Debug.LogError($"[GameManager] Scenario not found: {country}");
+                WebGLOptimizer.LogError($"[GameManager] Scenario not found: {country}");
                 return;
             }
 

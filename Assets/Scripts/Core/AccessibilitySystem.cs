@@ -307,7 +307,7 @@ namespace ThemeParkGame.Core
 
         private void BuildSettingsUI()
         {
-            var canvas = FindObjectOfType<Canvas>();
+            var canvas = CanvasCache.Get();
             if (canvas == null) return;
 
             _settingsPanel = new GameObject("AccessibilityPanel");

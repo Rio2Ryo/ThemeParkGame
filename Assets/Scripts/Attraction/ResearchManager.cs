@@ -483,7 +483,7 @@ namespace ThemeParkGame.Attraction
         {
             if (_allResearch.ContainsKey(item.ResearchId))
             {
-                Debug.LogWarning($"[ResearchManager] 重複した研究ID: {item.ResearchId}");
+                WebGLOptimizer.LogWarning($"[ResearchManager] 重複した研究ID: {item.ResearchId}");
                 return;
             }
             _allResearch[item.ResearchId] = item;
@@ -502,19 +502,19 @@ namespace ThemeParkGame.Attraction
         {
             if (_currentResearch != null)
             {
-                Debug.LogWarning($"[ResearchManager] 既に研究進行中: {_currentResearch.ResearchId}");
+                WebGLOptimizer.LogWarning($"[ResearchManager] 既に研究進行中: {_currentResearch.ResearchId}");
                 return false;
             }
 
             if (!_allResearch.TryGetValue(researchId, out var item))
             {
-                Debug.LogError($"[ResearchManager] 研究項目が見つかりません: {researchId}");
+                WebGLOptimizer.LogError($"[ResearchManager] 研究項目が見つかりません: {researchId}");
                 return false;
             }
 
             if (!item.CanStart(_allResearch))
             {
-                Debug.LogWarning($"[ResearchManager] 前提条件未達成: {researchId}");
+                WebGLOptimizer.LogWarning($"[ResearchManager] 前提条件未達成: {researchId}");
                 return false;
             }
 
@@ -524,7 +524,7 @@ namespace ThemeParkGame.Attraction
             {
                 if (!GameManager.Instance.EconomyManager.CanAfford(item.ResearchCost))
                 {
-                    Debug.LogWarning($"[ResearchManager] 研究資金不足: {item.ResearchCost}");
+                    WebGLOptimizer.LogWarning($"[ResearchManager] 研究資金不足: {item.ResearchCost}");
                     TotalResearchSpending -= item.ResearchCost;
                     return false;
                 }

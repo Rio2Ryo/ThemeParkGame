@@ -507,7 +507,7 @@ namespace ThemeParkGame.Core
 
         private void CreateUI()
         {
-            var canvas = FindObjectOfType<Canvas>();
+            var canvas = CanvasCache.Get();
             if (canvas == null) return;
 
             _uiPanel = new GameObject("CoopPanel");

@@ -273,7 +273,7 @@ namespace ThemeParkGame.AI
 
         private void BuildUI()
         {
-            var canvas = FindObjectOfType<Canvas>();
+            var canvas = CanvasCache.Get();
             if (canvas == null) return;
 
             _uiPanel = new GameObject("WordOfMouthPanel");

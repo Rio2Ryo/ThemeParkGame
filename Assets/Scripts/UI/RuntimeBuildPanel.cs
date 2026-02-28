@@ -275,7 +275,7 @@ namespace ThemeParkGame.UI
                 }
                 catch (Exception e)
                 {
-                    Debug.LogWarning($"[RuntimeBuildPanel] attractions.json parse error: {e.Message}");
+                    WebGLOptimizer.LogWarning($"[RuntimeBuildPanel] attractions.json parse error: {e.Message}");
                 }
             }
 
@@ -308,7 +308,7 @@ namespace ThemeParkGame.UI
                 }
                 catch (Exception e)
                 {
-                    Debug.LogWarning($"[RuntimeBuildPanel] shops.json parse error: {e.Message}");
+                    WebGLOptimizer.LogWarning($"[RuntimeBuildPanel] shops.json parse error: {e.Message}");
                 }
             }
 
@@ -342,7 +342,7 @@ namespace ThemeParkGame.UI
                 }
                 catch (Exception e)
                 {
-                    Debug.LogWarning($"[RuntimeBuildPanel] facilities.json parse error: {e.Message}");
+                    WebGLOptimizer.LogWarning($"[RuntimeBuildPanel] facilities.json parse error: {e.Message}");
                 }
             }
 
@@ -929,7 +929,7 @@ namespace ThemeParkGame.UI
             // コスト支払い
             if (!gm.EconomyManager.SpendMoney(_selectedItem.BuildCost))
             {
-                Debug.LogWarning("[RuntimeBuildPanel] 資金不足で配置できません");
+                WebGLOptimizer.LogWarning("[RuntimeBuildPanel] 資金不足で配置できません");
                 CancelPlacement();
                 return;
             }

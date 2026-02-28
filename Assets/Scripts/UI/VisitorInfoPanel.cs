@@ -219,7 +219,7 @@ namespace ThemeParkGame.UI
             var data = visitorManager.GetVisitorData(visitorId);
             if (data == null)
             {
-                Debug.LogWarning($"[VisitorInfoPanel] 来場者データが見つかりません: ID={visitorId}");
+                WebGLOptimizer.LogWarning($"[VisitorInfoPanel] 来場者データが見つかりません: ID={visitorId}");
                 ClosePanel();
                 return;
             }
@@ -242,7 +242,7 @@ namespace ThemeParkGame.UI
 
             // 所持金
             if (cashRemainingText != null)
-                cashRemainingText.text = $"所持金: ¥{data.CashRemaining:N0}";
+                cashRemainingText.text = $"{LocalizationData.LabelCash}: {LocalizationData.LabelYen}{data.CashRemaining:N0}";
 
             // 訪問履歴
             PopulateVisitedList(data.VisitedAttractions);
@@ -265,19 +265,19 @@ namespace ThemeParkGame.UI
 
             // 所持金更新
             if (cashRemainingText != null)
-                cashRemainingText.text = $"所持金: ¥{data.CashRemaining:N0}";
+                cashRemainingText.text = $"{LocalizationData.LabelCash}: {LocalizationData.LabelYen}{data.CashRemaining:N0}";
         }
 
         /// <summary>パラメータバーを更新する</summary>
         private void UpdateParameterBars(VisitorDisplayData data)
         {
-            happinessBar?.SetValue(data.Happiness, "幸福度");
-            hungerBar?.SetValue(data.Hunger, "空腹");
-            thirstBar?.SetValue(data.Thirst, "のどの渇き");
-            toiletBar?.SetValue(data.ToiletUrgency, "トイレ");
-            energyBar?.SetValue(data.Energy, "体力");
-            nauseaBar?.SetValue(data.Nausea, "酔い");
-            excitementBar?.SetValue(data.Excitement, "興奮度");
+            happinessBar?.SetValue(data.Happiness, LocalizationData.LabelHappiness);
+            hungerBar?.SetValue(data.Hunger, LocalizationData.LabelHungerShort);
+            thirstBar?.SetValue(data.Thirst, LocalizationData.LabelThirstShort);
+            toiletBar?.SetValue(data.ToiletUrgency, LocalizationData.LabelToilet);
+            energyBar?.SetValue(data.Energy, LocalizationData.LabelEnergy);
+            nauseaBar?.SetValue(data.Nausea, LocalizationData.LabelNauseaShort);
+            excitementBar?.SetValue(data.Excitement, LocalizationData.LabelExcitement);
         }
 
         /// <summary>感情バブル表示を更新する</summary>
@@ -312,12 +312,12 @@ namespace ThemeParkGame.UI
             if (visitedAttractions == null || visitedAttractions.Count == 0)
             {
                 if (visitedCountText != null)
-                    visitedCountText.text = "訪問履歴: まだありません";
+                    visitedCountText.text = LocalizationData.VisitHistoryEmpty;
                 return;
             }
 
             if (visitedCountText != null)
-                visitedCountText.text = $"訪問履歴: {visitedAttractions.Count}件";
+                visitedCountText.text = string.Format(LocalizationData.VisitHistoryCount, visitedAttractions.Count);
 
             foreach (var entry in visitedAttractions)
             {
@@ -331,15 +331,7 @@ namespace ThemeParkGame.UI
                 if (nameText != null) nameText.text = entry.AttractionName;
                 if (ratingText != null)
                 {
-                    string ratingStr = entry.SatisfactionRating switch
-                    {
-                        >= 0.8f => "最高！",
-                        >= 0.6f => "楽しい",
-                        >= 0.4f => "普通",
-                        >= 0.2f => "微妙…",
-                        _       => "つまらない"
-                    };
-                    ratingText.text = ratingStr;
+                    ratingText.text = LocalizationData.GetSatisfactionRating(entry.SatisfactionRating);
                 }
             }
         }
@@ -391,7 +383,7 @@ namespace ThemeParkGame.UI
 
             if (followButtonText != null)
             {
-                followButtonText.text = _isFollowing ? "フォロー解除" : "フォローする";
+                followButtonText.text = _isFollowing ? LocalizationData.BtnUnfollow : LocalizationData.BtnFollow;
             }
 
             // カメラシステムにフォロー対象を通知
@@ -417,7 +409,7 @@ namespace ThemeParkGame.UI
 
             if (talkButtonText != null)
             {
-                talkButtonText.text = canTalk ? "話しかける" : "会話不可";
+                talkButtonText.text = canTalk ? LocalizationData.BtnTalk : LocalizationData.BtnTalkUnavailable;
             }
         }
 
@@ -441,7 +433,7 @@ namespace ThemeParkGame.UI
         private void HandleHappinessChanged(int visitorId, float happiness)
         {
             if (visitorId != _currentVisitorId) return;
-            happinessBar?.SetValue(happiness, "幸福度");
+            happinessBar?.SetValue(happiness, LocalizationData.LabelHappiness);
         }
 
         /// <summary>来場者退園イベントハンドラ - 表示中の来場者が退園した場合パネルを閉じる</summary>
@@ -458,49 +450,16 @@ namespace ThemeParkGame.UI
         // 表示名ヘルパー
         // ============================================================
 
-        /// <summary>来場者タイプの日本語表示名を取得する</summary>
+        /// <summary>来場者タイプの表示名を取得する</summary>
         private string GetVisitorTypeDisplayName(VisitorType type)
         {
-            return type switch
-            {
-                VisitorType.Kids   => "キッズ",
-                VisitorType.Young  => "ヤング",
-                VisitorType.Family => "ファミリー",
-                VisitorType.Couple => "カップル",
-                VisitorType.Senior => "シニア",
-                VisitorType.VIP    => "VIP",
-                _                  => "不明"
-            };
+            return LocalizationData.GetVisitorTypeName(type);
         }
 
-        /// <summary>感情バブルの日本語表示テキストを取得する</summary>
+        /// <summary>感情バブルの表示テキストを取得する</summary>
         private string GetEmotionDisplayText(EmotionBubbleType emotion)
         {
-            return emotion switch
-            {
-                EmotionBubbleType.LookingForExit    => "出口を探している",
-                EmotionBubbleType.LookingForToilet  => "トイレを探している",
-                EmotionBubbleType.LookingForFood    => "食べ物を探している",
-                EmotionBubbleType.Lost              => "迷子になっている",
-                EmotionBubbleType.Hungry            => "お腹がすいた",
-                EmotionBubbleType.Thirsty           => "のどが渇いた",
-                EmotionBubbleType.CurrentlyEating   => "食事中",
-                EmotionBubbleType.RodeAllRides      => "全部乗った！",
-                EmotionBubbleType.NoMoney           => "お金がない…",
-                EmotionBubbleType.Resting           => "休憩中",
-                EmotionBubbleType.FoodTastesBad     => "まずい！",
-                EmotionBubbleType.TooExpensive      => "高すぎる！",
-                EmotionBubbleType.TooDirty          => "汚い！",
-                EmotionBubbleType.NotExcitingEnough => "つまらない",
-                EmotionBubbleType.LongWait          => "待ち時間が長い",
-                EmotionBubbleType.Interesting       => "面白い！",
-                EmotionBubbleType.Average           => "まあまあ",
-                EmotionBubbleType.Boring            => "退屈…",
-                EmotionBubbleType.BestRide          => "最高の乗り物！",
-                EmotionBubbleType.BestShop          => "最高のお店！",
-                EmotionBubbleType.LovingIt          => "大満足！",
-                _                                   => ""
-            };
+            return LocalizationData.GetEmotionText(emotion);
         }
 
         /// <summary>感情バブルの背景色を取得する</summary>
@@ -552,28 +511,10 @@ namespace ThemeParkGame.UI
             };
         }
 
-        /// <summary>行動状態の日本語表示テキストを取得する</summary>
+        /// <summary>行動状態の表示テキストを取得する</summary>
         private string GetBehaviorStateDisplayText(VisitorBehaviorState state)
         {
-            return state switch
-            {
-                VisitorBehaviorState.Idle                 => "うろうろしている",
-                VisitorBehaviorState.WalkingToAttraction  => "アトラクションへ移動中",
-                VisitorBehaviorState.WaitingInQueue       => "並んでいる",
-                VisitorBehaviorState.RidingAttraction     => "搭乗中",
-                VisitorBehaviorState.WalkingToShop        => "お店へ移動中",
-                VisitorBehaviorState.Eating               => "食事中",
-                VisitorBehaviorState.Drinking             => "飲み物を飲んでいる",
-                VisitorBehaviorState.WalkingToToilet      => "トイレへ急いでいる",
-                VisitorBehaviorState.UsingToilet          => "トイレ使用中",
-                VisitorBehaviorState.Resting              => "ベンチで休憩中",
-                VisitorBehaviorState.WatchingEntertainment => "ショーを見ている",
-                VisitorBehaviorState.LookingAtMap         => "地図を見ている",
-                VisitorBehaviorState.Vomiting             => "気分が悪い…",
-                VisitorBehaviorState.LeavingPark          => "帰宅中",
-                VisitorBehaviorState.TalkingToPlayer      => "プレイヤーと会話中",
-                _                                         => "不明"
-            };
+            return LocalizationData.GetBehaviorStateText(state);
         }
     }
 

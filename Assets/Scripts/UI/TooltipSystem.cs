@@ -5,6 +5,7 @@
 
 using UnityEngine;
 using UnityEngine.UI;
+using ThemeParkGame.Core;
 
 namespace ThemeParkGame.UI
 {
@@ -49,7 +50,7 @@ namespace ThemeParkGame.UI
             if (_canvas == null)
                 _canvas = GetComponentInParent<Canvas>();
             if (_canvas == null)
-                _canvas = FindObjectOfType<Canvas>();
+                _canvas = CanvasCache.Get();
 
             if (_canvas == null) return;
 

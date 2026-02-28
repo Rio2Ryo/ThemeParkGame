@@ -37,14 +37,62 @@ namespace ThemeParkGame.Staff
         public int TotalSales { get; private set; }
         public float TotalRevenue { get; private set; }
 
+        /// <summary>販売売上の静的集計（全VendorStaff合算）</summary>
+        private static int _globalTotalSales;
+        private static float _globalTotalRevenue;
+
+        /// <summary>全Vendorの累計販売件数</summary>
+        public static int GlobalTotalSales => _globalTotalSales;
+
+        /// <summary>全Vendorの累計売上</summary>
+        public static float GlobalTotalRevenue => _globalTotalRevenue;
+
         protected override void Awake()
         {
             base.Awake();
             StaffType = StaffType.Vendor;
         }
 
-        protected override void SubscribeToEvents() { }
-        protected override void UnsubscribeFromEvents() { }
+        // ============================================================
+        // イベント購読
+        // ============================================================
+
+        protected override void SubscribeToEvents()
+        {
+            GameEvents.OnVisitorEnterPark += HandleVisitorEntered;
+            GameEvents.OnParkEventStarted += HandleParkEventStarted;
+        }
+
+        protected override void UnsubscribeFromEvents()
+        {
+            GameEvents.OnVisitorEnterPark -= HandleVisitorEntered;
+            GameEvents.OnParkEventStarted -= HandleParkEventStarted;
+        }
+
+        /// <summary>
+        /// 来場者入園イベントハンドラ。
+        /// 新しい来場者が入園した時、Idle状態なら即座に販売対象を検索する。
+        /// </summary>
+        private void HandleVisitorEntered(int visitorId)
+        {
+            if (CurrentState == StaffBehaviorState.Idle)
+            {
+                FindAndAssignTask();
+            }
+        }
+
+        /// <summary>
+        /// パークイベント開始ハンドラ。
+        /// イベント開催中は来場者の飲食需要が高まるため、積極的に販売する。
+        /// </summary>
+        private void HandleParkEventStarted(string eventId, string displayName)
+        {
+            if (CurrentState == StaffBehaviorState.Idle)
+            {
+                _cooldownTimer = 0f; // イベント開始時はクールダウンをリセット
+                FindAndAssignTask();
+            }
+        }
 
         protected override bool FindAndAssignTask()
         {
@@ -129,6 +177,8 @@ namespace ThemeParkGame.Staff
                 {
                     TotalSales++;
                     TotalRevenue += price;
+                    _globalTotalSales++;
+                    _globalTotalRevenue += price;
 
                     // 来場者から代金を受け取り
                     _targetVisitor.Parameters.SpendCash(price);
@@ -159,6 +209,13 @@ namespace ThemeParkGame.Staff
             _targetVisitor = null;
             _cooldownTimer = SellCooldown;
             CompleteCurrentTask();
+        }
+
+        /// <summary>グローバル販売統計をリセットする（ゲームリセット時等）</summary>
+        public static void ClearGlobalStats()
+        {
+            _globalTotalSales = 0;
+            _globalTotalRevenue = 0f;
         }
     }
 }

@@ -250,12 +250,12 @@ namespace ThemeParkGame.Attraction
         {
             if (string.IsNullOrEmpty(AttractionId))
             {
-                Debug.LogWarning($"[AttractionData] AttractionIdが未設定です: {name}");
+                WebGLOptimizer.LogWarning($"[AttractionData] AttractionIdが未設定です: {name}");
             }
 
             if (UpgradePath != null && UpgradePath.Count > 3)
             {
-                Debug.LogWarning($"[AttractionData] アップグレードは最大3段階です: {name}");
+                WebGLOptimizer.LogWarning($"[AttractionData] アップグレードは最大3段階です: {name}");
                 UpgradePath.RemoveRange(3, UpgradePath.Count - 3);
             }
         }

@@ -163,11 +163,11 @@ namespace ThemeParkGame.UI
         private void ValidateReferences()
         {
             if (moneyText == null)
-                Debug.LogWarning("[HUDController] moneyText が未設定です");
+                WebGLOptimizer.LogWarning("[HUDController] moneyText が未設定です");
             if (dateTimeText == null)
-                Debug.LogWarning("[HUDController] dateTimeText が未設定です");
+                WebGLOptimizer.LogWarning("[HUDController] dateTimeText が未設定です");
             if (visitorCountText == null)
-                Debug.LogWarning("[HUDController] visitorCountText が未設定です");
+                WebGLOptimizer.LogWarning("[HUDController] visitorCountText が未設定です");
         }
 
         /// <summary>全表示を最新状態に更新する</summary>

@@ -691,7 +691,7 @@ namespace ThemeParkGame.Core
         {
             if (GameManager.Instance == null)
             {
-                Debug.LogError("[GameBootstrapper] GameManager が見つかりません");
+                WebGLOptimizer.LogError("[GameBootstrapper] GameManager が見つかりません");
                 return;
             }
             GameManager.Instance.StartNewGame(ThemeZone.LostKingdom, difficulty);
@@ -713,12 +713,12 @@ namespace ThemeParkGame.Core
                     }
                     else
                     {
-                        Debug.LogError($"[StartScreen] Failed to load slot {i}");
+                        WebGLOptimizer.LogError($"[StartScreen] Failed to load slot {i}");
                     }
                     return;
                 }
             }
-            Debug.LogWarning("[StartScreen] No save data found for continue");
+            WebGLOptimizer.LogWarning("[StartScreen] No save data found for continue");
         }
 
         public void OnScenarioModeClicked()

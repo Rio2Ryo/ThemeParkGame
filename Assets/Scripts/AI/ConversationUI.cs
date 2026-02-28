@@ -181,7 +181,7 @@ namespace ThemeParkGame.AI
             if (GameManager.Instance != null &&
                 GameManager.Instance.CurrentViewMode != ViewMode.ResidentView)
             {
-                Debug.LogWarning("[ConversationUI] Conversations only available in ResidentView mode.");
+                WebGLOptimizer.LogWarning("[ConversationUI] Conversations only available in ResidentView mode.");
                 return;
             }
 
@@ -447,7 +447,7 @@ namespace ThemeParkGame.AI
             GameObject prefab = data.IsPlayerMessage ? playerBubblePrefab : npcBubblePrefab;
             if (prefab == null || chatContentParent == null)
             {
-                Debug.LogWarning("[ConversationUI] Missing bubble prefab or content parent.");
+                WebGLOptimizer.LogWarning("[ConversationUI] Missing bubble prefab or content parent.");
                 return;
             }
 

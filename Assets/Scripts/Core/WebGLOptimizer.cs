@@ -67,6 +67,31 @@ namespace ThemeParkGame.Core
         }
 
         /// <summary>
+        /// 条件付き警告ログ。WebGLリリースビルドではスキップされる。
+        /// Debug.LogWarningの代替として使用する。
+        /// </summary>
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        public static void LogWarning(string message)
+        {
+            Debug.LogWarning(message);
+        }
+
+        /// <summary>
+        /// エラーログ。リリースビルドでも出力される（重大なエラーは常に記録すべき）。
+        /// Debug.LogErrorの代替として使用する。WebGLではスタックトレースを省略する。
+        /// </summary>
+        public static void LogError(string message)
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            // WebGLリリースではconsole.errorのみ（スタックトレースは既に無効化済み）
+            Debug.LogError(message);
+#else
+            Debug.LogError(message);
+#endif
+        }
+
+        /// <summary>
         /// テクスチャメモリ使用量を削減する。
         /// ゲーム起動後に呼び出し、不要なテクスチャを解放する。
         /// </summary>

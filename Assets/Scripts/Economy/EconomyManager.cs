@@ -209,7 +209,7 @@ namespace ThemeParkGame.Economy
         {
             if (amount <= 0f)
             {
-                Debug.LogWarning($"[EconomyManager] AddRevenue: 不正な金額 {amount}");
+                WebGLOptimizer.LogWarning($"[EconomyManager] AddRevenue: 不正な金額 {amount}");
                 return;
             }
 
@@ -278,7 +278,7 @@ namespace ThemeParkGame.Economy
         {
             if (amount <= 0f)
             {
-                Debug.LogWarning($"[EconomyManager] PayExpense: 不正な金額 {amount}");
+                WebGLOptimizer.LogWarning($"[EconomyManager] PayExpense: 不正な金額 {amount}");
                 return false;
             }
 
@@ -315,7 +315,7 @@ namespace ThemeParkGame.Economy
 
             if (CurrentBalance < 0f)
             {
-                Debug.LogWarning($"[EconomyManager] 赤字状態! 残高: {CurrentBalance:F0}");
+                WebGLOptimizer.LogWarning($"[EconomyManager] 赤字状態! 残高: {CurrentBalance:F0}");
             }
 
             return true;
@@ -357,14 +357,14 @@ namespace ThemeParkGame.Economy
             // バリデーション
             if (amount <= 0f || amount > MAX_LOAN_AMOUNT)
             {
-                Debug.LogWarning($"[EconomyManager] ローン金額が不正: {amount} (上限: {MAX_LOAN_AMOUNT})");
+                WebGLOptimizer.LogWarning($"[EconomyManager] ローン金額が不正: {amount} (上限: {MAX_LOAN_AMOUNT})");
                 return null;
             }
 
             int activeLoanCount = _activeLoans.Count(l => !l.IsFullyRepaid);
             if (activeLoanCount >= MAX_ACTIVE_LOANS)
             {
-                Debug.LogWarning($"[EconomyManager] ローン上限に達しています ({MAX_ACTIVE_LOANS}件)");
+                WebGLOptimizer.LogWarning($"[EconomyManager] ローン上限に達しています ({MAX_ACTIVE_LOANS}件)");
                 return null;
             }
 

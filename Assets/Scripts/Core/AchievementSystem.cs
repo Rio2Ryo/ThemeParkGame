@@ -341,7 +341,7 @@ namespace ThemeParkGame.Core
             var def = _definitions.Find(d => d.Id == achievementId);
             if (def == null)
             {
-                Debug.LogWarning($"[AchievementSystem] Unknown achievement: {achievementId}");
+                WebGLOptimizer.LogWarning($"[AchievementSystem] Unknown achievement: {achievementId}");
                 return;
             }
 
@@ -590,9 +590,9 @@ namespace ThemeParkGame.Core
             // ---- トイレ/ベンチ/装飾 ----
             {
                 int toiletCount = 0, benchCount = 0, decoCount = 0;
-                try { toiletCount = GameObject.FindGameObjectsWithTag("Toilet")?.Length ?? 0; } catch { }
-                try { benchCount = GameObject.FindGameObjectsWithTag("Bench")?.Length ?? 0; } catch { }
-                try { decoCount = GameObject.FindGameObjectsWithTag("Decoration")?.Length ?? 0; } catch { }
+                try { toiletCount = GameObject.FindGameObjectsWithTag("Toilet")?.Length ?? 0; } catch (System.Exception ex) { WebGLOptimizer.LogWarning($"[AchievementSystem] Tag 'Toilet' not found: {ex.Message}"); }
+                try { benchCount = GameObject.FindGameObjectsWithTag("Bench")?.Length ?? 0; } catch (System.Exception ex) { WebGLOptimizer.LogWarning($"[AchievementSystem] Tag 'Bench' not found: {ex.Message}"); }
+                try { decoCount = GameObject.FindGameObjectsWithTag("Decoration")?.Length ?? 0; } catch (System.Exception ex) { WebGLOptimizer.LogWarning($"[AchievementSystem] Tag 'Decoration' not found: {ex.Message}"); }
                 if (toiletCount >= 5) Unlock("toilet_5");
                 if (benchCount >= 10) Unlock("bench_10");
                 if (decoCount >= 10) Unlock("decoration_10");

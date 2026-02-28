@@ -581,7 +581,7 @@ namespace ThemeParkGame.Attraction
             }
 
             GameEvents.FireAttractionAccident(FacilityId);
-            Debug.LogWarning($"[Attraction] 事故発生: {DisplayName} (ID: {FacilityId})");
+            WebGLOptimizer.LogWarning($"[Attraction] 事故発生: {DisplayName} (ID: {FacilityId})");
         }
 
         /// <summary>
@@ -654,7 +654,7 @@ namespace ThemeParkGame.Attraction
             var upgradeData = attractionData.GetUpgradeLevel(nextLevel);
             if (upgradeData == null)
             {
-                Debug.LogWarning($"[Attraction] これ以上アップグレードできません: {DisplayName} (Lv.{upgradeLevel})");
+                WebGLOptimizer.LogWarning($"[Attraction] これ以上アップグレードできません: {DisplayName} (Lv.{upgradeLevel})");
                 return false;
             }
 

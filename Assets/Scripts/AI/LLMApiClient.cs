@@ -265,12 +265,12 @@ namespace ThemeParkGame.AI
                     if (request.responseCode >= 400 && request.responseCode < 500 &&
                         request.responseCode != 429)
                     {
-                        Debug.LogWarning($"[LLMApiClient] Non-retryable error: {request.responseCode}");
+                        WebGLOptimizer.LogWarning($"[LLMApiClient] Non-retryable error: {request.responseCode}");
                         break;
                     }
                 }
 
-                Debug.LogWarning($"[LLMApiClient] Request failed (attempt {attempt + 1}): {lastResponse?.ErrorMessage}");
+                WebGLOptimizer.LogWarning($"[LLMApiClient] Request failed (attempt {attempt + 1}): {lastResponse?.ErrorMessage}");
             }
 
             // All retries exhausted

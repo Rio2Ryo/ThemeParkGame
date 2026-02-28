@@ -299,7 +299,7 @@ namespace ThemeParkGame.AI
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[DynamicQuestSystem] Failed to parse LLM quest response: {ex.Message}");
+                WebGLOptimizer.LogWarning($"[DynamicQuestSystem] Failed to parse LLM quest response: {ex.Message}");
                 return null;
             }
         }
@@ -386,13 +386,13 @@ namespace ThemeParkGame.AI
             var quest = _activeQuests.Find(q => q.QuestId == questId);
             if (quest == null)
             {
-                Debug.LogWarning($"[DynamicQuestSystem] Cannot complete quest '{questId}': not found in active quests.");
+                WebGLOptimizer.LogWarning($"[DynamicQuestSystem] Cannot complete quest '{questId}': not found in active quests.");
                 return;
             }
 
             if (quest.State != QuestState.Active)
             {
-                Debug.LogWarning($"[DynamicQuestSystem] Cannot complete quest '{questId}': state is {quest.State}.");
+                WebGLOptimizer.LogWarning($"[DynamicQuestSystem] Cannot complete quest '{questId}': state is {quest.State}.");
                 return;
             }
 

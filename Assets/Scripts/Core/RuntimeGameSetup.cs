@@ -421,7 +421,7 @@ namespace ThemeParkGame.Core
             var ground = GameObject.Find("Ground");
             if (ground == null)
             {
-                Debug.LogWarning("[RuntimeGameSetup] Groundが見つかりません。NavMesh構築スキップ。");
+                WebGLOptimizer.LogWarning("[RuntimeGameSetup] Groundが見つかりません。NavMesh構築スキップ。");
                 return;
             }
 
@@ -440,7 +440,7 @@ namespace ThemeParkGame.Core
             }
             catch (System.Exception e)
             {
-                Debug.LogWarning($"[RuntimeGameSetup] NavMesh構築失敗: {e.Message}");
+                WebGLOptimizer.LogWarning($"[RuntimeGameSetup] NavMesh構築失敗: {e.Message}");
                 // フォールバック: NavMeshなしでも動くようにする
             }
         }
@@ -735,7 +735,7 @@ namespace ThemeParkGame.Core
             var sm = GameManager.Instance?.StaffManager;
             if (sm == null)
             {
-                Debug.LogWarning("[RuntimeGameSetup] StaffManager未検出");
+                WebGLOptimizer.LogWarning("[RuntimeGameSetup] StaffManager未検出");
                 return;
             }
 
@@ -874,7 +874,7 @@ namespace ThemeParkGame.Core
             var vm = GameManager.Instance?.VisitorManager;
             if (vm == null)
             {
-                Debug.LogWarning("[RuntimeGameSetup] VisitorManager未検出");
+                WebGLOptimizer.LogWarning("[RuntimeGameSetup] VisitorManager未検出");
                 return;
             }
 
@@ -1042,7 +1042,7 @@ namespace ThemeParkGame.Core
             }
             catch (System.Exception e)
             {
-                Debug.LogWarning($"[RuntimeGameSetup] 静的バッチング適用失敗: {e.Message}");
+                WebGLOptimizer.LogWarning($"[RuntimeGameSetup] 静的バッチング適用失敗: {e.Message}");
             }
         }
 

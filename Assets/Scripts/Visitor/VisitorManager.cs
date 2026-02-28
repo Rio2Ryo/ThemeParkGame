@@ -270,7 +270,7 @@ namespace ThemeParkGame.Visitor
 
             if (visitorPrefab == null)
             {
-                Debug.LogWarning("[VisitorManager] Visitor prefab is not assigned. Pool initialization skipped.");
+                WebGLOptimizer.LogWarning("[VisitorManager] Visitor prefab is not assigned. Pool initialization skipped.");
                 return;
             }
 
@@ -310,7 +310,7 @@ namespace ThemeParkGame.Visitor
                 // プールが空の場合は新規作成
                 if (visitorPrefab == null)
                 {
-                    Debug.LogError("[VisitorManager] Cannot create visitor: prefab is null.");
+                    WebGLOptimizer.LogError("[VisitorManager] Cannot create visitor: prefab is null.");
                     return null;
                 }
                 visitor = CreateVisitorObject();
@@ -387,7 +387,7 @@ namespace ThemeParkGame.Visitor
         {
             if (activeVisitors.Count >= maxVisitors)
             {
-                Debug.LogWarning($"[VisitorManager] Cannot spawn visitor: max capacity ({maxVisitors}) reached.");
+                WebGLOptimizer.LogWarning($"[VisitorManager] Cannot spawn visitor: max capacity ({maxVisitors}) reached.");
                 return null;
             }
 

@@ -337,14 +337,14 @@ namespace ThemeParkGame.Park
             // ゾーンアンロックチェック
             if (!IsZoneUnlocked(zone))
             {
-                Debug.LogWarning($"[ParkManager] ゾーン {zone} はアンロックされていません");
+                WebGLOptimizer.LogWarning($"[ParkManager] ゾーン {zone} はアンロックされていません");
                 return -1;
             }
 
             // グリッド範囲チェック
             if (!IsGridAreaAvailable(zone, gridX, gridY, width, height))
             {
-                Debug.LogWarning($"[ParkManager] グリッド({gridX},{gridY}) size({width}x{height}) は配置不可");
+                WebGLOptimizer.LogWarning($"[ParkManager] グリッド({gridX},{gridY}) size({width}x{height}) は配置不可");
                 return -1;
             }
 

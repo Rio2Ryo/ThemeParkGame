@@ -309,7 +309,7 @@ namespace ThemeParkGame.Park
 
         private void CreateUI()
         {
-            var canvas = UnityEngine.Object.FindObjectOfType<Canvas>();
+            var canvas = CanvasCache.Get();
             if (canvas == null) return;
 
             // メインパネル

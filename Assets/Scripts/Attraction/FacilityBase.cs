@@ -125,7 +125,7 @@ namespace ThemeParkGame.Attraction
         {
             if (!ValidatePlacement(position, zone))
             {
-                Debug.LogWarning($"[FacilityBase] 配置バリデーション失敗: {DisplayName} at {position}");
+                WebGLOptimizer.LogWarning($"[FacilityBase] 配置バリデーション失敗: {DisplayName} at {position}");
                 return false;
             }
 

@@ -26,16 +26,16 @@ namespace ThemeParkGame.Attraction
         public string Description;
         public AttractionCategory Category;
         public ThemeZone PrimaryThemeZone;
-        public float ExcitementRating;
-        public float NauseaFactor;
-        public int Capacity;
-        public float RideDuration;
-        public int BuildCost;
-        public int MaintenanceCost;
-        public int SuggestedTicketPrice;
-        public Vector2Int Size;
+        public float ExcitementRating = 5f;
+        public float NauseaFactor = 0.1f;
+        public int Capacity = 12;
+        public float RideDuration = 60f;
+        public int BuildCost = 5000;
+        public int MaintenanceCost = 200;
+        public int SuggestedTicketPrice = 300;
+        public Vector2Int Size = new Vector2Int(3, 3);
         public string RequiredResearchId;
-        public float BaseBreakdownRate;
+        public float BaseBreakdownRate = 0.02f;
         public bool CrossZoneCompatible;
         public List<AttractionUpgradeLevel> UpgradePath;
     }
@@ -1040,8 +1040,25 @@ namespace ThemeParkGame.Attraction
         {
             if (_definitions.ContainsKey(def.AttractionId))
             {
-                Debug.LogWarning($"[AttractionDatabase] 重複ID: {def.AttractionId}");
+                WebGLOptimizer.LogWarning($"[AttractionDatabase] 重複ID: {def.AttractionId}");
                 return;
+            }
+
+            // パラメータバリデーション: 0以下なら安全なデフォルト値にフォールバック
+            if (def.Capacity <= 0)
+            {
+                WebGLOptimizer.LogWarning($"[AttractionDatabase] {def.AttractionId}: Capacity={def.Capacity} は不正。デフォルト値12を適用");
+                def.Capacity = 12;
+            }
+            if (def.RideDuration <= 0f)
+            {
+                WebGLOptimizer.LogWarning($"[AttractionDatabase] {def.AttractionId}: RideDuration={def.RideDuration} は不正。デフォルト値60を適用");
+                def.RideDuration = 60f;
+            }
+            if (def.BuildCost <= 0)
+            {
+                WebGLOptimizer.LogWarning($"[AttractionDatabase] {def.AttractionId}: BuildCost={def.BuildCost} は不正。デフォルト値5000を適用");
+                def.BuildCost = 5000;
             }
 
             _definitions[def.AttractionId] = def;
@@ -1115,8 +1132,8 @@ namespace ThemeParkGame.Attraction
             data.PrimaryThemeZone = def.PrimaryThemeZone;
             data.ExcitementRating = def.ExcitementRating;
             data.NauseaFactor = def.NauseaFactor;
-            data.Capacity = def.Capacity;
-            data.RideDuration = def.RideDuration;
+            data.Capacity = def.Capacity > 0 ? def.Capacity : 12;
+            data.RideDuration = def.RideDuration > 0f ? def.RideDuration : 60f;
             data.BuildCost = def.BuildCost;
             data.MaintenanceCost = def.MaintenanceCost;
             data.SuggestedTicketPrice = def.SuggestedTicketPrice;
