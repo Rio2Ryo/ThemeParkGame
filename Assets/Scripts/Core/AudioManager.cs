@@ -423,7 +423,8 @@ namespace ThemeParkGame.Core
             PlaySE(clipWeatherChange);
 
             // 雨天 → 雨音環境音に切替、それ以外 → 群衆音に戻す
-            if (weather == Weather.Rainy || weather == Weather.Snowy)
+            if (weather == Weather.Rainy || weather == Weather.Snowy
+                || weather == Weather.Typhoon || weather == Weather.Thunderstorm)
             {
                 SwitchToRainAmbient();
             }

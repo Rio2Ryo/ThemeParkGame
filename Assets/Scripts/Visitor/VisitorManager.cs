@@ -793,11 +793,13 @@ namespace ThemeParkGame.Visitor
             Weather weather = GetCurrentWeather();
             switch (weather)
             {
-                case Weather.Sunny:  return 0.9f;   // 普通（やや多い）
-                case Weather.Cloudy: return 1.0f;    // 基準
-                case Weather.Hot:    return 1.1f;    // やや少ない（暑い）
-                case Weather.Rainy:  return 2.0f;    // 客足半減（間隔倍増）
-                case Weather.Snowy:  return 2.5f;    // 大幅減
+                case Weather.Sunny:       return 0.9f;   // 普通（やや多い）
+                case Weather.Cloudy:      return 1.0f;    // 基準
+                case Weather.Hot:         return 1.1f;    // やや少ない（暑い）
+                case Weather.Rainy:       return 2.0f;    // 客足半減（間隔倍増）
+                case Weather.Snowy:       return 2.5f;    // 大幅減
+                case Weather.Typhoon:     return 5.0f;    // ほぼ来場停止
+                case Weather.Thunderstorm:return 3.0f;    // 大幅減
                 default: return 1.0f;
             }
         }

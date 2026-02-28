@@ -165,7 +165,9 @@ namespace ThemeParkGame.Core
         Cloudy,
         Rainy,
         Snowy,
-        Hot
+        Hot,
+        Typhoon,       // 台風
+        Thunderstorm   // 雷雨
     }
 
     /// <summary>パーク認定証カテゴリ</summary>

@@ -145,7 +145,8 @@ namespace ThemeParkGame.Staff
         /// </summary>
         private void HandleWeatherChanged(Weather newWeather)
         {
-            _isRaining = newWeather == Weather.Rainy;
+            _isRaining = newWeather == Weather.Rainy
+                || newWeather == Weather.Typhoon || newWeather == Weather.Thunderstorm;
         }
 
         // ============================================================

@@ -85,6 +85,12 @@ namespace ThemeParkGame.Core
         private float _lowFpsDuration; // 30fps以下が続いた秒数
         private int _lastQualityLevel = -1; // QualitySettings変更検出用
 
+        // ---- 雷雨フラッシュ制御 ----
+        private float _thunderFlashTimer;
+        private float _thunderFlashDuration;
+        private float _nextThunderFlashInterval;
+        private bool _isThunderFlashing;
+
         // ---- 現在の天候 ----
         private Weather _currentWeather = Weather.Sunny;
 
@@ -477,6 +483,28 @@ namespace ThemeParkGame.Core
                     _targetFogDensity = 0.002f;
                     _targetFogColor = new Color(0.95f, 0.9f, 0.8f);
                     break;
+
+                case Weather.Typhoon:
+                    _targetLightColor = new Color(0.35f, 0.38f, 0.45f);
+                    _targetLightIntensity = 0.3f;
+                    _targetAmbientColor = new Color(0.2f, 0.22f, 0.3f);
+                    _targetOverlayColor = new Color(0.05f, 0.08f, 0.15f, 0.4f); // 暗い画面オーバーレイ alpha 0.4
+                    _targetFogEnabled = true;
+                    _targetFogDensity = 0.015f;
+                    _targetFogColor = new Color(0.35f, 0.38f, 0.45f);
+                    break;
+
+                case Weather.Thunderstorm:
+                    _targetLightColor = new Color(0.5f, 0.52f, 0.6f);
+                    _targetLightIntensity = 0.4f;
+                    _targetAmbientColor = new Color(0.25f, 0.28f, 0.35f);
+                    _targetOverlayColor = new Color(0.1f, 0.12f, 0.25f, 0.2f);
+                    _targetFogEnabled = true;
+                    _targetFogDensity = 0.01f;
+                    _targetFogColor = new Color(0.4f, 0.42f, 0.5f);
+                    _nextThunderFlashInterval = Random.Range(3f, 8f);
+                    _thunderFlashTimer = 0f;
+                    break;
             }
         }
 
@@ -495,6 +523,11 @@ namespace ThemeParkGame.Core
             if (_isTransitioning)
             {
                 UpdateTransition();
+            }
+            else
+            {
+                // 遷移完了後も雷雨フラッシュは継続
+                UpdateThunderFlash();
             }
         }
 
@@ -677,10 +710,58 @@ namespace ThemeParkGame.Core
             // パーティクルシステム制御
             UpdateParticleSystems(smooth);
 
+            // 雷雨の画面フラッシュ
+            UpdateThunderFlash();
+
             if (t >= 1f)
             {
                 _isTransitioning = false;
                 _currentWeather = _targetWeather;
+            }
+        }
+
+        /// <summary>雷雨時の不定期ホワイトフラッシュを制御する</summary>
+        private void UpdateThunderFlash()
+        {
+            // 雷雨中のみフラッシュを処理
+            bool isThunderstorm = _targetWeather == Weather.Thunderstorm
+                               || _currentWeather == Weather.Thunderstorm;
+            if (!isThunderstorm)
+            {
+                _isThunderFlashing = false;
+                return;
+            }
+
+            if (_isThunderFlashing)
+            {
+                // フラッシュ中: オーバーレイを白くフラッシュ
+                _thunderFlashDuration -= Time.unscaledDeltaTime;
+                if (_thunderFlashDuration <= 0f)
+                {
+                    _isThunderFlashing = false;
+                    // フラッシュ終了: 元のオーバーレイ色に戻す
+                    if (_overlayImage != null)
+                        _overlayImage.color = _targetOverlayColor;
+                }
+                else
+                {
+                    // フラッシュ中の白い点滅
+                    float flashAlpha = Mathf.PingPong(_thunderFlashDuration * 15f, 1f) * 0.6f;
+                    if (_overlayImage != null)
+                        _overlayImage.color = new Color(1f, 1f, 1f, flashAlpha);
+                }
+            }
+            else
+            {
+                // フラッシュ間隔カウントダウン
+                _thunderFlashTimer += Time.unscaledDeltaTime;
+                if (_thunderFlashTimer >= _nextThunderFlashInterval)
+                {
+                    _isThunderFlashing = true;
+                    _thunderFlashDuration = Random.Range(0.1f, 0.4f);
+                    _thunderFlashTimer = 0f;
+                    _nextThunderFlashInterval = Random.Range(3f, 10f);
+                }
             }
         }
 
@@ -689,15 +770,34 @@ namespace ThemeParkGame.Core
         {
             float lodScale = GetLODScale();
 
-            // 雨
+            // 雨（通常雨・台風・雷雨で共有）
+            bool needsRain = _targetWeather == Weather.Rainy
+                          || _targetWeather == Weather.Typhoon
+                          || _targetWeather == Weather.Thunderstorm;
             if (_rainPS != null)
             {
-                if (_targetWeather == Weather.Rainy)
+                if (needsRain)
                 {
                     if (!_rainPS.isPlaying) _rainPS.Play();
-                    // 徐々にパーティクル量を増やす（LODスケール適用）
                     var emission = _rainPS.emission;
-                    emission.rateOverTime = Mathf.Lerp(0f, RainEmissionRate * lodScale, t);
+                    // 台風は雨PSのemission rate 3倍
+                    float rateMultiplier = _targetWeather == Weather.Typhoon ? 3f : 1f;
+                    emission.rateOverTime = Mathf.Lerp(0f, RainEmissionRate * lodScale * rateMultiplier, t);
+
+                    // 台風: 横方向velocityオーバーライド（強風）
+                    var vel = _rainPS.velocityOverLifetime;
+                    vel.enabled = true;
+                    if (_targetWeather == Weather.Typhoon)
+                    {
+                        vel.x = new ParticleSystem.MinMaxCurve(8f, 15f);
+                        vel.z = new ParticleSystem.MinMaxCurve(-3f, 5f);
+                    }
+                    else
+                    {
+                        // 通常の雨・雷雨は軽い風
+                        vel.x = new ParticleSystem.MinMaxCurve(-2f, 2f);
+                        vel.z = new ParticleSystem.MinMaxCurve(-1f, 1f);
+                    }
                 }
                 else
                 {
@@ -796,7 +896,21 @@ namespace ThemeParkGame.Core
             switch (weather)
             {
                 case Weather.Rainy:
+                case Weather.Thunderstorm:
                     if (_rainPS != null) _rainPS.Play();
+                    break;
+                case Weather.Typhoon:
+                    if (_rainPS != null)
+                    {
+                        _rainPS.Play();
+                        // 台風は即座に3倍emission + 横風
+                        var emission = _rainPS.emission;
+                        emission.rateOverTime = RainEmissionRate * 3f;
+                        var vel = _rainPS.velocityOverLifetime;
+                        vel.enabled = true;
+                        vel.x = new ParticleSystem.MinMaxCurve(8f, 15f);
+                        vel.z = new ParticleSystem.MinMaxCurve(-3f, 5f);
+                    }
                     break;
                 case Weather.Snowy:
                     if (_snowPS != null) _snowPS.Play();

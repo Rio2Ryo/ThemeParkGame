@@ -198,6 +198,8 @@ namespace ThemeParkGame.UI
                 Weather.Rainy => "[RAN]",
                 Weather.Snowy => "[SNW]",
                 Weather.Hot => "[HOT]",
+                Weather.Typhoon => "[TYP]",
+                Weather.Thunderstorm => "[THD]",
                 _ => "[???]"
             };
         }

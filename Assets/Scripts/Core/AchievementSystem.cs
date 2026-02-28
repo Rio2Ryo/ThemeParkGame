@@ -134,8 +134,10 @@ namespace ThemeParkGame.Core
 
         private void OnWeatherChangedForAchievement(Weather newWeather)
         {
-            if ((_prevWeather == Weather.Rainy || _prevWeather == Weather.Snowy) &&
-                newWeather != Weather.Rainy && newWeather != Weather.Snowy)
+            if ((_prevWeather == Weather.Rainy || _prevWeather == Weather.Snowy
+                || _prevWeather == Weather.Typhoon || _prevWeather == Weather.Thunderstorm) &&
+                newWeather != Weather.Rainy && newWeather != Weather.Snowy
+                && newWeather != Weather.Typhoon && newWeather != Weather.Thunderstorm)
             {
                 _survivedStorm = true;
             }

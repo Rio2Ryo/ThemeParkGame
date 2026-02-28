@@ -516,12 +516,14 @@ namespace ThemeParkGame.UI
         {
             return weather switch
             {
-                Weather.Sunny  => "晴れ",
-                Weather.Cloudy => "くもり",
-                Weather.Rainy  => "雨",
-                Weather.Snowy  => "雪",
-                Weather.Hot    => "猛暑",
-                _              => "不明"
+                Weather.Sunny       => "晴れ",
+                Weather.Cloudy      => "くもり",
+                Weather.Rainy       => "雨",
+                Weather.Snowy       => "雪",
+                Weather.Hot         => "猛暑",
+                Weather.Typhoon     => "台風",
+                Weather.Thunderstorm=> "雷雨",
+                _                   => "不明"
             };
         }
 

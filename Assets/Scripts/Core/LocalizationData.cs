@@ -42,6 +42,8 @@ namespace ThemeParkGame.Core
         public const string WeatherSnowy = "❄ 雪";
         public const string WeatherHeatWave = "🌡 猛暑";
         public const string WeatherStormy = "⚡ 嵐";
+        public const string WeatherTyphoon = "🌀 台風";
+        public const string WeatherThunderstorm = "⛈ 雷雨";
 
         // ============================================================
         // HUD - ボタン
@@ -461,6 +463,8 @@ namespace ThemeParkGame.Core
                 Weather.Rainy => WeatherRainy,
                 Weather.Snowy => WeatherSnowy,
                 Weather.Hot => WeatherHeatWave,
+                Weather.Typhoon => WeatherTyphoon,
+                Weather.Thunderstorm => WeatherThunderstorm,
                 _ => weather.ToString()
             };
         }

@@ -1031,6 +1031,148 @@ namespace ThemeParkGame.Attraction
                     }
                 }
             });
+
+            // ============================================================
+            // 追加アトラクション（コンテンツ拡張フェーズ）
+            // ============================================================
+
+            // ダークネスホラーハウス（ハロウィーンワールド / ShowAttraction）
+            // 恐怖度で幸福UP。ハロウィン時期ブースト。
+            Register(new AttractionDefinition
+            {
+                AttractionId = "HW_HORROR_HOUSE",
+                NameJP = "ダークネスホラーハウス",
+                NameEN = "Darkness Horror House",
+                Description = "完全暗闘の中を歩いて進むホラーハウス。最新の音響・触覚演出で恐怖度MAX。ハロウィン時期は特別演出でさらにパワーアップ。",
+                Category = AttractionCategory.ShowAttraction,
+                PrimaryThemeZone = ThemeZone.HalloweenWorld,
+                ExcitementRating = 6.5f,
+                NauseaFactor = 0.08f,
+                Capacity = 20,
+                RideDuration = 180f,
+                BuildCost = 9000,
+                MaintenanceCost = 350,
+                SuggestedTicketPrice = 400,
+                Size = new Vector2Int(4, 5),
+                BaseBreakdownRate = 0.02f,
+                UpgradePath = new List<AttractionUpgradeLevel>
+                {
+                    new AttractionUpgradeLevel
+                    {
+                        Level = 1,
+                        UpgradeName = "恐怖演出強化",
+                        Description = "アニマトロニクスと振動床を追加。恐怖度と興奮度がアップ。",
+                        UpgradeCost = 4000,
+                        ExcitementMultiplier = 1.2f,
+                        CapacityMultiplier = 1.0f,
+                        NauseaMultiplier = 1.1f,
+                        BreakdownRateMultiplier = 0.95f
+                    },
+                    new AttractionUpgradeLevel
+                    {
+                        Level = 2,
+                        UpgradeName = "ルート分岐システム",
+                        Description = "複数のルートを導入しリプレイ性を向上。定員も増加。",
+                        UpgradeCost = 6000,
+                        ExcitementMultiplier = 1.3f,
+                        CapacityMultiplier = 1.3f,
+                        NauseaMultiplier = 1.0f,
+                        BreakdownRateMultiplier = 0.9f
+                    }
+                }
+            });
+
+            // スプラッシュアドベンチャー（ワンダーランド / RideAttraction）
+            // 猛暑時に人気UP。雨/雪時に来場者が避ける。
+            Register(new AttractionDefinition
+            {
+                AttractionId = "WL_WATER_RIDE",
+                NameJP = "スプラッシュアドベンチャー",
+                NameEN = "Splash Adventure",
+                Description = "急流を丸太ボートで下るウォーターライド。クライマックスの大スプラッシュで全身ずぶ濡れ！猛暑の日に大人気。",
+                Category = AttractionCategory.RideAttraction,
+                PrimaryThemeZone = ThemeZone.Wonderland,
+                ExcitementRating = 7.0f,
+                NauseaFactor = 0.12f,
+                Capacity = 16,
+                RideDuration = 120f,
+                BuildCost = 11000,
+                MaintenanceCost = 450,
+                SuggestedTicketPrice = 450,
+                Size = new Vector2Int(5, 6),
+                BaseBreakdownRate = 0.03f,
+                UpgradePath = new List<AttractionUpgradeLevel>
+                {
+                    new AttractionUpgradeLevel
+                    {
+                        Level = 1,
+                        UpgradeName = "ウォーターキャノン",
+                        Description = "コース沿いにウォーターキャノンを設置。観客も参加して水をかけ合える。",
+                        UpgradeCost = 5000,
+                        ExcitementMultiplier = 1.15f,
+                        CapacityMultiplier = 1.1f,
+                        NauseaMultiplier = 1.0f,
+                        BreakdownRateMultiplier = 0.95f
+                    },
+                    new AttractionUpgradeLevel
+                    {
+                        Level = 2,
+                        UpgradeName = "ダブルスプラッシュ",
+                        Description = "2段階の大落差を追加。スリルと水量が倍増。",
+                        UpgradeCost = 7500,
+                        ExcitementMultiplier = 1.25f,
+                        CapacityMultiplier = 1.2f,
+                        NauseaMultiplier = 1.1f,
+                        BreakdownRateMultiplier = 0.9f
+                    }
+                }
+            });
+
+            // ネクストディメンション4D（未来都市 / ShowAttraction）
+            // 天候無関係（室内）。嘔吐率あり（4D演出）。
+            Register(new AttractionDefinition
+            {
+                AttractionId = "FC_4D_THEATER",
+                NameJP = "ネクストディメンション4D",
+                NameEN = "Next Dimension 4D",
+                Description = "座席が動き、風・水・香りの4D演出で映像に没入する次世代シアター。天候に左右されない室内型だが、激しい動きで酔う人も。",
+                Category = AttractionCategory.ShowAttraction,
+                PrimaryThemeZone = ThemeZone.FutureCity,
+                ExcitementRating = 6.0f,
+                NauseaFactor = 0.15f,
+                Capacity = 40,
+                RideDuration = 150f,
+                BuildCost = 10000,
+                MaintenanceCost = 400,
+                SuggestedTicketPrice = 500,
+                Size = new Vector2Int(5, 4),
+                BaseBreakdownRate = 0.02f,
+                UpgradePath = new List<AttractionUpgradeLevel>
+                {
+                    new AttractionUpgradeLevel
+                    {
+                        Level = 1,
+                        UpgradeName = "5Dアップグレード",
+                        Description = "温度・振動演出を追加して5D化。没入感が大幅アップ。",
+                        UpgradeCost = 5000,
+                        ExcitementMultiplier = 1.2f,
+                        CapacityMultiplier = 1.0f,
+                        NauseaMultiplier = 1.15f,
+                        BreakdownRateMultiplier = 0.95f
+                    },
+                    new AttractionUpgradeLevel
+                    {
+                        Level = 2,
+                        UpgradeName = "プレミアムシート",
+                        Description = "VIP席を追加し座席数増加。プレミアム料金で収益UP。",
+                        UpgradeCost = 6500,
+                        ExcitementMultiplier = 1.15f,
+                        CapacityMultiplier = 1.4f,
+                        NauseaMultiplier = 1.0f,
+                        BreakdownRateMultiplier = 0.9f
+                    }
+                }
+            });
         }
 
         // ---- 登録ヘルパー ----

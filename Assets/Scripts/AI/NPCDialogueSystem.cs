@@ -162,7 +162,8 @@ namespace ThemeParkGame.AI
             if (GameManager.Instance?.WeatherSystem != null)
             {
                 var weather = GameManager.Instance.WeatherSystem.CurrentWeather;
-                if (weather == Weather.Rainy || weather == Weather.Snowy)
+                if (weather == Weather.Rainy || weather == Weather.Snowy
+                    || weather == Weather.Typhoon || weather == Weather.Thunderstorm)
                     return DialogueCategory.WeatherComment;
             }
 
@@ -286,6 +287,8 @@ namespace ThemeParkGame.AI
                     Weather.Rainy => "雨",
                     Weather.Snowy => "雪",
                     Weather.Hot => "猛暑",
+                    Weather.Typhoon => "台風",
+                    Weather.Thunderstorm => "雷雨",
                     _ => "晴れ"
                 };
                 text = text.Replace("{weather}", weatherName);

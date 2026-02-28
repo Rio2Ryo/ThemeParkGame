@@ -423,11 +423,13 @@ namespace ThemeParkGame.Core
         {
             switch (w)
             {
-                case Weather.Sunny:  return "[晴れ]";
-                case Weather.Cloudy: return "[曇り]";
-                case Weather.Rainy:  return "[雨]";
-                case Weather.Snowy:  return "[雪]";
-                case Weather.Hot:    return "[猛暑]";
+                case Weather.Sunny:       return "[晴れ]";
+                case Weather.Cloudy:      return "[曇り]";
+                case Weather.Rainy:       return "[雨]";
+                case Weather.Snowy:       return "[雪]";
+                case Weather.Hot:         return "[猛暑]";
+                case Weather.Typhoon:     return "[台風]";
+                case Weather.Thunderstorm:return "[雷雨]";
                 default: return "";
             }
         }

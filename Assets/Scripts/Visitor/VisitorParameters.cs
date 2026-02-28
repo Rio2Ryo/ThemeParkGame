@@ -386,6 +386,14 @@ namespace ThemeParkGame.Visitor
                 case Weather.Hot:
                     Happiness -= HotHappinessPenaltyRate * weatherImpact * deltaTime;
                     break;
+                case Weather.Typhoon:
+                    // 台風は雨の2.5倍のペナルティ
+                    Happiness -= RainHappinessPenaltyRate * 2.5f * weatherImpact * deltaTime;
+                    break;
+                case Weather.Thunderstorm:
+                    // 雷雨は雨の1.5倍のペナルティ
+                    Happiness -= RainHappinessPenaltyRate * 1.5f * weatherImpact * deltaTime;
+                    break;
             }
 
             // パークイベントボーナス: 開催中イベントの幸福度/満足度パッシブ加算

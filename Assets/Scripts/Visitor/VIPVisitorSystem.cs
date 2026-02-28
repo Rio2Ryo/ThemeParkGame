@@ -1,6 +1,7 @@
 // ============================================================
 // ThemeParkGame - VIP Visitor System
 // VIP来場者の特別対応・リクエスト管理・評価ブースト
+// VIPランク（Silver/Gold/Platinum）による差別化報酬
 // ============================================================
 
 using System.Collections.Generic;
@@ -15,18 +16,92 @@ namespace ThemeParkGame.Visitor
     /// VIPが来場すると特別リクエストが発生し、
     /// 満足させるとパーク評価が大幅に上昇する。
     /// 失望させると評価が下がる。
+    /// ランクに応じて報酬が変動する。
     /// </summary>
     public class VIPVisitorSystem : MonoBehaviour
     {
         public static VIPVisitorSystem Instance { get; private set; }
 
+        // ---- VIPランク定義 ----
+        public enum VIPRank
+        {
+            Silver,    // 所持金2倍、報酬=$500+知名度2.0+ゴールデンチケット×1
+            Gold,      // 所持金4倍、報酬=$1000+知名度3.0+ゴールデンチケット×1、幸福度閾値55
+            Platinum   // 所持金6倍、報酬=$2000+知名度5.0+ゴールデンチケット×2、幸福度閾値45
+        }
+
         // ---- 設定 ----
         private const float VIP_RATING_BONUS = 3.0f;        // VIP満足時の評価ボーナス
         private const float VIP_RATING_PENALTY = -1.5f;     // VIP不満時の評価ペナルティ
-        private const float VIP_HAPPINESS_THRESHOLD = 65f;   // VIP満足判定閾値
         private const float VIP_CHECK_INTERVAL = 10f;        // VIPステータスチェック間隔
-        private const float VIP_SPENDING_MULTIPLIER = 3.0f;  // VIPの消費倍率
-        private const float VIP_FAME_BONUS = 2.0f;           // VIP満足時の知名度ボーナス
+
+        // ---- ランク別パラメータ ----
+        private static float GetHappinessThreshold(VIPRank rank)
+        {
+            switch (rank)
+            {
+                case VIPRank.Silver:   return 65f;
+                case VIPRank.Gold:     return 55f;
+                case VIPRank.Platinum: return 45f;
+                default: return 65f;
+            }
+        }
+
+        private static float GetSpendingMultiplier(VIPRank rank)
+        {
+            switch (rank)
+            {
+                case VIPRank.Silver:   return 2.0f;
+                case VIPRank.Gold:     return 4.0f;
+                case VIPRank.Platinum: return 6.0f;
+                default: return 2.0f;
+            }
+        }
+
+        private static float GetRevenueBonus(VIPRank rank)
+        {
+            switch (rank)
+            {
+                case VIPRank.Silver:   return 500f;
+                case VIPRank.Gold:     return 1000f;
+                case VIPRank.Platinum: return 2000f;
+                default: return 500f;
+            }
+        }
+
+        private static float GetFameBonus(VIPRank rank)
+        {
+            switch (rank)
+            {
+                case VIPRank.Silver:   return 2.0f;
+                case VIPRank.Gold:     return 3.0f;
+                case VIPRank.Platinum: return 5.0f;
+                default: return 2.0f;
+            }
+        }
+
+        private static int GetGoldenTicketReward(VIPRank rank)
+        {
+            switch (rank)
+            {
+                case VIPRank.Silver:   return 1;
+                case VIPRank.Gold:     return 1;
+                case VIPRank.Platinum: return 2;
+                default: return 1;
+            }
+        }
+
+        /// <summary>VIPランクの日本語表示名を取得する</summary>
+        public static string GetRankDisplayName(VIPRank rank)
+        {
+            switch (rank)
+            {
+                case VIPRank.Silver:   return "シルバー";
+                case VIPRank.Gold:     return "ゴールド";
+                case VIPRank.Platinum: return "プラチナ";
+                default: return "不明";
+            }
+        }
 
         // ---- 内部状態 ----
         private readonly Dictionary<int, VIPData> _activeVIPs = new Dictionary<int, VIPData>();
@@ -78,6 +153,19 @@ namespace ThemeParkGame.Visitor
         }
 
         // ================================================================
+        // VIPランク抽選
+        // ================================================================
+
+        /// <summary>VIPランクを確率で決定する（Silver60%, Gold30%, Platinum10%）</summary>
+        private VIPRank RollVIPRank()
+        {
+            float roll = Random.value;
+            if (roll < 0.60f) return VIPRank.Silver;
+            if (roll < 0.90f) return VIPRank.Gold;
+            return VIPRank.Platinum;
+        }
+
+        // ================================================================
         // VIPイベントハンドラ
         // ================================================================
 
@@ -85,30 +173,34 @@ namespace ThemeParkGame.Visitor
         {
             if (_activeVIPs.ContainsKey(visitorId)) return;
 
+            VIPRank rank = RollVIPRank();
+
             var vipData = new VIPData
             {
                 VisitorId = visitorId,
                 ArrivalTime = Time.time,
                 RequestType = GenerateVIPRequest(),
                 IsRequestCompleted = false,
-                InitialHappiness = GetVisitorHappiness(visitorId)
+                InitialHappiness = GetVisitorHappiness(visitorId),
+                Rank = rank
             };
 
             _activeVIPs[visitorId] = vipData;
 
-            // VIPの初期キャッシュブースト（VIPはお金持ち）
-            BoostVIPCash(visitorId);
+            // VIPの初期キャッシュブースト（ランクに応じた倍率）
+            BoostVIPCash(visitorId, rank);
 
             // 通知
             string requestDesc = GetRequestDescription(vipData.RequestType);
+            string rankName = GetRankDisplayName(rank);
             if (NotificationSystem.Instance != null)
             {
                 NotificationSystem.Instance.Notify(
-                    $"VIP来場！ リクエスト: {requestDesc}",
+                    $"VIP[{rankName}]来場！ リクエスト: {requestDesc}",
                     NotifLevel.Info);
             }
 
-            WebGLOptimizer.LogVerbose($"[VIPSystem] VIP #{visitorId} arrived. Request: {vipData.RequestType}");
+            WebGLOptimizer.LogVerbose($"[VIPSystem] VIP #{visitorId} [{rank}] arrived. Request: {vipData.RequestType}");
         }
 
         private void HandleVisitorLeave(int visitorId)
@@ -117,41 +209,46 @@ namespace ThemeParkGame.Visitor
 
             _totalVIPsServed++;
             float happiness = GetVisitorHappiness(visitorId);
-            bool satisfied = happiness >= VIP_HAPPINESS_THRESHOLD;
+            float threshold = GetHappinessThreshold(vipData.Rank);
+            bool satisfied = happiness >= threshold;
 
             if (satisfied)
             {
                 _satisfiedVIPs++;
-                ApplyRatingBonus(VIP_RATING_BONUS);
-                ApplyFameBonus(VIP_FAME_BONUS);
 
+                float fameBonus = GetFameBonus(vipData.Rank);
+                ApplyRatingBonus(VIP_RATING_BONUS);
+                ApplyFameBonus(fameBonus);
+
+                string rankName = GetRankDisplayName(vipData.Rank);
                 if (NotificationSystem.Instance != null)
                 {
                     NotificationSystem.Instance.Notify(
-                        $"VIPが満足して帰りました！ (幸福度: {happiness:F0}) 評価UP!",
+                        $"VIP[{rankName}]が満足して帰りました！ (幸福度: {happiness:F0}) 評価UP!",
                         NotifLevel.Success);
                 }
 
-                // VIP満足時の収益ボーナス
+                // VIP満足時の収益ボーナス（ランク別）
                 if (GameManager.Instance?.EconomyManager != null)
                 {
-                    float bonus = 500f + happiness * 10f;
+                    float bonus = GetRevenueBonus(vipData.Rank) + happiness * 10f;
                     GameManager.Instance.EconomyManager.AddRevenue(bonus, RevenueCategory.Other);
-                    WebGLOptimizer.LogVerbose($"[VIPSystem] VIP #{visitorId} satisfied. Bonus: ${bonus:N0}");
+                    WebGLOptimizer.LogVerbose($"[VIPSystem] VIP #{visitorId} [{vipData.Rank}] satisfied. Bonus: ${bonus:N0}");
                 }
             }
             else
             {
                 ApplyRatingBonus(VIP_RATING_PENALTY);
 
+                string rankName = GetRankDisplayName(vipData.Rank);
                 if (NotificationSystem.Instance != null)
                 {
                     NotificationSystem.Instance.Notify(
-                        $"VIPが不満のまま帰りました... (幸福度: {happiness:F0}) 評価DOWN",
+                        $"VIP[{rankName}]が不満のまま帰りました... (幸福度: {happiness:F0}) 評価DOWN",
                         NotifLevel.Warning);
                 }
 
-                WebGLOptimizer.LogVerbose($"[VIPSystem] VIP #{visitorId} unsatisfied. Happiness: {happiness:F0}");
+                WebGLOptimizer.LogVerbose($"[VIPSystem] VIP #{visitorId} [{vipData.Rank}] unsatisfied. Happiness: {happiness:F0}");
             }
 
             GameEvents.FireVIPRequestCompleted(visitorId, satisfied);
@@ -194,18 +291,26 @@ namespace ThemeParkGame.Visitor
                             visitor.Parameters.ModifyHappiness(20f);
                         }
 
-                        // ゴールデンチケット報酬
-                        GameManager.Instance?.AwardGoldenTicket();
+                        // ゴールデンチケット報酬（ランク別）
+                        int ticketCount = GetGoldenTicketReward(vipData.Rank);
+                        for (int i = 0; i < ticketCount; i++)
+                        {
+                            GameManager.Instance?.AwardGoldenTicket();
+                        }
 
+                        string rankName = GetRankDisplayName(vipData.Rank);
                         if (NotificationSystem.Instance != null)
                         {
+                            string ticketMsg = ticketCount > 1
+                                ? $"ゴールデンチケット{ticketCount}枚獲得！"
+                                : "ゴールデンチケット獲得！";
                             NotificationSystem.Instance.Notify(
-                                "VIPのリクエストが達成されました！ ゴールデンチケット獲得！",
+                                $"VIP[{rankName}]のリクエストが達成されました！ {ticketMsg}",
                                 NotifLevel.Success);
                         }
 
                         WebGLOptimizer.LogVerbose(
-                            $"[VIPSystem] VIP #{vipId} request fulfilled: {vipData.RequestType}");
+                            $"[VIPSystem] VIP #{vipId} [{vipData.Rank}] request fulfilled: {vipData.RequestType}, tickets: {ticketCount}");
                     }
                     else
                     {
@@ -256,11 +361,29 @@ namespace ThemeParkGame.Visitor
                 data.ShopPurchaseCount++;
             }
 
+            // お土産購入を検出（WalkingToShop → Idle/他でショップが完了）
+            // ShopPurchaseCountが食事・飲料以外にも増えた場合お土産とみなす
+            if (prevState == VisitorBehaviorState.WalkingToShop
+                && currentState != VisitorBehaviorState.WalkingToShop
+                && currentState != VisitorBehaviorState.Eating
+                && currentState != VisitorBehaviorState.Drinking)
+            {
+                data.HasPurchasedSouvenir = true;
+                data.ShopPurchaseCount++;
+            }
+
             // エンタメ鑑賞完了を検出
             if (prevState == VisitorBehaviorState.WatchingEntertainment
                 && currentState != VisitorBehaviorState.WatchingEntertainment)
             {
                 data.HasWatchedEntertainment = true;
+            }
+
+            // アトラクション搭乗完了を検出（搭乗回数追跡）
+            if (prevState == VisitorBehaviorState.RidingAttraction
+                && currentState != VisitorBehaviorState.RidingAttraction)
+            {
+                data.AttractionRideCount++;
             }
 
             // 行列待ち時間の追跡
@@ -288,11 +411,15 @@ namespace ThemeParkGame.Visitor
         private VIPRequestType GenerateVIPRequest()
         {
             float roll = Random.value;
-            if (roll < 0.30f) return VIPRequestType.RideTopAttraction;
-            if (roll < 0.55f) return VIPRequestType.TryAllShops;
-            if (roll < 0.75f) return VIPRequestType.HighSatisfaction;
-            if (roll < 0.90f) return VIPRequestType.ShortWaitTimes;
-            return VIPRequestType.MeetEntertainer;
+            // 既存5種 + 新規3種 = 8種
+            if (roll < 0.18f) return VIPRequestType.RideTopAttraction;
+            if (roll < 0.33f) return VIPRequestType.TryAllShops;
+            if (roll < 0.46f) return VIPRequestType.HighSatisfaction;
+            if (roll < 0.56f) return VIPRequestType.ShortWaitTimes;
+            if (roll < 0.66f) return VIPRequestType.MeetEntertainer;
+            if (roll < 0.78f) return VIPRequestType.ExclusiveRide;
+            if (roll < 0.89f) return VIPRequestType.PhotoWithMascot;
+            return VIPRequestType.GourmetExperience;
         }
 
         private string GetRequestDescription(VIPRequestType type)
@@ -309,6 +436,12 @@ namespace ThemeParkGame.Visitor
                     return "待ち時間が短いのが好き";
                 case VIPRequestType.MeetEntertainer:
                     return "エンターテイナーに会いたい";
+                case VIPRequestType.ExclusiveRide:
+                    return "アトラクションを堪能したい";
+                case VIPRequestType.PhotoWithMascot:
+                    return "マスコットと記念撮影したい";
+                case VIPRequestType.GourmetExperience:
+                    return "パークグルメを完全制覇したい";
                 default:
                     return "特別な体験";
             }
@@ -348,6 +481,18 @@ namespace ThemeParkGame.Visitor
                     // エンターテイナーのショーを実際に鑑賞した
                     return data.HasWatchedEntertainment;
 
+                case VIPRequestType.ExclusiveRide:
+                    // アトラクション2回以上搭乗 + 幸福度70以上
+                    return data.AttractionRideCount >= 2 && visitor.Happiness >= 70f;
+
+                case VIPRequestType.PhotoWithMascot:
+                    // エンターテイナー鑑賞 + ショップ1回以上利用
+                    return data.HasWatchedEntertainment && data.ShopPurchaseCount >= 1;
+
+                case VIPRequestType.GourmetExperience:
+                    // 食事 + 飲料 + お土産の3種ショップ利用
+                    return data.HasPurchasedFood && data.HasPurchasedDrink && data.HasPurchasedSouvenir;
+
                 default:
                     return false;
             }
@@ -369,14 +514,14 @@ namespace ThemeParkGame.Visitor
             return visitor?.Happiness ?? 50f;
         }
 
-        private void BoostVIPCash(int visitorId)
+        private void BoostVIPCash(int visitorId, VIPRank rank)
         {
             var visitor = FindVisitor(visitorId);
             if (visitor?.Parameters != null)
             {
-                // VIPは通常の3倍の所持金を持つ（追加分を加算）
+                float multiplier = GetSpendingMultiplier(rank);
                 float currentCash = visitor.Parameters.Cash;
-                float extraCash = currentCash * (VIP_SPENDING_MULTIPLIER - 1f);
+                float extraCash = currentCash * (multiplier - 1f);
                 visitor.Parameters.AddCash(extraCash);
             }
         }
@@ -416,6 +561,8 @@ namespace ThemeParkGame.Visitor
             public VIPRequestType RequestType;
             public bool IsRequestCompleted;
             public float InitialHappiness;
+            /// <summary>VIPランク</summary>
+            public VIPRank Rank;
 
             /// <summary>ショップ購入回数追跡（TryAllShops用）</summary>
             public int ShopPurchaseCount;
@@ -423,8 +570,12 @@ namespace ThemeParkGame.Visitor
             public bool HasPurchasedFood;
             /// <summary>飲料購入済みフラグ</summary>
             public bool HasPurchasedDrink;
+            /// <summary>お土産購入済みフラグ（GourmetExperience用）</summary>
+            public bool HasPurchasedSouvenir;
             /// <summary>エンターテイナー鑑賞済みフラグ</summary>
             public bool HasWatchedEntertainment;
+            /// <summary>アトラクション搭乗回数（ExclusiveRide用）</summary>
+            public int AttractionRideCount;
             /// <summary>累計行列待ち時間（秒）</summary>
             public float TotalWaitTime;
             /// <summary>行列待ち開始時刻</summary>
@@ -441,7 +592,10 @@ namespace ThemeParkGame.Visitor
             TryAllShops,
             HighSatisfaction,
             ShortWaitTimes,
-            MeetEntertainer
+            MeetEntertainer,
+            ExclusiveRide,      // アトラクション2回以上搭乗+幸福度70以上
+            PhotoWithMascot,    // エンターテイナー鑑賞+ショップ1回以上利用
+            GourmetExperience   // 食事+飲料+お土産の3種ショップ利用
         }
     }
 }

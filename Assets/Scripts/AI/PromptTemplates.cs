@@ -148,6 +148,8 @@ namespace ThemeParkGame.AI
         public const string WeatherRainy = "雨 - 屋外アトラクションは少し不便です";
         public const string WeatherSnowy = "雪 - 幻想的な雰囲気ですが寒いです";
         public const string WeatherHot = "猛暑 - とても暑く、水分補給が必要です";
+        public const string WeatherTyphoon = "台風 - 非常に危険な暴風雨です。来場者がほぼいません";
+        public const string WeatherThunderstorm = "雷雨 - 激しい雷と雨で屋外は危険です";
 
         /// <summary>Time period descriptions.</summary>
         public const string TimeMorning = "午前中 - パークが開いたばかりで空いています";
@@ -338,6 +340,8 @@ namespace ThemeParkGame.AI
                 Core.Weather.Rainy => WeatherRainy,
                 Core.Weather.Snowy => WeatherSnowy,
                 Core.Weather.Hot => WeatherHot,
+                Core.Weather.Typhoon => WeatherTyphoon,
+                Core.Weather.Thunderstorm => WeatherThunderstorm,
                 _ => "不明な天気"
             };
         }

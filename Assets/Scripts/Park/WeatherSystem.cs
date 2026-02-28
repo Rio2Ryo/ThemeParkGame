@@ -178,6 +178,26 @@ namespace ThemeParkGame.Park
                 MaintenanceCostMultiplier = 1.5f,  // メンテナンスコスト増
                 ParkRatingBonus = 3f               // 雪景色ボーナス
             };
+
+            _weatherEffects[Weather.Typhoon] = new WeatherEffect
+            {
+                WeatherType = Weather.Typhoon,
+                VisitorCountMultiplier = 0.1f,     // 来場者90%減（ほぼ来場停止）
+                ThirstRateMultiplier = 0.2f,
+                HappinessModifierPerHour = -5.0f,  // 幸福度大幅低下
+                MaintenanceCostMultiplier = 2.5f,   // 維持費2.5倍
+                ParkRatingBonus = -10f              // 評価大幅ダウン
+            };
+
+            _weatherEffects[Weather.Thunderstorm] = new WeatherEffect
+            {
+                WeatherType = Weather.Thunderstorm,
+                VisitorCountMultiplier = 0.3f,     // 来場者70%減
+                ThirstRateMultiplier = 0.4f,
+                HappinessModifierPerHour = -3.0f,  // 幸福度低下
+                MaintenanceCostMultiplier = 2.0f,   // 維持費2倍
+                ParkRatingBonus = -5f               // 評価ダウン
+            };
         }
 
         /// <summary>
@@ -188,44 +208,52 @@ namespace ThemeParkGame.Park
         {
             _seasonalProbabilities.Clear();
 
-            // 春: 晴れ多め、たまに曇り・雨
+            // 春: 晴れ多め、たまに曇り・雨。台風稀、雷雨少し
             _seasonalProbabilities[Season.Spring] = new Dictionary<Weather, float>
             {
-                { Weather.Sunny, 0.45f },
-                { Weather.Cloudy, 0.25f },
-                { Weather.Rainy, 0.20f },
+                { Weather.Sunny, 0.40f },
+                { Weather.Cloudy, 0.23f },
+                { Weather.Rainy, 0.18f },
                 { Weather.Hot, 0.05f },
-                { Weather.Snowy, 0.05f }
+                { Weather.Snowy, 0.05f },
+                { Weather.Typhoon, 0.02f },
+                { Weather.Thunderstorm, 0.07f }
             };
 
-            // 夏: 晴れと猛暑が多い
+            // 夏: 晴れと猛暑が多い。台風・雷雨が発生しやすい
             _seasonalProbabilities[Season.Summer] = new Dictionary<Weather, float>
             {
-                { Weather.Sunny, 0.35f },
-                { Weather.Cloudy, 0.10f },
-                { Weather.Rainy, 0.15f },
+                { Weather.Sunny, 0.25f },
+                { Weather.Cloudy, 0.08f },
+                { Weather.Rainy, 0.12f },
                 { Weather.Hot, 0.40f },
-                { Weather.Snowy, 0.00f }
+                { Weather.Snowy, 0.00f },
+                { Weather.Typhoon, 0.05f },
+                { Weather.Thunderstorm, 0.10f }
             };
 
-            // 秋: 曇りと雨が増える
+            // 秋: 曇りと雨が増える。台風シーズン
             _seasonalProbabilities[Season.Autumn] = new Dictionary<Weather, float>
             {
-                { Weather.Sunny, 0.30f },
-                { Weather.Cloudy, 0.30f },
-                { Weather.Rainy, 0.30f },
+                { Weather.Sunny, 0.23f },
+                { Weather.Cloudy, 0.25f },
+                { Weather.Rainy, 0.25f },
                 { Weather.Hot, 0.05f },
-                { Weather.Snowy, 0.05f }
+                { Weather.Snowy, 0.02f },
+                { Weather.Typhoon, 0.10f },
+                { Weather.Thunderstorm, 0.10f }
             };
 
-            // 冬: 雪と曇りが多い
+            // 冬: 雪と曇りが多い。台風なし、雷雨稀
             _seasonalProbabilities[Season.Winter] = new Dictionary<Weather, float>
             {
                 { Weather.Sunny, 0.15f },
-                { Weather.Cloudy, 0.30f },
+                { Weather.Cloudy, 0.28f },
                 { Weather.Rainy, 0.15f },
                 { Weather.Hot, 0.00f },
-                { Weather.Snowy, 0.40f }
+                { Weather.Snowy, 0.40f },
+                { Weather.Typhoon, 0.00f },
+                { Weather.Thunderstorm, 0.02f }
             };
         }
 
@@ -479,6 +507,8 @@ namespace ThemeParkGame.Park
                 case Weather.Rainy: return "雨";
                 case Weather.Snowy: return "雪";
                 case Weather.Hot: return "猛暑";
+                case Weather.Typhoon: return "台風";
+                case Weather.Thunderstorm: return "雷雨";
                 default: return "不明";
             }
         }

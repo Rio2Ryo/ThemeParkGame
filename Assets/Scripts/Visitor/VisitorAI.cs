@@ -1842,10 +1842,18 @@ namespace ThemeParkGame.Visitor
 
         private void HandleWeatherChanged(Weather newWeather)
         {
-            // 雨天時の幸福度ペナルティ
-            if (newWeather == Weather.Rainy)
+            // 天候別の幸福度ペナルティ
+            switch (newWeather)
             {
-                parameters.ModifyHappiness(-5f);
+                case Weather.Rainy:
+                    parameters.ModifyHappiness(-5f);
+                    break;
+                case Weather.Typhoon:
+                    parameters.ModifyHappiness(-15f);
+                    break;
+                case Weather.Thunderstorm:
+                    parameters.ModifyHappiness(-10f);
+                    break;
             }
         }
 
@@ -1930,11 +1938,12 @@ namespace ThemeParkGame.Visitor
             return s_facilityTagMap.TryGetValue(type, out string tag) ? tag : null;
         }
 
-        /// <summary>悪天候かどうかを判定する（雨・雪）</summary>
+        /// <summary>悪天候かどうかを判定する（雨・雪・台風・雷雨）</summary>
         private bool IsWeatherBad()
         {
             Weather w = GetCurrentWeather();
-            return w == Weather.Rainy || w == Weather.Snowy;
+            return w == Weather.Rainy || w == Weather.Snowy
+                || w == Weather.Typhoon || w == Weather.Thunderstorm;
         }
 
         /// <summary>
