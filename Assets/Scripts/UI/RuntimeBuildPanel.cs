@@ -48,6 +48,8 @@ namespace ThemeParkGame.UI
         // ---- アイテムリスト ----
         private RectTransform _itemListContainer;
         private readonly List<GameObject> _itemCards = new List<GameObject>();
+        private readonly Dictionary<int, List<GameObject>> _categoryCardCache = new Dictionary<int, List<GameObject>>();
+        private bool _categoryCardCacheDirty = true;
 
         // ---- 詳細パネル ----
         private GameObject _detailPanel;
@@ -180,11 +182,18 @@ namespace ThemeParkGame.UI
             LoadBuildData();
             BuildUI();
             _panelRoot.SetActive(false);
+            GameEvents.OnResearchCompleted += OnResearchCompletedInvalidateCache;
         }
 
         private void OnDestroy()
         {
+            GameEvents.OnResearchCompleted -= OnResearchCompletedInvalidateCache;
             if (Instance == this) Instance = null;
+        }
+
+        private void OnResearchCompletedInvalidateCache(string researchId)
+        {
+            InvalidateCardCache();
         }
 
         private void Update()
@@ -633,34 +642,128 @@ namespace ThemeParkGame.UI
 
         private void PopulateItemList()
         {
-            // 既存カードをクリア
-            foreach (var card in _itemCards)
-                if (card != null) Destroy(card);
-            _itemCards.Clear();
+            int catIndex = _selectedCategoryIndex;
 
-            string targetType = _categoryTypes[_selectedCategoryIndex];
-
-            // アトラクションカテゴリは全サブカテゴリをまとめて表示
-            var filteredItems = new List<BuildableItem>();
-            foreach (var item in _allItems)
+            // キャッシュが汚れている場合は全カテゴリのキャッシュを破棄
+            if (_categoryCardCacheDirty)
             {
-                if (targetType == "Attraction" && item.Type == "Attraction")
-                    filteredItems.Add(item);
-                else if (item.Type == targetType)
-                    filteredItems.Add(item);
+                foreach (var kvp in _categoryCardCache)
+                    foreach (var card in kvp.Value)
+                        if (card != null) Destroy(card);
+                _categoryCardCache.Clear();
+                _itemCards.Clear();
+                _categoryCardCacheDirty = false;
             }
+
+            // 現在表示中のカードを非表示
+            foreach (var card in _itemCards)
+                if (card != null) card.SetActive(false);
 
             float currentMoney = GameManager.Instance?.EconomyManager?.CurrentBalance ?? 0f;
 
-            foreach (var item in filteredItems)
+            // キャッシュにあればそのまま表示、なければ生成してキャッシュ
+            if (_categoryCardCache.TryGetValue(catIndex, out var cachedCards))
             {
-                var card = CreateItemCard(item, currentMoney);
-                _itemCards.Add(card);
+                _itemCards.Clear();
+                _itemCards.AddRange(cachedCards);
+                foreach (var card in _itemCards)
+                {
+                    if (card == null) continue;
+                    card.SetActive(true);
+                    RefreshCardAppearance(card, currentMoney);
+                }
+            }
+            else
+            {
+                _itemCards.Clear();
+                string targetType = _categoryTypes[catIndex];
+
+                var filteredItems = new List<BuildableItem>();
+                foreach (var item in _allItems)
+                {
+                    if (targetType == "Attraction" && item.Type == "Attraction")
+                        filteredItems.Add(item);
+                    else if (item.Type == targetType)
+                        filteredItems.Add(item);
+                }
+
+                foreach (var item in filteredItems)
+                {
+                    var card = CreateItemCard(item, currentMoney);
+                    _itemCards.Add(card);
+                }
+
+                _categoryCardCache[catIndex] = new List<GameObject>(_itemCards);
             }
 
             // 所持金更新
             if (_headerMoneyText != null)
                 _headerMoneyText.text = $"所持金: ${currentMoney:N0}";
+        }
+
+        /// <summary>キャッシュ済みカードの外観（購入可否の色）を現在の所持金で更新する</summary>
+        private void RefreshCardAppearance(GameObject cardGo, float currentMoney)
+        {
+            var btn = cardGo.GetComponent<Button>();
+            if (btn == null) return;
+
+            // カード名からBuildableItemを逆引き（Card_{Id}形式）
+            string cardName = cardGo.name;
+            if (!cardName.StartsWith("Card_")) return;
+            string itemId = cardName.Substring(5);
+
+            BuildableItem item = null;
+            foreach (var it in _allItems)
+            {
+                if (it.Id == itemId) { item = it; break; }
+            }
+            if (item == null) return;
+
+            bool researched = IsResearchUnlocked(item.RequiredResearchId);
+            bool canAfford = currentMoney >= item.BuildCost;
+
+            // 背景色更新
+            var bgImg = cardGo.GetComponent<Image>();
+            if (bgImg != null)
+            {
+                bgImg.color = !researched ? new Color(0.12f, 0.12f, 0.15f, 0.6f)
+                             : canAfford ? BgLight
+                             : new Color(0.15f, 0.15f, 0.18f, 0.7f);
+            }
+
+            btn.interactable = researched;
+
+            // 名前テキスト色更新
+            var nameTextTr = cardGo.transform.Find("Name");
+            if (nameTextTr != null)
+            {
+                var nameText = nameTextTr.GetComponent<Text>();
+                if (nameText != null)
+                {
+                    nameText.text = researched ? item.NameJa : $"[要研究] {item.NameJa}";
+                    nameText.color = !researched ? new Color(0.45f, 0.45f, 0.5f)
+                                    : canAfford ? TextWhite : TextMuted;
+                }
+            }
+
+            // コストテキスト更新
+            var costTextTr = cardGo.transform.Find("Cost");
+            if (costTextTr != null)
+            {
+                var costText = costTextTr.GetComponent<Text>();
+                if (costText != null)
+                {
+                    costText.text = researched ? $"${item.BuildCost:N0}" : "未解放";
+                    costText.color = !researched ? new Color(0.6f, 0.4f, 0.4f)
+                                    : canAfford ? new Color(0.95f, 0.88f, 0.45f) : AccentRed;
+                }
+            }
+        }
+
+        /// <summary>研究完了時などにカードキャッシュを無効化する</summary>
+        public void InvalidateCardCache()
+        {
+            _categoryCardCacheDirty = true;
         }
 
         private bool IsResearchUnlocked(string requiredResearchId)

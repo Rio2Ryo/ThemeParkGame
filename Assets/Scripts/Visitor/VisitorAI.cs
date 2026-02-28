@@ -1907,20 +1907,27 @@ namespace ThemeParkGame.Visitor
             return Weather.Sunny;
         }
 
-        /// <summary>FacilityTypeに対応するタグ名を返す（仮実装用）</summary>
-        private string GetFacilityTag(FacilityType type)
+        /// <summary>FacilityType→タグ名の静的マッピング</summary>
+        private static readonly Dictionary<FacilityType, string> s_facilityTagMap = new Dictionary<FacilityType, string>
         {
-            switch (type)
-            {
-                case FacilityType.Attraction:   return "Attraction";
-                case FacilityType.FoodShop:     return "FoodShop";
-                case FacilityType.DrinkShop:    return "DrinkShop";
-                case FacilityType.SouvenirShop: return "SouvenirShop";
-                case FacilityType.Toilet:       return "Toilet";
-                case FacilityType.Bench:        return "Bench";
-                case FacilityType.InfoBoard:    return "InfoBoard";
-                default: return null;
-            }
+            { FacilityType.Attraction,   "Attraction" },
+            { FacilityType.FoodShop,     "FoodShop" },
+            { FacilityType.DrinkShop,    "DrinkShop" },
+            { FacilityType.SouvenirShop, "SouvenirShop" },
+            { FacilityType.Toilet,       "Toilet" },
+            { FacilityType.Bench,        "Bench" },
+            { FacilityType.TrashCan,     "TrashCan" },
+            { FacilityType.InfoBoard,    "InfoBoard" },
+            { FacilityType.Pathway,      "Pathway" },
+            { FacilityType.Decoration,   "Decoration" },
+            { FacilityType.StaffRoom,    "StaffRoom" },
+            { FacilityType.ResearchLab,  "ResearchLab" },
+        };
+
+        /// <summary>FacilityTypeに対応するタグ名を返す</summary>
+        private static string GetFacilityTag(FacilityType type)
+        {
+            return s_facilityTagMap.TryGetValue(type, out string tag) ? tag : null;
         }
 
         /// <summary>悪天候かどうかを判定する（雨・雪）</summary>

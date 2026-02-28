@@ -42,12 +42,21 @@ namespace ThemeParkGame.Core
         {
             get
             {
-                string id = PlayerPrefs.GetString(PREF_PLAYER_ID, "");
+                string id = WebGLStorageHelper.GetItem(PREF_PLAYER_ID);
                 if (string.IsNullOrEmpty(id))
                 {
-                    id = Guid.NewGuid().ToString("N").Substring(0, 16);
-                    PlayerPrefs.SetString(PREF_PLAYER_ID, id);
-                    PlayerPrefs.Save();
+                    // PlayerPrefsからの移行チェック
+                    id = PlayerPrefs.GetString(PREF_PLAYER_ID, "");
+                    if (!string.IsNullOrEmpty(id))
+                    {
+                        WebGLStorageHelper.SetItem(PREF_PLAYER_ID, id);
+                        PlayerPrefs.DeleteKey(PREF_PLAYER_ID);
+                    }
+                    else
+                    {
+                        id = Guid.NewGuid().ToString("N").Substring(0, 16);
+                        WebGLStorageHelper.SetItem(PREF_PLAYER_ID, id);
+                    }
                 }
                 return id;
             }
@@ -55,11 +64,28 @@ namespace ThemeParkGame.Core
 
         public string PlayerName
         {
-            get => PlayerPrefs.GetString(PREF_PLAYER_NAME, "Player");
+            get
+            {
+                string name = WebGLStorageHelper.GetItem(PREF_PLAYER_NAME);
+                if (string.IsNullOrEmpty(name))
+                {
+                    // PlayerPrefsからの移行チェック
+                    name = PlayerPrefs.GetString(PREF_PLAYER_NAME, "");
+                    if (!string.IsNullOrEmpty(name))
+                    {
+                        WebGLStorageHelper.SetItem(PREF_PLAYER_NAME, name);
+                        PlayerPrefs.DeleteKey(PREF_PLAYER_NAME);
+                    }
+                    else
+                    {
+                        name = "Player";
+                    }
+                }
+                return name;
+            }
             set
             {
-                PlayerPrefs.SetString(PREF_PLAYER_NAME, value);
-                PlayerPrefs.Save();
+                WebGLStorageHelper.SetItem(PREF_PLAYER_NAME, value);
             }
         }
 
