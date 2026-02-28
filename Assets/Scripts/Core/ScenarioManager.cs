@@ -12,7 +12,8 @@ namespace ThemeParkGame.Core
 {
     /// <summary>
     /// シナリオモードのランタイム進行を管理する。
-    /// 目標の進捗をリアルタイムで監視し、全目標達成でクリアを判定する。
+    /// イベント駆動でdirtyフラグを立て、InvokeRepeating（1秒間隔）で
+    /// バッチチェックすることで高頻度イベント時のパフォーマンスを確保する。
     /// </summary>
     public class ScenarioManager : MonoBehaviour
     {
@@ -33,6 +34,13 @@ namespace ThemeParkGame.Core
         // クリア済みシナリオの記録
         private static readonly HashSet<ScenarioCountry> _clearedScenarios = new HashSet<ScenarioCountry>();
 
+        // dirtyフラグ: イベントで立て、InvokeRepeatingでチェック
+        private bool _objectivesDirty;
+        private bool _timeLimitDirty;
+
+        /// <summary>目標チェック間隔（秒）</summary>
+        private const float CheckInterval = 1f;
+
         /// <summary>指定シナリオがクリア済みか</summary>
         public static bool IsCleared(ScenarioCountry country) => _clearedScenarios.Contains(country);
 
@@ -48,6 +56,7 @@ namespace ThemeParkGame.Core
 
         private void OnDestroy()
         {
+            CancelInvoke(nameof(PeriodicObjectiveCheck));
             UnsubscribeAll();
             if (Instance == this) Instance = null;
         }
@@ -70,16 +79,24 @@ namespace ThemeParkGame.Core
             }
 
             SubscribeEvents(scenario);
-            WebGLOptimizer.LogVerbose($"[ScenarioManager] Scenario started: {scenario.Country} ({scenario.Difficulty})");
+
+            // 1秒間隔の定期チェック開始
+            CancelInvoke(nameof(PeriodicObjectiveCheck));
+            InvokeRepeating(nameof(PeriodicObjectiveCheck), CheckInterval, CheckInterval);
+
+            WebGLOptimizer.LogVerbose($"[ScenarioManager] Scenario started: {scenario.Country} ({scenario.Difficulty}), check interval={CheckInterval}s");
         }
 
         /// <summary>シナリオを終了してサンドボックスに戻す</summary>
         public void EndScenario()
         {
+            CancelInvoke(nameof(PeriodicObjectiveCheck));
             UnsubscribeAll();
             ActiveScenario = null;
             IsScenarioCleared = false;
             IsScenarioFailed = false;
+            _objectivesDirty = false;
+            _timeLimitDirty = false;
         }
 
         // ================================================================
@@ -151,33 +168,47 @@ namespace ThemeParkGame.Core
         }
 
         // ================================================================
-        // イベントハンドラ
+        // イベントハンドラ（dirtyフラグを立てるだけ。実際のチェックは定期実行）
         // ================================================================
 
-        private void HandleConditionChanged()
+        private void MarkObjectivesDirty()
         {
-            if (ActiveScenario == null || IsScenarioCleared || IsScenarioFailed) return;
-            if (GameManager.Instance == null) return;
-            if (GameManager.Instance.CurrentState != GameState.Playing) return;
-            CheckObjectives();
+            _objectivesDirty = true;
         }
 
-        private void OnVisitorEntered(int _) => HandleConditionChanged();
-        private void OnRevenueOrExpenseChanged(float _) => HandleConditionChanged();
-        private void OnParkRatingChanged(float _, float __) => HandleConditionChanged();
-        private void OnAttractionBuilt(int _) => HandleConditionChanged();
-        private void OnVisitorHappinessChanged(int _, float __) => HandleConditionChanged();
-        private void OnGoldenTicketEarned(int _) => HandleConditionChanged();
-        private void OnCertificateAwarded(CertificateCategory _) => HandleConditionChanged();
-        private void OnThemeZoneUnlocked(ThemeZone _) => HandleConditionChanged();
+        private void OnVisitorEntered(int _) => MarkObjectivesDirty();
+        private void OnRevenueOrExpenseChanged(float _) => MarkObjectivesDirty();
+        private void OnParkRatingChanged(float _, float __) => MarkObjectivesDirty();
+        private void OnAttractionBuilt(int _) => MarkObjectivesDirty();
+        private void OnVisitorHappinessChanged(int _, float __) => MarkObjectivesDirty();
+        private void OnGoldenTicketEarned(int _) => MarkObjectivesDirty();
+        private void OnCertificateAwarded(CertificateCategory _) => MarkObjectivesDirty();
+        private void OnThemeZoneUnlocked(ThemeZone _) => MarkObjectivesDirty();
 
         private void OnYearPassed(int _)
         {
+            _objectivesDirty = true;
+            _timeLimitDirty = true;
+        }
+
+        /// <summary>InvokeRepeatingから1秒間隔で呼ばれる定期チェック</summary>
+        private void PeriodicObjectiveCheck()
+        {
             if (ActiveScenario == null || IsScenarioCleared || IsScenarioFailed) return;
             if (GameManager.Instance == null) return;
             if (GameManager.Instance.CurrentState != GameState.Playing) return;
-            CheckObjectives();
-            CheckTimeLimit();
+
+            if (_objectivesDirty)
+            {
+                _objectivesDirty = false;
+                CheckObjectives();
+            }
+
+            if (_timeLimitDirty)
+            {
+                _timeLimitDirty = false;
+                CheckTimeLimit();
+            }
         }
 
         // ================================================================
