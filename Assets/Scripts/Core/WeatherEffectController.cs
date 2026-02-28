@@ -33,6 +33,37 @@ namespace ThemeParkGame.Core
         private Image _overlayImage;
         private CanvasGroup _overlayCanvasGroup;
 
+        // ---- WebGLプラットフォーム判定 ----
+        private static readonly bool IsWebGL = Application.platform == RuntimePlatform.WebGLPlayer;
+
+        // ---- プラットフォーム別パーティクル上限 ----
+        // 雨
+        private static readonly int RainMaxParticles = IsWebGL ? 800 : 3000;
+        private static readonly float RainEmissionRate = IsWebGL ? 500f : 1500f;
+        // 雪
+        private static readonly int SnowMaxParticles = IsWebGL ? 500 : 2000;
+        private static readonly float SnowEmissionRate = IsWebGL ? 150f : 400f;
+        // 陽光ダスト
+        private static readonly int SunDustMaxParticles = IsWebGL ? 100 : 200;
+        private static readonly float SunDustEmissionRateNormal = IsWebGL ? 20f : 30f;
+        private static readonly float SunDustEmissionRateHot = IsWebGL ? 20f : 60f;
+
+        // ---- プラットフォーム別パーティクル形状スケール ----
+        private static readonly Vector3 RainSnowShapeScale = IsWebGL
+            ? new Vector3(40f, 0.1f, 40f)
+            : new Vector3(60f, 0.1f, 60f);
+        private static readonly Vector3 SunDustShapeScale = IsWebGL
+            ? new Vector3(25f, 6f, 25f)
+            : new Vector3(40f, 8f, 40f);
+
+        // ---- LOD（パーティクル品質段階） ----
+        private int _particleLOD = 0; // 0=High, 1=Medium, 2=Low
+        private float _fpsAccumulator;
+        private int _fpsFrameCount;
+        private float _fpsCheckInterval = 1f;
+        private float _fpsCheckTimer;
+        private float _lowFpsDuration; // 30fps以下が続いた秒数
+
         // ---- 現在の天候 ----
         private Weather _currentWeather = Weather.Sunny;
 
@@ -149,7 +180,7 @@ namespace ThemeParkGame.Core
 
             var ps = go.AddComponent<ParticleSystem>();
             var main = ps.main;
-            main.maxParticles = 3000;
+            main.maxParticles = RainMaxParticles;
             main.startLifetime = 1.2f;
             main.startSpeed = 25f;
             main.startSize = 0.08f;
@@ -160,11 +191,13 @@ namespace ThemeParkGame.Core
             main.playOnAwake = false;
 
             var emission = ps.emission;
-            emission.rateOverTime = 1500f;
+            emission.rateOverTime = RainEmissionRate;
 
             var shape = ps.shape;
             shape.shapeType = ParticleSystemShapeType.Box;
-            shape.scale = new Vector3(60f, 0.1f, 60f);
+            shape.scale = RainSnowShapeScale;
+
+            WebGLOptimizer.LogVerbose($"[WeatherEffect] Rain PS: maxParticles={RainMaxParticles}, emission={RainEmissionRate}, shape={RainSnowShapeScale}");
 
             // 描画設定
             var renderer = go.GetComponent<ParticleSystemRenderer>();
@@ -191,7 +224,7 @@ namespace ThemeParkGame.Core
 
             var ps = go.AddComponent<ParticleSystem>();
             var main = ps.main;
-            main.maxParticles = 2000;
+            main.maxParticles = SnowMaxParticles;
             main.startLifetime = 6f;
             main.startSpeed = 2f;
             main.startSize = new ParticleSystem.MinMaxCurve(0.15f, 0.35f);
@@ -205,11 +238,13 @@ namespace ThemeParkGame.Core
             main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
 
             var emission = ps.emission;
-            emission.rateOverTime = 400f;
+            emission.rateOverTime = SnowEmissionRate;
 
             var shape = ps.shape;
             shape.shapeType = ParticleSystemShapeType.Box;
-            shape.scale = new Vector3(60f, 0.1f, 60f);
+            shape.scale = RainSnowShapeScale;
+
+            WebGLOptimizer.LogVerbose($"[WeatherEffect] Snow PS: maxParticles={SnowMaxParticles}, emission={SnowEmissionRate}, shape={RainSnowShapeScale}");
 
             // 描画設定
             var renderer = go.GetComponent<ParticleSystemRenderer>();
@@ -249,7 +284,7 @@ namespace ThemeParkGame.Core
 
             var ps = go.AddComponent<ParticleSystem>();
             var main = ps.main;
-            main.maxParticles = 200;
+            main.maxParticles = SunDustMaxParticles;
             main.startLifetime = 8f;
             main.startSpeed = 0.3f;
             main.startSize = new ParticleSystem.MinMaxCurve(0.05f, 0.15f);
@@ -260,11 +295,13 @@ namespace ThemeParkGame.Core
             main.playOnAwake = false;
 
             var emission = ps.emission;
-            emission.rateOverTime = 30f;
+            emission.rateOverTime = SunDustEmissionRateNormal;
 
             var shape = ps.shape;
             shape.shapeType = ParticleSystemShapeType.Box;
-            shape.scale = new Vector3(40f, 8f, 40f);
+            shape.scale = SunDustShapeScale;
+
+            WebGLOptimizer.LogVerbose($"[WeatherEffect] SunDust PS: maxParticles={SunDustMaxParticles}, emission={SunDustEmissionRateNormal}, shape={SunDustShapeScale}");
 
             var renderer = go.GetComponent<ParticleSystemRenderer>();
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
@@ -427,11 +464,57 @@ namespace ThemeParkGame.Core
             if (GameManager.Instance == null) return;
             if (GameManager.Instance.CurrentState == GameState.MainMenu) return;
 
+            UpdateParticleLOD();
             FollowCamera();
 
             if (_isTransitioning)
             {
                 UpdateTransition();
+            }
+        }
+
+        /// <summary>FPSを監視しパーティクルLODを自動調整する</summary>
+        private void UpdateParticleLOD()
+        {
+            // FPS計測
+            _fpsAccumulator += Time.unscaledDeltaTime;
+            _fpsFrameCount++;
+            _fpsCheckTimer += Time.unscaledDeltaTime;
+
+            if (_fpsCheckTimer < _fpsCheckInterval) return;
+
+            float avgFps = _fpsFrameCount / _fpsAccumulator;
+            _fpsAccumulator = 0f;
+            _fpsFrameCount = 0;
+            _fpsCheckTimer = 0f;
+
+            // 30fps以下が続いた秒数を追跡
+            if (avgFps < 30f)
+            {
+                _lowFpsDuration += _fpsCheckInterval;
+            }
+            else
+            {
+                _lowFpsDuration = 0f;
+            }
+
+            // 3秒以上30fps以下が続いたらLODを下げる
+            if (_lowFpsDuration >= 3f && _particleLOD < 2)
+            {
+                _particleLOD++;
+                _lowFpsDuration = 0f;
+                WebGLOptimizer.LogVerbose($"[WeatherEffect] パーティクルLOD低下: LOD={_particleLOD} (avgFps={avgFps:F1})");
+            }
+        }
+
+        /// <summary>LODに応じたemissionRateスケールを返す（0=1.0, 1=0.5, 2=0.25）</summary>
+        private float GetLODScale()
+        {
+            switch (_particleLOD)
+            {
+                case 1: return 0.5f;
+                case 2: return 0.25f;
+                default: return 1f;
             }
         }
 
@@ -502,15 +585,17 @@ namespace ThemeParkGame.Core
         /// <summary>天候に応じてパーティクルシステムのON/OFFを制御する</summary>
         private void UpdateParticleSystems(float t)
         {
+            float lodScale = GetLODScale();
+
             // 雨
             if (_rainPS != null)
             {
                 if (_targetWeather == Weather.Rainy)
                 {
                     if (!_rainPS.isPlaying) _rainPS.Play();
-                    // 徐々にパーティクル量を増やす
+                    // 徐々にパーティクル量を増やす（LODスケール適用）
                     var emission = _rainPS.emission;
-                    emission.rateOverTime = Mathf.Lerp(0f, 1500f, t);
+                    emission.rateOverTime = Mathf.Lerp(0f, RainEmissionRate * lodScale, t);
                 }
                 else
                 {
@@ -531,7 +616,7 @@ namespace ThemeParkGame.Core
                 {
                     if (!_snowPS.isPlaying) _snowPS.Play();
                     var emission = _snowPS.emission;
-                    emission.rateOverTime = Mathf.Lerp(0f, 400f, t);
+                    emission.rateOverTime = Mathf.Lerp(0f, SnowEmissionRate * lodScale, t);
                 }
                 else
                 {
@@ -552,8 +637,10 @@ namespace ThemeParkGame.Core
                 {
                     if (!_sunDustPS.isPlaying) _sunDustPS.Play();
                     var emission = _sunDustPS.emission;
-                    float targetRate = _targetWeather == Weather.Hot ? 60f : 30f;
-                    emission.rateOverTime = Mathf.Lerp(0f, targetRate, t);
+                    float targetRate = _targetWeather == Weather.Hot
+                        ? SunDustEmissionRateHot
+                        : SunDustEmissionRateNormal;
+                    emission.rateOverTime = Mathf.Lerp(0f, targetRate * lodScale, t);
                 }
                 else
                 {

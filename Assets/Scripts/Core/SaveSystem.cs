@@ -1,6 +1,7 @@
 // ============================================================
 // ThemeParkGame - SaveSystem
-// セーブ/ロードシステム（JSON形式でPlayerPrefsに保存）
+// セーブ/ロードシステム（JSON形式でIndexedDB+localStorageに保存）
+// WebGL環境ではIndexedDBを使用し、非WebGLではPlayerPrefsにフォールバック
 // ============================================================
 
 using System;
@@ -19,7 +20,7 @@ namespace ThemeParkGame.Core
     [Serializable]
     public class SaveData
     {
-        public string SaveVersion = "3.0";
+        public string SaveVersion = "4.0";
         public string SaveDate;
 
         // ゲーム時間
@@ -184,7 +185,8 @@ namespace ThemeParkGame.Core
 
     /// <summary>
     /// セーブ/ロードを管理するシステム。
-    /// PlayerPrefsを使用してJSONシリアライズされたデータを保存する。
+    /// WebGLStorageHelper経由でJSONシリアライズされたデータを保存する。
+    /// WebGL環境ではIndexedDB+localStorage、非WebGLではPlayerPrefsを使用。
     /// 最大3つのセーブスロットをサポート。
     /// </summary>
     public class SaveSystem : MonoBehaviour
@@ -198,7 +200,7 @@ namespace ThemeParkGame.Core
         public static bool HasSaveData(int slot)
         {
             if (slot < 0 || slot >= MAX_SAVE_SLOTS) return false;
-            return PlayerPrefs.HasKey(SAVE_KEY_PREFIX + slot);
+            return WebGLStorageHelper.HasKey(SAVE_KEY_PREFIX + slot);
         }
 
         /// <summary>いずれかのスロットにセーブが存在するか</summary>
@@ -234,8 +236,7 @@ namespace ThemeParkGame.Core
             {
                 SaveData data = CollectSaveData();
                 string json = JsonUtility.ToJson(data, true);
-                PlayerPrefs.SetString(SAVE_KEY_PREFIX + slot, json);
-                PlayerPrefs.Save();
+                WebGLStorageHelper.SetItem(SAVE_KEY_PREFIX + slot, json);
 
                 GameEvents.FireGameSaved();
                 WebGLOptimizer.LogVerbose($"[SaveSystem] Saved to slot {slot} ({json.Length} bytes)");
@@ -263,7 +264,7 @@ namespace ThemeParkGame.Core
 
             try
             {
-                string json = PlayerPrefs.GetString(SAVE_KEY_PREFIX + slot);
+                string json = WebGLStorageHelper.GetItem(SAVE_KEY_PREFIX + slot);
                 SaveData data = JsonUtility.FromJson<SaveData>(json);
                 data = MigrateSaveData(data);
 
@@ -291,8 +292,7 @@ namespace ThemeParkGame.Core
         public static void DeleteSave(int slot)
         {
             if (slot < 0 || slot >= MAX_SAVE_SLOTS) return;
-            PlayerPrefs.DeleteKey(SAVE_KEY_PREFIX + slot);
-            PlayerPrefs.Save();
+            WebGLStorageHelper.DeleteItem(SAVE_KEY_PREFIX + slot);
             WebGLOptimizer.LogVerbose($"[SaveSystem] Deleted slot {slot}");
         }
 
@@ -303,7 +303,7 @@ namespace ThemeParkGame.Core
 
             try
             {
-                string json = PlayerPrefs.GetString(SAVE_KEY_PREFIX + slot);
+                string json = WebGLStorageHelper.GetItem(SAVE_KEY_PREFIX + slot);
                 return JsonUtility.FromJson<SaveData>(json);
             }
             catch
@@ -812,7 +812,7 @@ namespace ThemeParkGame.Core
         // セーブデータマイグレーション
         // ================================================================
 
-        private static readonly string CURRENT_SAVE_VERSION = "3.0";
+        private static readonly string CURRENT_SAVE_VERSION = "4.0";
 
         /// <summary>古いバージョンのセーブデータを現在のバージョンに変換する</summary>
         private static SaveData MigrateSaveData(SaveData data)
@@ -826,11 +826,74 @@ namespace ThemeParkGame.Core
             {
                 // 新規フィールドはJsonUtilityによりデフォルト値(0/false/null)で初期化済み
                 // 追加のマイグレーションロジックが必要な場合はここに記述
-                WebGLOptimizer.LogVerbose($"[SaveSystem] セーブデータを v{version} → v{CURRENT_SAVE_VERSION} にマイグレーション");
+                WebGLOptimizer.LogVerbose($"[SaveSystem] セーブデータを v{version} → v3.0 にマイグレーション");
+                version = "3.0";
+            }
+
+            // v3.0 → v4.0: ストレージをPlayerPrefsからIndexedDB+localStorageに移行
+            if (string.Compare(version, "4.0") < 0)
+            {
+                // データ形式自体は変更なし（JSON構造は同一）
+                // ストレージバックエンドの切り替えのみ
+                // InitializeMigration() で旧PlayerPrefsデータの自動移行を処理済み
+                WebGLOptimizer.LogVerbose($"[SaveSystem] セーブデータを v{version} → v{CURRENT_SAVE_VERSION} にマイグレーション（ストレージ移行）");
             }
 
             data.SaveVersion = CURRENT_SAVE_VERSION;
             return data;
+        }
+
+        /// <summary>
+        /// ストレージ移行の初期化。旧PlayerPrefsに残存するセーブデータを検出し、
+        /// WebGLStorageHelper（IndexedDB+localStorage）に自動移行する。
+        /// ゲーム起動時に一度だけ呼び出す。
+        /// </summary>
+        public static void InitializeMigration()
+        {
+            bool migrated = false;
+
+            // 各セーブスロットの旧データを移行
+            for (int i = 0; i < MAX_SAVE_SLOTS; i++)
+            {
+                string key = SAVE_KEY_PREFIX + i;
+                // PlayerPrefsに直接残っているデータを確認（WebGLStorageHelper経由ではなく直接）
+                if (PlayerPrefs.HasKey(key))
+                {
+                    string json = PlayerPrefs.GetString(key);
+                    if (!string.IsNullOrEmpty(json))
+                    {
+                        // 新ストレージに書き込み
+                        WebGLStorageHelper.SetItem(key, json);
+                        // 旧PlayerPrefsから削除
+                        PlayerPrefs.DeleteKey(key);
+                        migrated = true;
+                        WebGLOptimizer.LogVerbose($"[SaveSystem] スロット {i} のデータをPlayerPrefsから新ストレージに移行");
+                    }
+                }
+            }
+
+            // オートセーブの旧データも移行
+            if (PlayerPrefs.HasKey(AUTOSAVE_KEY))
+            {
+                string json = PlayerPrefs.GetString(AUTOSAVE_KEY);
+                if (!string.IsNullOrEmpty(json))
+                {
+                    WebGLStorageHelper.SetItem(AUTOSAVE_KEY, json);
+                    PlayerPrefs.DeleteKey(AUTOSAVE_KEY);
+                    migrated = true;
+                    WebGLOptimizer.LogVerbose("[SaveSystem] オートセーブデータをPlayerPrefsから新ストレージに移行");
+                }
+            }
+
+            if (migrated)
+            {
+                PlayerPrefs.Save();
+                WebGLOptimizer.LogVerbose("[SaveSystem] PlayerPrefsからのデータ移行完了");
+            }
+            else
+            {
+                WebGLOptimizer.LogVerbose("[SaveSystem] 移行対象のPlayerPrefsデータなし");
+            }
         }
 
         /// <summary>セーブデータのバリデーション。破損データを検出する。</summary>
@@ -881,8 +944,7 @@ namespace ThemeParkGame.Core
             {
                 SaveData data = CollectSaveData();
                 string json = JsonUtility.ToJson(data);
-                PlayerPrefs.SetString(AUTOSAVE_KEY, json);
-                PlayerPrefs.Save();
+                WebGLStorageHelper.SetItem(AUTOSAVE_KEY, json);
 
                 // 通知表示
                 if (NotificationSystem.Instance != null)
@@ -899,7 +961,7 @@ namespace ThemeParkGame.Core
         /// <summary>オートセーブデータが存在するか</summary>
         public static bool HasAutoSave()
         {
-            return PlayerPrefs.HasKey(AUTOSAVE_KEY);
+            return WebGLStorageHelper.HasKey(AUTOSAVE_KEY);
         }
 
         /// <summary>オートセーブデータの概要を取得する</summary>
@@ -909,7 +971,7 @@ namespace ThemeParkGame.Core
 
             try
             {
-                string json = PlayerPrefs.GetString(AUTOSAVE_KEY);
+                string json = WebGLStorageHelper.GetItem(AUTOSAVE_KEY);
                 var info = JsonUtility.FromJson<SaveData>(json);
                 return $"[AUTO] Y{info.CurrentYear} M{info.CurrentMonth} D{info.CurrentDay}  " +
                        $"${info.CurrentBalance:N0}  {info.SaveDate}";
@@ -924,7 +986,7 @@ namespace ThemeParkGame.Core
 
             try
             {
-                string json = PlayerPrefs.GetString(AUTOSAVE_KEY);
+                string json = WebGLStorageHelper.GetItem(AUTOSAVE_KEY);
                 SaveData data = JsonUtility.FromJson<SaveData>(json);
                 data = MigrateSaveData(data);
 
@@ -945,5 +1007,211 @@ namespace ThemeParkGame.Core
                 return false;
             }
         }
+    }
+
+    /// <summary>
+    /// WebGL環境向けストレージヘルパー。
+    /// WebGLではIndexedDB（localStorageフォールバック付き）を使用し、
+    /// 非WebGL環境ではPlayerPrefsにフォールバックする。
+    /// Application.ExternalEvalでJavaScript実行するため.jslibファイル不要。
+    /// </summary>
+    internal static class WebGLStorageHelper
+    {
+        private static bool IsWebGL => Application.platform == RuntimePlatform.WebGLPlayer;
+
+        // JS↔C#同期ブリッジ用の一時キー（localStorageを経由してExternalEvalの結果をC#に返す）
+        private const string BRIDGE_KEY = "_tpg_bridge_tmp";
+
+        // IndexedDB初期化用JavaScriptコード
+        // localStorageをsync wrapperとして使用し、バックグラウンドでIndexedDBに永続化する
+        private static bool _initialized;
+
+        /// <summary>
+        /// WebGL環境でのストレージを初期化する。
+        /// localStorageを即時アクセス用に、IndexedDBをバックアップ永続化用に使用する。
+        /// </summary>
+        private static void EnsureInitialized()
+        {
+            if (!IsWebGL || _initialized) return;
+            _initialized = true;
+
+            // IndexedDB初期化とlocalStorageとの同期ブリッジを構築
+            string initScript = @"
+                if (!window._tpgStorage) {
+                    window._tpgStorage = {
+                        dbName: 'ThemeParkGameDB',
+                        storeName: 'savedata',
+                        db: null,
+                        init: function() {
+                            var request = indexedDB.open(this.dbName, 1);
+                            var self = this;
+                            request.onupgradeneeded = function(e) {
+                                var db = e.target.result;
+                                if (!db.objectStoreNames.contains(self.storeName)) {
+                                    db.createObjectStore(self.storeName);
+                                }
+                            };
+                            request.onsuccess = function(e) {
+                                self.db = e.target.result;
+                                self.syncFromIDB();
+                            };
+                            request.onerror = function(e) {
+                                console.warn('[TPG Storage] IndexedDB init failed, using localStorage only');
+                            };
+                        },
+                        setItem: function(key, value) {
+                            try { localStorage.setItem(key, value); } catch(e) {
+                                console.warn('[TPG Storage] localStorage setItem failed: ' + e);
+                            }
+                            this.writeToIDB(key, value);
+                        },
+                        getItem: function(key) {
+                            try { return localStorage.getItem(key) || ''; } catch(e) {
+                                console.warn('[TPG Storage] localStorage getItem failed: ' + e);
+                                return '';
+                            }
+                        },
+                        deleteItem: function(key) {
+                            try { localStorage.removeItem(key); } catch(e) {}
+                            this.deleteFromIDB(key);
+                        },
+                        hasKey: function(key) {
+                            try { return localStorage.getItem(key) !== null; } catch(e) { return false; }
+                        },
+                        writeToIDB: function(key, value) {
+                            if (!this.db) return;
+                            try {
+                                var tx = this.db.transaction(this.storeName, 'readwrite');
+                                tx.objectStore(this.storeName).put(value, key);
+                            } catch(e) {
+                                console.warn('[TPG Storage] IDB write failed: ' + e);
+                            }
+                        },
+                        deleteFromIDB: function(key) {
+                            if (!this.db) return;
+                            try {
+                                var tx = this.db.transaction(this.storeName, 'readwrite');
+                                tx.objectStore(this.storeName).delete(key);
+                            } catch(e) {}
+                        },
+                        syncFromIDB: function() {
+                            if (!this.db) return;
+                            try {
+                                var tx = this.db.transaction(this.storeName, 'readonly');
+                                var store = tx.objectStore(this.storeName);
+                                var request = store.openCursor();
+                                request.onsuccess = function(e) {
+                                    var cursor = e.target.result;
+                                    if (cursor) {
+                                        try {
+                                            if (localStorage.getItem(cursor.key) === null) {
+                                                localStorage.setItem(cursor.key, cursor.value);
+                                            }
+                                        } catch(ex) {}
+                                        cursor.continue();
+                                    }
+                                };
+                            } catch(e) {
+                                console.warn('[TPG Storage] IDB sync failed: ' + e);
+                            }
+                        }
+                    };
+                    window._tpgStorage.init();
+                }
+            ";
+            Application.ExternalEval(initScript);
+            WebGLOptimizer.LogVerbose("[WebGLStorageHelper] IndexedDB ストレージ初期化完了");
+        }
+
+        /// <summary>キーに対して値を保存する</summary>
+        public static void SetItem(string key, string value)
+        {
+            if (IsWebGL)
+            {
+                EnsureInitialized();
+                // JavaScriptの文字列エスケープ（シングルクォート、バックスラッシュ、改行）
+                string escapedKey = EscapeForJS(key);
+                string escapedValue = EscapeForJS(value);
+                Application.ExternalEval($"window._tpgStorage.setItem('{escapedKey}', '{escapedValue}');");
+                WebGLOptimizer.LogVerbose($"[WebGLStorageHelper] SetItem: {key} ({value.Length} bytes)");
+            }
+            else
+            {
+                PlayerPrefs.SetString(key, value);
+                PlayerPrefs.Save();
+            }
+        }
+
+        /// <summary>キーに対応する値を取得する。存在しない場合は空文字を返す</summary>
+        public static string GetItem(string key)
+        {
+            if (IsWebGL)
+            {
+                EnsureInitialized();
+                string escapedKey = EscapeForJS(key);
+                // ExternalEvalは戻り値を返せないため、localStorageブリッジキー経由で同期取得する
+                // Unity WebGLのPlayerPrefsはlocalStorageを内部使用するため同期読み取りが可能
+                Application.ExternalEval(
+                    $"try {{ localStorage.setItem('{BRIDGE_KEY}', window._tpgStorage.getItem('{escapedKey}')); }} catch(e) {{}}");
+                string result = PlayerPrefs.GetString(BRIDGE_KEY, "");
+                Application.ExternalEval(
+                    $"try {{ localStorage.removeItem('{BRIDGE_KEY}'); }} catch(e) {{}}");
+                WebGLOptimizer.LogVerbose($"[WebGLStorageHelper] GetItem: {key} ({result.Length} bytes)");
+                return result;
+            }
+            else
+            {
+                return PlayerPrefs.GetString(key, "");
+            }
+        }
+
+        /// <summary>キーに対応するデータを削除する</summary>
+        public static void DeleteItem(string key)
+        {
+            if (IsWebGL)
+            {
+                EnsureInitialized();
+                string escapedKey = EscapeForJS(key);
+                Application.ExternalEval($"window._tpgStorage.deleteItem('{escapedKey}');");
+                WebGLOptimizer.LogVerbose($"[WebGLStorageHelper] DeleteItem: {key}");
+            }
+            else
+            {
+                PlayerPrefs.DeleteKey(key);
+                PlayerPrefs.Save();
+            }
+        }
+
+        /// <summary>キーが存在するかチェックする</summary>
+        public static bool HasKey(string key)
+        {
+            if (IsWebGL)
+            {
+                EnsureInitialized();
+                string escapedKey = EscapeForJS(key);
+                // ブリッジキー経由でbool結果を同期取得
+                Application.ExternalEval(
+                    $"try {{ localStorage.setItem('{BRIDGE_KEY}', window._tpgStorage.hasKey('{escapedKey}') ? '1' : '0'); }} catch(e) {{}}");
+                string result = PlayerPrefs.GetString(BRIDGE_KEY, "0");
+                Application.ExternalEval(
+                    $"try {{ localStorage.removeItem('{BRIDGE_KEY}'); }} catch(e) {{}}");
+                return result == "1";
+            }
+            else
+            {
+                return PlayerPrefs.HasKey(key);
+            }
+        }
+
+        /// <summary>JavaScript文字列リテラル用のエスケープ処理</summary>
+        private static string EscapeForJS(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            return s.Replace("\\", "\\\\")
+                    .Replace("'", "\\'")
+                    .Replace("\n", "\\n")
+                    .Replace("\r", "\\r");
+        }
+
     }
 }
