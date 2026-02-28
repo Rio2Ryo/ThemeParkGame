@@ -6,7 +6,7 @@
 
 # Part A: 次期開発 機能提案一覧
 
-## 現状のシステム概要（105スクリプト / 10シナリオ / 5ゾーン）
+## 現状のシステム概要（105スクリプト / 10シナリオ / 5ゾーン / 6カテゴリ+21アトラクション）
 
 **既存コアシステム**: GameManager, TimeManager, EconomyManager, ParkManager, WeatherSystem, SaveSystem, ScenarioManager
 **来場者**: VisitorAI(欲求駆動FSM), VisitorParameters, VIPVisitorSystem, Hooligan/HooliganManager, EmotionBubble
@@ -42,6 +42,12 @@
 **概要**: GForceカテゴリのアトラクションについて、コースのレイアウト（上昇・降下・ループ・旋回）をプレイヤーがノードベースで設計可能に。設計に応じて興奮度・嘔吐率・安全性が動的に算出。テスト走行プレビュー付き。
 **理由**: テーマパーク経営シミュの花形機能。現在は定型アトラクションの配置のみで、プレイヤーの創造性を活かす場がない。RollerCoaster Tycoonシリーズの最大の魅力がこの機能。
 **影響範囲**: 新規 CoasterDesigner.cs, CoasterTrack.cs, CoasterPhysics.cs / AttractionDatabase拡張 / RuntimeBuildPanel / ProceduralMeshGenerator連携
+**工数目安**: 特大
+
+### H5. リアルタイム対戦モード（パーク経営バトル）
+**概要**: CoopManager基盤を拡張し、2人のプレイヤーが同一マップ内で隣接するパークをそれぞれ経営して競い合う対戦モード。共通の来場者プール（同じ客を取り合う）、相手パークの価格・評判が自パークに影響、期間終了時の総合スコアで勝敗決定。妨害アクション（広告攻勢で相手の客を奪う、スタッフ引き抜き）あり。
+**理由**: CoopManagerにポーリングベースの同期・ルーム管理・アクション送信の基盤がすべて揃っているが、協力モードのみで対戦がない。RivalParkSystemのAI対戦を「対人」に昇格させるだけでゲームの寿命が飛躍的に延びる。LeaderboardManagerとの連動でランキング戦も可能。WebGL環境でもポーリング同期で実現可能。
+**影響範囲**: CoopManager拡張(対戦ルーム・勝敗判定) / RivalParkSystem(人間プレイヤー対応) / VisitorManager(共有来場者プール) / LeaderboardManager(対戦ランキング) / 新規 PvPMatchSystem.cs / RuntimeHUD(対戦スコアボード)
 **工数目安**: 特大
 
 ---
@@ -84,6 +90,18 @@
 **影響範囲**: RivalParkSystem拡張 / StaffMember(スパイ任務) / EconomyManager / ParkEventSystem(共同イベント)
 **工数目安**: 中
 
+### M7. AI来場者パーソナリティ深化＆インフルエンサーシステム
+**概要**: 現在のPersonalityTraits（外向性/冒険心/忍耐力/倹約度/好奇心の5軸）をVisitorAIの行動判断により深く反映させる。さらに新VisitorType「Influencer」を追加し、園内のSNS映えスポットやアトラクション体験をリアルタイムにSNS投稿。投稿がバズると来場者スポーン率にブースト。逆に悪体験投稿は炎上リスク。倹約度の高い来場者は安い代替を探し回る、冒険心の低い来場者はホラーハウスを絶対避けるなど、性格が行動ツリーに直結する。
+**理由**: PersonalityTraitsは5軸が定義済みだが、VisitorAIのDecideNextAction()での実利用がごくわずか（アトラクション好みのみ）。LLM会話用のDescribe()は充実しているが、ゲームプレイ上の行動に反映されていないのが惜しい。インフルエンサーはWordOfMouthSystem/SNSReputationSystemとの自然な接続点になり、「SNS戦略」という新しい経営軸を生む。
+**影響範囲**: VisitorType追加(Influencer) / VisitorProfile拡張 / VisitorAI(DecideNextAction全面見直し) / SNSReputationSystem(インフルエンサー投稿) / WordOfMouthSystem / PricingSystem(倹約度連動)
+**工数目安**: 中〜大
+
+### M8. インタラクティブアトラクション種別（参加型ライド）
+**概要**: 新AttractionCategory「Interactive」を追加。シューティングライド（ライド中にターゲットを撃ちスコア取得）、脱出ゲーム型（制限時間内に謎解き）、ARトレジャーハント（パーク内を歩き回り宝探し）など、来場者の行動がスコア・報酬に影響するアトラクション群。来場者の好奇心(Curiosity)・冒険心(Adventurousness)特性と連動し、高スコアで幸福度ボーナス。SNSでスコア自慢→バイラル効果。
+**理由**: 現在の6カテゴリ（GForce/VerticalRotation/HorizontalRotation/Observation/Show/Ride）はすべて「乗るだけ」の受動型で、来場者が能動的に参加する要素がゼロ。現代のテーマパークでは体験型アトラクションが主流（USJのハリポッター、TDRのバズ・ライトイヤー等）。DynamicQuestSystemのクエスト生成基盤を活用すれば、ARトレジャーハントの実装コストを抑えられる。
+**影響範囲**: AttractionCategory追加(Interactive) / AttractionDatabase(3-4種追加) / attractions.json / Attraction.cs(スコアシステム) / VisitorAI(参加行動) / DynamicQuestSystem連携(トレジャーハント) / SNSReputationSystem(スコアシェア)
+**工数目安**: 大
+
 ---
 
 ## LOW優先度（ポリッシュ・没入感向上）
@@ -124,18 +142,30 @@
 **影響範囲**: AccessibilitySystem拡張 / WeatherEffectController(フラッシュ抑制) / FontManager / RuntimeHUD
 **工数目安**: 小
 
+### L7. モバイルUI最適化＆レスポンシブレイアウト
+**概要**: InputManagerにタッチ操作基盤があるが、RuntimeHUD(1920x1080基準)のUIレイアウトをモバイル画面に最適化。ボタンサイズ拡大、パネル折りたたみ、ジェスチャー操作（ピンチズーム強化・スワイプメニュー）、縦画面モード対応。CanvasScalerのmatchWidthOrHeightを画面比率で動的切替。
+**理由**: WebGL対応でブラウザプレイ可能だが、スマホブラウザでのUIが実質使い物にならない。InputManagerのHandleTouchInput()/HandleSingleTouch()は実装済みで、UIレイアウト調整が主な作業。CanvasScalerの基盤もある。モバイルユーザー獲得はDAU増加に直結。
+**影響範囲**: RuntimeHUD全partial(レスポンシブ化) / InputManager(ジェスチャー拡張) / CanvasScaler設定 / RuntimeBuildPanel(タッチ最適化) / RuntimeStaffPanel
+**工数目安**: 中
+
 ---
 
-## 推奨実装ロードマップ
+## 推奨実装ロードマップ（改訂版）
 
 | フェーズ | 内容 | 工期目安 |
 |---|---|---|
-| Phase 1 | L3(実績拡充) + L6(アクセシビリティ) + L1(ゾーンBGM) | 小 |
+| Phase 1 | L3(実績拡充) + L6(アクセシビリティ) + L1(ゾーンBGM) + L7(モバイルUI) | 小〜中 |
 | Phase 2 | M3(ファストパス) + M4(シフト管理) + L4(チュートリアル拡張) | 中 |
 | Phase 3 | H1(ナイトパレード) + M2(デコレーション) + L2(フォトスポット) | 中〜大 |
-| Phase 4 | H2(スタッフ育成) + M1(グループ行動) + M5(レビュー詳細化) | 大 |
-| Phase 5 | H3(災害イベント) + M6(ライバル強化) + L5(Co-op) | 大 |
-| Phase 6 | H4(コースター設計) | 特大（独立開発） |
+| Phase 4 | H2(スタッフ育成) + M7(AIパーソナリティ＆インフルエンサー) + M5(レビュー) | 大 |
+| Phase 5 | H3(災害イベント) + M8(インタラクティブアトラクション) + M1(グループ行動) | 大 |
+| Phase 6 | M6(ライバル強化) + L5(Co-op) + H5(対戦モード) | 大（マルチ統合） |
+| Phase 7 | H4(コースター設計) | 特大（独立開発） |
+
+### 提案サマリー（全20件）
+- **HIGH**: 5件（H1〜H5）— パレード / スタッフ育成 / 災害 / コースター設計 / 対戦モード
+- **MEDIUM**: 8件（M1〜M8）— グループ行動 / デコ / チケット / シフト / レビュー / ライバル / AIパーソナリティ / 参加型アトラクション
+- **LOW**: 7件（L1〜L7）— BGM / フォトスポット / 実績 / チュートリアル / Co-op / アクセシビリティ / モバイルUI
 
 ---
 
