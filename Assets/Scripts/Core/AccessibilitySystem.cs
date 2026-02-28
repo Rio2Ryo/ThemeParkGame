@@ -43,6 +43,10 @@ namespace ThemeParkGame.Core
         /// <summary>Text instance ID → 変更前のテキスト色</summary>
         private readonly Dictionary<int, Color> _originalTextColors = new Dictionary<int, Color>();
 
+        // フォントスケール復元用: 変更前のサイズを保存
+        /// <summary>Text instance ID → 変更前のフォントサイズ</summary>
+        private readonly Dictionary<int, int> _originalFontSizes = new Dictionary<int, int>();
+
         // UI
         private GameObject _settingsPanel;
         private Text _contrastLabel;
@@ -256,10 +260,22 @@ namespace ThemeParkGame.Core
             var texts = FindObjectsOfType<Text>();
             foreach (var t in texts)
             {
-                // パネルタイトルなど大きいフォント以外をスケール
-                if (t.fontSize <= 16)
+                int id = t.GetInstanceID();
+
+                // 元のサイズを保存（初回のみ）
+                if (!_originalFontSizes.ContainsKey(id))
                 {
-                    t.fontSize = Mathf.RoundToInt(t.fontSize * (_largeFontEnabled ? 1.3f : 1f / 1.3f));
+                    _originalFontSizes[id] = t.fontSize;
+                }
+
+                int originalSize = _originalFontSizes[id];
+
+                // パネルタイトルなど大きいフォント以外をスケール
+                if (originalSize <= 16)
+                {
+                    t.fontSize = _largeFontEnabled
+                        ? Mathf.RoundToInt(originalSize * 1.3f)
+                        : originalSize;
                 }
             }
             WebGLOptimizer.LogVerbose($"[Accessibility] フォントスケール: {_fontScale:F1}x");

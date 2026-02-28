@@ -30,10 +30,6 @@ namespace ThemeParkGame.Core
         /// <summary>シナリオ失敗か（制限時間切れ）</summary>
         public bool IsScenarioFailed { get; private set; }
 
-        // 目標チェック間隔
-        private float _checkTimer;
-        private const float CheckInterval = 2f;
-
         // クリア済みシナリオの記録
         private static readonly HashSet<ScenarioCountry> _clearedScenarios = new HashSet<ScenarioCountry>();
 
@@ -52,16 +48,19 @@ namespace ThemeParkGame.Core
 
         private void OnDestroy()
         {
+            UnsubscribeAll();
             if (Instance == this) Instance = null;
         }
 
         /// <summary>シナリオを開始する</summary>
         public void StartScenario(ScenarioData scenario)
         {
+            // 重複 Subscribe 防止
+            UnsubscribeAll();
+
             ActiveScenario = scenario;
             IsScenarioCleared = false;
             IsScenarioFailed = false;
-            _checkTimer = CheckInterval;
 
             // 全目標をリセット
             if (scenario.Objectives != null)
@@ -70,27 +69,113 @@ namespace ThemeParkGame.Core
                     obj.IsCompleted = false;
             }
 
+            SubscribeEvents(scenario);
             WebGLOptimizer.LogVerbose($"[ScenarioManager] Scenario started: {scenario.Country} ({scenario.Difficulty})");
         }
 
         /// <summary>シナリオを終了してサンドボックスに戻す</summary>
         public void EndScenario()
         {
+            UnsubscribeAll();
             ActiveScenario = null;
             IsScenarioCleared = false;
             IsScenarioFailed = false;
         }
 
-        private void Update()
+        // ================================================================
+        // イベント Subscribe/Unsubscribe
+        // ================================================================
+
+        private void SubscribeEvents(ScenarioData scenario)
+        {
+            if (scenario.Objectives == null) return;
+
+            var subscribedTypes = new HashSet<ObjectiveType>();
+            foreach (var obj in scenario.Objectives)
+            {
+                if (subscribedTypes.Contains(obj.Type)) continue;
+                subscribedTypes.Add(obj.Type);
+
+                switch (obj.Type)
+                {
+                    case ObjectiveType.VisitorTarget:
+                        GameEvents.OnVisitorEnterPark += OnVisitorEntered;
+                        break;
+                    case ObjectiveType.MonthlyProfitTarget:
+                        GameEvents.OnRevenueEarned += OnRevenueOrExpenseChanged;
+                        GameEvents.OnExpensePaid += OnRevenueOrExpenseChanged;
+                        break;
+                    case ObjectiveType.ParkRatingTarget:
+                        GameEvents.OnParkRatingChanged += OnParkRatingChanged;
+                        break;
+                    case ObjectiveType.AttractionCountTarget:
+                        GameEvents.OnAttractionBuilt += OnAttractionBuilt;
+                        break;
+                    case ObjectiveType.TotalRevenueTarget:
+                        GameEvents.OnRevenueEarned += OnRevenueOrExpenseChanged;
+                        break;
+                    case ObjectiveType.HappinessTarget:
+                        GameEvents.OnVisitorHappinessChanged += OnVisitorHappinessChanged;
+                        break;
+                    case ObjectiveType.GoldenTicketTarget:
+                        GameEvents.OnGoldenTicketEarned += OnGoldenTicketEarned;
+                        break;
+                    case ObjectiveType.ObtainCertificate:
+                        GameEvents.OnCertificateAwarded += OnCertificateAwarded;
+                        break;
+                    case ObjectiveType.UnlockZone:
+                        GameEvents.OnThemeZoneUnlocked += OnThemeZoneUnlocked;
+                        break;
+                }
+            }
+
+            // 時間制限がある場合のみ年経過イベントを購読
+            if (scenario.TimeLimitYears > 0)
+            {
+                GameEvents.OnParkYearPassed += OnYearPassed;
+            }
+        }
+
+        private void UnsubscribeAll()
+        {
+            GameEvents.OnVisitorEnterPark -= OnVisitorEntered;
+            GameEvents.OnRevenueEarned -= OnRevenueOrExpenseChanged;
+            GameEvents.OnExpensePaid -= OnRevenueOrExpenseChanged;
+            GameEvents.OnParkRatingChanged -= OnParkRatingChanged;
+            GameEvents.OnAttractionBuilt -= OnAttractionBuilt;
+            GameEvents.OnVisitorHappinessChanged -= OnVisitorHappinessChanged;
+            GameEvents.OnGoldenTicketEarned -= OnGoldenTicketEarned;
+            GameEvents.OnCertificateAwarded -= OnCertificateAwarded;
+            GameEvents.OnThemeZoneUnlocked -= OnThemeZoneUnlocked;
+            GameEvents.OnParkYearPassed -= OnYearPassed;
+        }
+
+        // ================================================================
+        // イベントハンドラ
+        // ================================================================
+
+        private void HandleConditionChanged()
         {
             if (ActiveScenario == null || IsScenarioCleared || IsScenarioFailed) return;
             if (GameManager.Instance == null) return;
             if (GameManager.Instance.CurrentState != GameState.Playing) return;
+            CheckObjectives();
+        }
 
-            _checkTimer -= Time.deltaTime;
-            if (_checkTimer > 0f) return;
-            _checkTimer = CheckInterval;
+        private void OnVisitorEntered(int _) => HandleConditionChanged();
+        private void OnRevenueOrExpenseChanged(float _) => HandleConditionChanged();
+        private void OnParkRatingChanged(float _, float __) => HandleConditionChanged();
+        private void OnAttractionBuilt(int _) => HandleConditionChanged();
+        private void OnVisitorHappinessChanged(int _, float __) => HandleConditionChanged();
+        private void OnGoldenTicketEarned(int _) => HandleConditionChanged();
+        private void OnCertificateAwarded(CertificateCategory _) => HandleConditionChanged();
+        private void OnThemeZoneUnlocked(ThemeZone _) => HandleConditionChanged();
 
+        private void OnYearPassed(int _)
+        {
+            if (ActiveScenario == null || IsScenarioCleared || IsScenarioFailed) return;
+            if (GameManager.Instance == null) return;
+            if (GameManager.Instance.CurrentState != GameState.Playing) return;
             CheckObjectives();
             CheckTimeLimit();
         }
