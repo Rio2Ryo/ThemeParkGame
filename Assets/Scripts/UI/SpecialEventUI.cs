@@ -108,6 +108,10 @@ namespace ThemeParkGame.UI
         // 手動イベントのアクティブ状態
         private readonly Dictionary<string, float> _activeManualEvents = new Dictionary<string, float>();
 
+        // キャッシュ
+        private Canvas _cachedCanvas;
+        private ParkEventSystem _cachedParkEventSystem;
+
         public static SpecialEventUI Instance { get; private set; }
 
         private void Awake()
@@ -210,7 +214,9 @@ namespace ThemeParkGame.UI
 
         private void BuildUI()
         {
-            var canvas = FindObjectOfType<Canvas>();
+            if (_cachedCanvas == null)
+                _cachedCanvas = FindObjectOfType<Canvas>();
+            var canvas = _cachedCanvas;
             if (canvas == null) return;
 
             _panel = new GameObject("SpecialEventPanel");
@@ -289,7 +295,9 @@ namespace ThemeParkGame.UI
             // 開催中イベント表示
             if (_activeEventsText != null)
             {
-                var pes = FindObjectOfType<ParkEventSystem>();
+                if (_cachedParkEventSystem == null)
+                    _cachedParkEventSystem = FindObjectOfType<ParkEventSystem>();
+                var pes = _cachedParkEventSystem;
                 string auto = pes != null ? pes.GetActiveEventsSummary() : "---";
 
                 string manual = "";

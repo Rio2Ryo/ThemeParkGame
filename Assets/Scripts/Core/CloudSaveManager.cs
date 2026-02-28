@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections;
+using System.Security.Cryptography;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UI;
@@ -79,15 +80,20 @@ namespace ThemeParkGame.Core
                 localJson = PlayerPrefs.GetString(saveKey, "");
             }
 
+            // チェックサム計算
+            string checksum = ComputeHash(localJson);
+            WebGLOptimizer.LogVerbose("[CloudSave] Upload checksum: " + checksum);
+
             // API送信用ラッパー
             var wrapper = new CloudSaveUploadRequest
             {
                 playerId = PlayerId,
                 slot = slot,
-                saveDataJson = localJson
+                saveDataJson = localJson,
+                checksum = checksum
             };
 
-            string json = $"{{\"playerId\":\"{wrapper.playerId}\",\"slot\":{wrapper.slot},\"saveData\":{wrapper.saveDataJson}}}";
+            string json = $"{{\"playerId\":\"{wrapper.playerId}\",\"slot\":{wrapper.slot},\"saveData\":{wrapper.saveDataJson},\"checksum\":\"{wrapper.checksum}\"}}";
 
             using (var req = new UnityWebRequest($"{API_BASE}/api/cloudsave/upload", "POST"))
             {
@@ -142,6 +148,17 @@ namespace ThemeParkGame.Core
 
                     if (resp != null && !string.IsNullOrEmpty(resp.saveDataRaw))
                     {
+                        // データ整合性チェック
+                        if (!VerifyIntegrity(resp.saveDataRaw, resp.checksum))
+                        {
+                            SetStatus("データ整合性エラー");
+                            if (NotificationSystem.Instance != null)
+                                NotificationSystem.Instance.Notify("データ改ざんの可能性があります。ロードを中止しました", NotifLevel.Warning);
+                            WebGLOptimizer.LogVerbose("[CloudSave] Integrity verification failed, aborting load");
+                            onComplete?.Invoke(false);
+                            yield break;
+                        }
+
                         // ローカルのPlayerPrefsに書き込んでからLoad
                         string saveKey = $"SaveSlot_{slot}";
                         PlayerPrefs.SetString(saveKey, resp.saveDataRaw);
@@ -326,6 +343,37 @@ namespace ThemeParkGame.Core
         }
 
         // ================================================================
+        // データ整合性チェック
+        // ================================================================
+
+        private static string ComputeHash(string data)
+        {
+            using (var sha256 = System.Security.Cryptography.SHA256.Create())
+            {
+                byte[] bytes = System.Text.Encoding.UTF8.GetBytes(data);
+                byte[] hash = sha256.ComputeHash(bytes);
+                var sb = new System.Text.StringBuilder(64);
+                for (int i = 0; i < hash.Length; i++)
+                    sb.Append(hash[i].ToString("x2"));
+                return sb.ToString();
+            }
+        }
+
+        private bool VerifyIntegrity(string saveData, string expectedChecksum)
+        {
+            if (string.IsNullOrEmpty(expectedChecksum))
+            {
+                WebGLOptimizer.LogVerbose("[CloudSave] No checksum found (legacy data), skipping verification");
+                return true;
+            }
+            string computed = ComputeHash(saveData);
+            bool valid = computed == expectedChecksum;
+            if (!valid)
+                WebGLOptimizer.LogVerbose("[CloudSave] Integrity check FAILED! Expected=" + expectedChecksum + ", Got=" + computed);
+            return valid;
+        }
+
+        // ================================================================
         // データ構造
         // ================================================================
 
@@ -335,6 +383,7 @@ namespace ThemeParkGame.Core
             public string playerId;
             public int slot;
             public string saveDataJson;
+            public string checksum;
         }
 
         [Serializable]
@@ -342,6 +391,7 @@ namespace ThemeParkGame.Core
         {
             public bool success;
             public string saveDataRaw;
+            public string checksum;
         }
     }
 }

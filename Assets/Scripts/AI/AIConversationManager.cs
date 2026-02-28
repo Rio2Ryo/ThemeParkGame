@@ -99,7 +99,8 @@ namespace ThemeParkGame.AI
             if (_snsSystem == null)
                 _snsSystem = gameObject.AddComponent<SNSReputationSystem>();
 
-            _conversationUI = FindObjectOfType<ConversationUI>();
+            if (_conversationUI == null)
+                _conversationUI = FindObjectOfType<ConversationUI>();
             _dialogueSystem = NPCDialogueSystem.Instance;
 
             WebGLOptimizer.LogVerbose($"[AIConversationManager] 初期化完了 (Provider: {preferredProvider}, " +
@@ -134,7 +135,7 @@ namespace ThemeParkGame.AI
         private void WireConversationUI()
         {
             if (_conversationUI == null)
-                _conversationUI = FindObjectOfType<ConversationUI>();
+                _conversationUI = FindObjectOfType<ConversationUI>(); // lazy cache
 
             if (_conversationUI != null)
             {

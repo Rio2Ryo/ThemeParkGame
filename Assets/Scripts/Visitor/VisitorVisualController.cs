@@ -38,6 +38,10 @@ namespace ThemeParkGame.Visitor
         private float _congestionCheckTimer;
         private const float CongestionCheckInterval = 0.8f;
 
+        // ---- PathwaySystem staticキャッシュ（全インスタンス共有） ----
+        private static PathwaySystem s_cachedPathway;
+        private static float s_pathwayCacheTime;
+
         // ---- 状態別カラーテーブル ----
 
         private static readonly Color ColorIdle          = new Color(0.3f, 0.6f, 1.0f);   // 青
@@ -304,7 +308,12 @@ namespace ThemeParkGame.Visitor
                 return;
             }
 
-            var pathSystem = Object.FindObjectOfType<PathwaySystem>();
+            if (Time.time - s_pathwayCacheTime > 3f || s_cachedPathway == null)
+            {
+                s_cachedPathway = Object.FindObjectOfType<PathwaySystem>();
+                s_pathwayCacheTime = Time.time;
+            }
+            var pathSystem = s_cachedPathway;
             if (pathSystem != null)
             {
                 float target = pathSystem.GetCongestionAt(transform.position);

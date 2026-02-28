@@ -140,10 +140,12 @@ namespace ThemeParkGame.AI
         private void Awake()
         {
             _aiManager = GetComponentInParent<AIConversationManager>();
+            // GetComponentInParentで見つからない場合のみFindObjectOfType（lazy cache）
             if (_aiManager == null)
             {
                 _aiManager = FindObjectOfType<AIConversationManager>();
             }
+            // _aiManagerはフィールドに保持済みなので以降の呼び出しではキャッシュが使われる
         }
 
         private void Start()

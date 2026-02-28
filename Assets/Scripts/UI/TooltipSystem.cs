@@ -45,12 +45,11 @@ namespace ThemeParkGame.UI
 
         private void CreateTooltip()
         {
-            // Canvas取得（既存のものがあれば使用）
-            _canvas = GetComponentInParent<Canvas>();
+            // Canvas取得（既存のものがあれば使用、フィールド _canvas にキャッシュ）
             if (_canvas == null)
-            {
+                _canvas = GetComponentInParent<Canvas>();
+            if (_canvas == null)
                 _canvas = FindObjectOfType<Canvas>();
-            }
 
             if (_canvas == null) return;
 
