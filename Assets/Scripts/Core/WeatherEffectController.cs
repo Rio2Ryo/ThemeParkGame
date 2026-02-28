@@ -36,33 +36,54 @@ namespace ThemeParkGame.Core
         // ---- WebGLプラットフォーム判定 ----
         private static readonly bool IsWebGL = Application.platform == RuntimePlatform.WebGLPlayer;
 
-        // ---- プラットフォーム別パーティクル上限 ----
-        // 雨
-        private static readonly int RainMaxParticles = IsWebGL ? 800 : 3000;
-        private static readonly float RainEmissionRate = IsWebGL ? 500f : 1500f;
-        // 雪
-        private static readonly int SnowMaxParticles = IsWebGL ? 500 : 2000;
-        private static readonly float SnowEmissionRate = IsWebGL ? 150f : 400f;
-        // 陽光ダスト
-        private static readonly int SunDustMaxParticles = IsWebGL ? 100 : 200;
-        private static readonly float SunDustEmissionRateNormal = IsWebGL ? 20f : 30f;
-        private static readonly float SunDustEmissionRateHot = IsWebGL ? 20f : 60f;
+        // ---- パーティクル品質段階 ----
+        // QualitySettings.GetQualityLevel() + プラットフォームに基づく4段階品質
+        private enum ParticleQuality { Low = 0, Medium = 1, High = 2, Ultra = 3 }
+        private ParticleQuality _currentQuality;
 
-        // ---- プラットフォーム別パーティクル形状スケール ----
-        private static readonly Vector3 RainSnowShapeScale = IsWebGL
-            ? new Vector3(40f, 0.1f, 40f)
-            : new Vector3(60f, 0.1f, 60f);
-        private static readonly Vector3 SunDustShapeScale = IsWebGL
-            ? new Vector3(25f, 6f, 25f)
-            : new Vector3(40f, 8f, 40f);
+        // 品質別パーティクル上限テーブル [Low, Medium, High, Ultra]
+        private static readonly int[] RainMaxParticlesTable    = { 400,  800, 2000, 3000 };
+        private static readonly float[] RainEmissionRateTable  = { 250f, 500f, 1000f, 1500f };
+        private static readonly int[] SnowMaxParticlesTable    = { 250,  500, 1500, 2000 };
+        private static readonly float[] SnowEmissionRateTable  = { 80f,  150f, 300f, 400f };
+        private static readonly int[] DustMaxParticlesTable     = { 50,   100,  150,  200 };
+        private static readonly float[] DustEmissionNormalTable = { 10f,  20f,  30f,  30f };
+        private static readonly float[] DustEmissionHotTable    = { 15f,  20f,  40f,  60f };
 
-        // ---- LOD（パーティクル品質段階） ----
-        private int _particleLOD = 0; // 0=High, 1=Medium, 2=Low
+        // 品質別パーティクル形状スケール
+        private static readonly Vector3[] RainSnowShapeScaleTable = {
+            new Vector3(30f, 0.1f, 30f),  // Low
+            new Vector3(40f, 0.1f, 40f),  // Medium
+            new Vector3(50f, 0.1f, 50f),  // High
+            new Vector3(60f, 0.1f, 60f),  // Ultra
+        };
+        private static readonly Vector3[] DustShapeScaleTable = {
+            new Vector3(20f, 5f, 20f),    // Low
+            new Vector3(25f, 6f, 25f),    // Medium
+            new Vector3(35f, 7f, 35f),    // High
+            new Vector3(40f, 8f, 40f),    // Ultra
+        };
+
+        // 品質テーブル参照ヘルパー
+        private int QI => (int)_currentQuality; // Quality Index
+        private int RainMaxParticles => RainMaxParticlesTable[QI];
+        private float RainEmissionRate => RainEmissionRateTable[QI];
+        private int SnowMaxParticles => SnowMaxParticlesTable[QI];
+        private float SnowEmissionRate => SnowEmissionRateTable[QI];
+        private int SunDustMaxParticles => DustMaxParticlesTable[QI];
+        private float SunDustEmissionRateNormal => DustEmissionNormalTable[QI];
+        private float SunDustEmissionRateHot => DustEmissionHotTable[QI];
+        private Vector3 RainSnowShapeScale => RainSnowShapeScaleTable[QI];
+        private Vector3 SunDustShapeScale => DustShapeScaleTable[QI];
+
+        // ---- FPSベース自動LOD降格 ----
+        private int _particleLOD = 0; // 0=なし, 1=1段階降格, 2=2段階降格
         private float _fpsAccumulator;
         private int _fpsFrameCount;
         private float _fpsCheckInterval = 1f;
         private float _fpsCheckTimer;
         private float _lowFpsDuration; // 30fps以下が続いた秒数
+        private int _lastQualityLevel = -1; // QualitySettings変更検出用
 
         // ---- 現在の天候 ----
         private Weather _currentWeather = Weather.Sunny;
@@ -88,6 +109,10 @@ namespace ThemeParkGame.Core
 
         private void Awake()
         {
+            _currentQuality = DetermineParticleQuality();
+            _lastQualityLevel = QualitySettings.GetQualityLevel();
+            WebGLOptimizer.LogVerbose($"[WeatherEffect] ParticleQuality={_currentQuality} (QualityLevel={_lastQualityLevel}, WebGL={IsWebGL})");
+
             FindDirectionalLight();
             SaveDefaultLighting();
             CreateParticleSystems();
@@ -473,9 +498,86 @@ namespace ThemeParkGame.Core
             }
         }
 
-        /// <summary>FPSを監視しパーティクルLODを自動調整する</summary>
+        /// <summary>
+        /// QualitySettings.GetQualityLevel() とプラットフォームから品質段階を決定する。
+        /// WebGLは最大Mediumに制限。デスクトップはQualityLevelに応じて4段階。
+        /// </summary>
+        private static ParticleQuality DetermineParticleQuality()
+        {
+            int level = QualitySettings.GetQualityLevel();
+
+            if (IsWebGL)
+            {
+                // WebGL: Low (level 0-1) / Medium (level 2+)。High以上は許可しない。
+                return level >= 2 ? ParticleQuality.Medium : ParticleQuality.Low;
+            }
+
+            // デスクトップ: 0-1=Low, 2-3=Medium, 4=High, 5+=Ultra
+            if (level <= 1) return ParticleQuality.Low;
+            if (level <= 3) return ParticleQuality.Medium;
+            if (level <= 4) return ParticleQuality.High;
+            return ParticleQuality.Ultra;
+        }
+
+        /// <summary>
+        /// パーティクル品質を手動で設定する（設定メニュー等から呼び出し用）。
+        /// FPS LOD降格もリセットされる。
+        /// </summary>
+        public void SetParticleQuality(int qualityIndex)
+        {
+            int maxQ = IsWebGL ? (int)ParticleQuality.Medium : (int)ParticleQuality.Ultra;
+            qualityIndex = Mathf.Clamp(qualityIndex, 0, maxQ);
+            _currentQuality = (ParticleQuality)qualityIndex;
+            _particleLOD = 0;
+            _lowFpsDuration = 0f;
+            ApplyQualityToParticleSystems();
+            WebGLOptimizer.LogVerbose($"[WeatherEffect] 品質手動設定: {_currentQuality}");
+        }
+
+        /// <summary>現在のパーティクル品質段階を返す（0=Low, 1=Medium, 2=High, 3=Ultra）</summary>
+        public int CurrentParticleQuality => (int)_currentQuality;
+
+        /// <summary>品質設定をパーティクルシステムに反映する</summary>
+        private void ApplyQualityToParticleSystems()
+        {
+            if (_rainPS != null)
+            {
+                var main = _rainPS.main;
+                main.maxParticles = RainMaxParticles;
+                var shape = _rainPS.shape;
+                shape.scale = RainSnowShapeScale;
+            }
+            if (_snowPS != null)
+            {
+                var main = _snowPS.main;
+                main.maxParticles = SnowMaxParticles;
+                var shape = _snowPS.shape;
+                shape.scale = RainSnowShapeScale;
+            }
+            if (_sunDustPS != null)
+            {
+                var main = _sunDustPS.main;
+                main.maxParticles = SunDustMaxParticles;
+                var shape = _sunDustPS.shape;
+                shape.scale = SunDustShapeScale;
+            }
+        }
+
+        /// <summary>FPSを監視しパーティクルLODを自動調整。QualitySettings変更も検出。</summary>
         private void UpdateParticleLOD()
         {
+            // QualitySettings変更を検出して品質を再決定
+            int currentLevel = QualitySettings.GetQualityLevel();
+            if (currentLevel != _lastQualityLevel)
+            {
+                _lastQualityLevel = currentLevel;
+                _currentQuality = DetermineParticleQuality();
+                _particleLOD = 0;
+                _lowFpsDuration = 0f;
+                ApplyQualityToParticleSystems();
+                WebGLOptimizer.LogVerbose($"[WeatherEffect] QualitySettings変更検出: level={currentLevel} → {_currentQuality}");
+            }
+
             // FPS計測
             _fpsAccumulator += Time.unscaledDeltaTime;
             _fpsFrameCount++;
@@ -498,12 +600,12 @@ namespace ThemeParkGame.Core
                 _lowFpsDuration = 0f;
             }
 
-            // 3秒以上30fps以下が続いたらLODを下げる
+            // 3秒以上30fps以下が続いたらLODを下げる（品質の範囲内で最大2段階降格）
             if (_lowFpsDuration >= 3f && _particleLOD < 2)
             {
                 _particleLOD++;
                 _lowFpsDuration = 0f;
-                WebGLOptimizer.LogVerbose($"[WeatherEffect] パーティクルLOD低下: LOD={_particleLOD} (avgFps={avgFps:F1})");
+                WebGLOptimizer.LogVerbose($"[WeatherEffect] FPS LOD降格: LOD={_particleLOD}, Quality={_currentQuality} (avgFps={avgFps:F1})");
             }
         }
 
