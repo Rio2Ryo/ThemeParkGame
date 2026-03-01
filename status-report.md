@@ -1,12 +1,12 @@
 # ThemeParkGame ステータスレポート
 
-## 最終更新: 2026-03-01（Phase 5完了時点）
+## 最終更新: 2026-03-01（Phase 6完了時点）
 
 ---
 
 # Part A: 次期開発 機能提案一覧
 
-## 現状のシステム概要（116スクリプト / 70,615行 / 10シナリオ / 5ゾーン / 6カテゴリ+24アトラクション）
+## 現状のシステム概要（120スクリプト / 73,711行 / 10シナリオ / 5ゾーン / 6カテゴリ+24アトラクション）
 
 **既存コアシステム**: GameManager, TimeManager, EconomyManager, ParkManager, WeatherSystem, SaveSystem, ScenarioManager
 **来場者**: VisitorAI(欲求駆動FSM), VisitorParameters, VIPVisitorSystem, Hooligan/HooliganManager, EmotionBubble, **RepeaterSystem(リピーター)**, **GroupBehaviorSystem(グループ行動)**
@@ -16,7 +16,8 @@
 **AI連携**: LLM会話(Claude/OpenAI/Gemini), NPCDialogue, DynamicQuestSystem, WordOfMouth, SNSReputation
 **パレード/デコ**: **ParadeSystem(ナイトパレード)**, **DecorationSystem(季節デコレーション)**, **フォトスポット**
 **災害/交通**: **DisasterEventSystem(5種災害)**, **ParkTransportSystem(3路線)**
-**その他**: RivalParkSystem, ParkExpansion(土地購入), ParkEventSystem(4種), ChallengeSystem, AchievementSystem(107件), TutorialSystem(15ステップ), CoopManager, LeaderboardManager, SocialShareSystem, AccessibilitySystem(色覚/テキスト/フラッシュ軽減/ナレーション)
+**対戦/Co-op**: **PvPMatchSystem(2人対戦)**, **CoopScenarioSystem(共同シナリオ3種)**, CoopManager(ポーリング同期), LeaderboardManager
+**その他**: RivalParkSystem + **RivalDiplomacySystem(スパイ/提携/買収)**, ParkExpansion(土地購入), ParkEventSystem(4種), ChallengeSystem, AchievementSystem(107件), TutorialSystem(15ステップ), SocialShareSystem, AccessibilitySystem(色覚/テキスト/フラッシュ軽減/ナレーション), **MobileUIOptimizer(レスポンシブUI)**
 
 ---
 
@@ -45,7 +46,7 @@
 **影響範囲**: 新規 CoasterDesigner.cs, CoasterTrack.cs, CoasterPhysics.cs / AttractionDatabase拡張 / RuntimeBuildPanel / ProceduralMeshGenerator連携
 **工数目安**: 特大
 
-### H5. リアルタイム対戦モード（パーク経営バトル） ⬜ 未実装（Phase 6予定）
+### H5. リアルタイム対戦モード（パーク経営バトル） ✅ Phase 6完了
 
 **概要**: CoopManager基盤を拡張し、2人のプレイヤーが同一マップ内で隣接するパークをそれぞれ経営して競い合う対戦モード。共通の来場者プール（同じ客を取り合う）、相手パークの価格・評判が自パークに影響、期間終了時の総合スコアで勝敗決定。妨害アクション（広告攻勢で相手の客を奪う、スタッフ引き抜き）あり。
 **理由**: CoopManagerにポーリングベースの同期・ルーム管理・アクション送信の基盤がすべて揃っているが、協力モードのみで対戦がない。RivalParkSystemのAI対戦を「対人」に昇格させるだけでゲームの寿命が飛躍的に延びる。LeaderboardManagerとの連動でランキング戦も可能。WebGL環境でもポーリング同期で実現可能。
@@ -92,7 +93,7 @@
 **影響範囲**: VisitorProfile拡張(Review) / WordOfMouthSystem拡張 / SNSReputationSystem / LLMApiClient連携 / RuntimeHUD_ParkInfo(レビューパネル)
 **工数目安**: 中
 
-### M6. ライバルパーク強化（スパイ・提携・買収） ⬜ 未実装（Phase 6予定）
+### M6. ライバルパーク強化（スパイ・提携・買収） ✅ Phase 6完了
 **概要**: RivalParkSystemを拡張し、ライバルパークへのスパイ派遣(相手の価格・アトラクション情報入手)、業務提携(共同イベント・相互送客)、最終的な買収(大金で相手パークを統合)を追加。
 **理由**: RivalParkSystemは価格競争のみで、プレイヤーが能動的に対抗する手段が少ない。外交要素を加えることで「競争vs協力」の戦略的選択が生まれ、終盤のゲームプレイが豊かに。
 **影響範囲**: RivalParkSystem拡張 / StaffMember(スパイ任務) / EconomyManager / ParkEventSystem(共同イベント)
@@ -150,7 +151,7 @@
 **影響範囲**: TutorialSystem(ステップデータ追加) / RuntimeHUD
 **工数目安**: 小
 
-### L5. Co-opモード実コンテンツ追加（共同シナリオ） ⬜ 未実装（Phase 6予定）
+### L5. Co-opモード実コンテンツ追加（共同シナリオ） ✅ Phase 6完了
 **概要**: CoopManagerの基盤上に、2人プレイ専用シナリオを追加。プレイヤーAがアトラクション担当、プレイヤーBがスタッフ・経済担当のような役割分担型。
 **理由**: CoopManagerが基盤のみで実際のマルチプレイコンテンツがない。WebGL環境のため通信制約はあるが、ターンベース的な非同期協力は実現可能。
 **影響範囲**: CoopManager拡張 / ScenarioDatabase(共同シナリオ追加) / RuntimeHUD
@@ -161,7 +162,7 @@
 **実装**: 色覚フィルター4モード、テキストサイズ3段階、フラッシュ軽減、ナレーションログ(Rキー)
 **コミット**: `6de591f`
 
-### L7. モバイルUI最適化＆レスポンシブレイアウト ⬜ 未実装（Phase 6予定）
+### L7. モバイルUI最適化＆レスポンシブレイアウト ✅ Phase 6完了
 **概要**: InputManagerにタッチ操作基盤があるが、RuntimeHUD(1920x1080基準)のUIレイアウトをモバイル画面に最適化。ボタンサイズ拡大、パネル折りたたみ、ジェスチャー操作（ピンチズーム強化・スワイプメニュー）、縦画面モード対応。CanvasScalerのmatchWidthOrHeightを画面比率で動的切替。
 **理由**: WebGL対応でブラウザプレイ可能だが、スマホブラウザでのUIが実質使い物にならない。InputManagerのHandleTouchInput()/HandleSingleTouch()は実装済みで、UIレイアウト調整が主な作業。CanvasScalerの基盤もある。モバイルユーザー獲得はDAU増加に直結。
 **影響範囲**: RuntimeHUD全partial(レスポンシブ化) / InputManager(ジェスチャー拡張) / CanvasScaler設定 / RuntimeBuildPanel(タッチ最適化) / RuntimeStaffPanel
@@ -190,15 +191,15 @@
 | Phase 3 | H1(ナイトパレード) + M2(デコレーション) + L2(フォトスポット) + L8(リピーター) | ✅ **完了** `abaa549` |
 | Phase 4 | H2(スタッフ育成) + M7(AIパーソナリティ) + M5(レビュー) + M9(マーケティング) | ✅ **完了** |
 | Phase 5 | H3(災害イベント) + M8(インタラクティブ) + M1(グループ行動) + M10(園内交通) | ✅ **完了** |
-| Phase 6 | M6(ライバル強化) + L5(Co-op) + H5(対戦モード) + L7(モバイルUI) | ⬜ 未着手 |
+| Phase 6 | M6(ライバル強化) + L5(Co-op) + H5(対戦モード) + L7(モバイルUI) | ✅ **完了** |
 | Phase 7 | H4(コースター設計) | ⬜ 未着手 |
 
 ### 進捗サマリー（全25件）
-- **完了**: 20件 / 25件（80%）
-  - HIGH: 4/6完了（H1✅ H2✅ H3✅ H6✅ / H4⬜ H5⬜）
-  - MEDIUM: 9/10完了（M1✅ M2✅ M3✅ M4✅ M5✅ M7✅ M8✅ M9✅ M10✅ / M6⬜）
-  - LOW: 7/9完了（L1✅ L2✅ L3✅ L4✅ L6✅ L8✅ L9✅ / L5⬜ L7⬜）
-- **未実装**: 5件（HIGH×2 + MEDIUM×1 + LOW×2）
+- **完了**: 24件 / 25件（96%）
+  - HIGH: 5/6完了（H1✅ H2✅ H3✅ H5✅ H6✅ / H4⬜）
+  - MEDIUM: 10/10完了（M1✅ M2✅ M3✅ M4✅ M5✅ M6✅ M7✅ M8✅ M9✅ M10✅）
+  - LOW: 9/9完了（L1✅ L2✅ L3✅ L4✅ L5✅ L6✅ L7✅ L8✅ L9✅）
+- **未実装**: 1件（H4: カスタムコースター設計ツール = Phase 7）
 
 ---
 
@@ -834,3 +835,107 @@
 | 7 | `Assets/Scripts/Visitor/VisitorAI.cs` | RidingTransport/Evacuating状態、災害避難チェック、交通利用判断、施設タグマップ拡張 |
 | 8 | `Assets/Scripts/Visitor/VisitorManager.cs` | 災害時スポーンブロック率連携 |
 | 9 | `status-report.md` | Phase 5完了レポート追加 |
+
+---
+
+# Part H: Phase 6 実装完了レポート（2026-03-01）
+
+## Phase 6: M6(ライバル強化) + L5(Co-op) + H5(対戦モード) + L7(モバイルUI) — 全完了
+
+### M6. ライバルパーク強化（スパイ・提携・買収）
+
+**RivalDiplomacySystem.cs (新規: 705行)**
+
+| アクション | コスト | 効果 | 条件 |
+|---|---|---|---|
+| スパイ派遣 | $1,000 | 70%成功でライバル情報5分間開示。失敗で関係Hostile化 | 中立以上 |
+| 業務提携 | 無料 | 競争ペナルティ50%減+イベント来場者+10% | 中立、自動/50%受諾 |
+| 提携解消 | 無料 | 提携終了、関係Neutral化 | 提携中 |
+| 買収 | Rating×$500 | ライバル閉園、知名度+10、ゴールデンチケット | 自スコア>相手 |
+| 広告攻勢 | $2,000 | 60秒間ライバルから来場者10%追加奪取 | CD120秒 |
+
+**外交状態**: Neutral / Hostile / Partner / Acquired
+
+**RivalParkSystem連携**: CalculateCompetitionPenaltyで外交修正適用、ForceSpawnRival/GetRivalById追加
+
+### H5. リアルタイム対戦モード
+
+**PvPMatchSystem.cs (新規: 876行)**
+
+| 項目 | 内容 |
+|---|---|
+| モード | 2人対戦、CoopManager基盤 |
+| 試合時間 | 30分（リアルタイム） |
+| 初期資金 | $50,000 |
+| 共有来場者 | 200人プール |
+| 勝利条件 | 加重スコア（収益30% + 評価25% + 来場者25% + 幸福度20%） |
+
+**妨害アクション（最大5回/試合）**
+
+| タイプ | コスト | 持続 | 効果 |
+|---|---|---|---|
+| 広告攻勢 | $3,000 | 60秒 | 相手来場者15%奪取 |
+| スタッフ引抜 | $5,000 | 90秒 | 相手スタッフ効率-20% |
+| 価格競争 | $2,000 | 60秒 | 相手満足度-10 |
+| イベント横取 | $4,000 | 即時 | 相手アクティブイベント中止 |
+
+**LeaderboardManager連携**: 対戦結果をランキングに自動送信
+
+### L5. Co-opモード実コンテンツ追加
+
+**CoopScenarioSystem.cs (新規: 659行)**
+
+| シナリオ | 難易度 | 時間 | 資金 | 目標 |
+|---|---|---|---|---|
+| テーマパーク再建 | Easy | 20分 | $30,000 | 来場者50/評価40/収益$10K |
+| 嵐を乗り越えろ | Normal | 25分 | $50,000 | 来場者80/評価55/収益$25K |
+| 究極のテーマパーク | Hard | 30分 | $80,000 | 来場者150/評価75/収益$100K |
+
+**役割分担**:
+- AttractionManager: アトラクション建設/アップグレード/イベント管理
+- StaffEconomyManager: スタッフ雇用/経済管理/マーケティング
+
+**CoopManager拡張**: PlayerId/PlayerName公開、IsPvPMode/IsScenarioModeフラグ追加
+
+### L7. モバイルUI最適化
+
+**MobileUIOptimizer.cs (新規: 741行)**
+
+| 機能 | Desktop | Tablet | Mobile |
+|---|---|---|---|
+| CanvasScaler match | 0.5 | 0.65 | 1.0 |
+| ボタンスケール | 1.0x | 1.2x | 1.5x (44dp最小) |
+| フォントスケール | 1.0x | 1.15x | 1.3x |
+| パネル折りたたみ | 無効 | 無効 | 自動 |
+| ハンバーガーメニュー | 非表示 | 非表示 | 表示 |
+| セーフエリア対応 | 無効 | 無効 | 有効 |
+
+**スワイプジェスチャー**: 左=次パネル、右=閉じる、上=展開（50px最小、0.3秒以内）
+
+**InputManager拡張**: OnSwipeGesture/OnThreeFingerTapイベント追加
+
+### GameEnums.cs 追加項目
+
+| enum | 追加値 |
+|---|---|
+| RivalDiplomacyAction | SendSpy, ProposePartnership, BreakPartnership, AttemptAcquisition, LaunchAdBlitz |
+| RivalRelationState | Neutral, Hostile, Partner, Acquired |
+| PvPMatchState | Lobby, Countdown, InProgress, Finished |
+| PvPSabotageType | AdBlitz, StaffPoaching, PriceWar, EventSteal |
+| CoopRole | AttractionManager, StaffEconomyManager, FullAccess |
+| UILayoutMode | Desktop, Tablet, Mobile |
+
+## Phase 6 修正ファイル一覧
+
+| # | ファイル | 変更内容 |
+|---|---|---|
+| 1 | `Assets/Scripts/Core/GameEnums.cs` | 6 enum追加（外交/PvP/Co-op/UI） |
+| 2 | `Assets/Scripts/Park/RivalDiplomacySystem.cs` | **新規**: スパイ・提携・買収・広告攻勢（外交UI付き） |
+| 3 | `Assets/Scripts/Core/PvPMatchSystem.cs` | **新規**: 2人対戦モード（妨害4種、スコアリング、対戦HUD） |
+| 4 | `Assets/Scripts/Core/CoopScenarioSystem.cs` | **新規**: 共同シナリオ3種（役割分担、進捗追跡） |
+| 5 | `Assets/Scripts/UI/MobileUIOptimizer.cs` | **新規**: レスポンシブUI（3レイアウト、スワイプ、セーフエリア） |
+| 6 | `Assets/Scripts/Park/RivalParkSystem.cs` | 外交ペナルティ修正+ForceSpawnRival+GetRivalById |
+| 7 | `Assets/Scripts/Core/CoopManager.cs` | PlayerId/Name公開+PvP/Scenarioモードフラグ |
+| 8 | `Assets/Scripts/Core/InputManager.cs` | スワイプジェスチャー検出+3本指タップイベント |
+| 9 | `Assets/Scripts/Core/RuntimeHUD.cs` | MobileUIOptimizer自動初期化 |
+| 10 | `status-report.md` | Phase 6完了レポート追加 |

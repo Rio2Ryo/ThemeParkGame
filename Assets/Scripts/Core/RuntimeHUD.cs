@@ -70,6 +70,10 @@ namespace ThemeParkGame.Core
             // ツールチップシステムの初期化
             if (ThemeParkGame.UI.TooltipSystem.Instance == null)
                 gameObject.AddComponent<ThemeParkGame.UI.TooltipSystem>();
+
+            // モバイルUI最適化の初期化
+            if (ThemeParkGame.UI.MobileUIOptimizer.Instance == null)
+                gameObject.AddComponent<ThemeParkGame.UI.MobileUIOptimizer>();
         }
 
         private void Start()

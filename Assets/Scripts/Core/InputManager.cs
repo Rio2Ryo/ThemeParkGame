@@ -396,5 +396,27 @@ namespace ThemeParkGame.Core
             cameraPos.z = worldPosition.z;
             mainCamera.transform.position = cameraPos;
         }
+
+        // ================================================================
+        // スワイプジェスチャー検出（MobileUIOptimizer連携）
+        // ================================================================
+
+        /// <summary>スワイプ検出イベント（MobileUIOptimizerから購読される）</summary>
+        public event Action<Vector2, float> OnSwipeGesture;
+
+        /// <summary>3本指タップイベント（メニュー展開用）</summary>
+        public event Action OnThreeFingerTap;
+
+        private void DetectSwipeGesture(Touch touch)
+        {
+            if (touch.phase != TouchPhase.Ended) return;
+            float duration = Time.unscaledTime - touchStartTime;
+            if (duration > 0.5f) return; // 長すぎるスワイプは無視
+
+            Vector2 delta = touch.position - touchStartPosition;
+            if (delta.magnitude < 50f) return; // 短すぎるスワイプは無視
+
+            OnSwipeGesture?.Invoke(delta.normalized, delta.magnitude);
+        }
     }
 }

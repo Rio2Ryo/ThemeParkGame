@@ -148,6 +148,14 @@ namespace ThemeParkGame.Core
         public bool IsHost => _isHost;
         public string CurrentRoomCode => _currentRoomCode;
         public IReadOnlyList<CoopPlayer> Players => _players;
+        public string PlayerId => _playerId;
+        public string PlayerName => _playerName;
+
+        /// <summary>PvP対戦モードが有効かどうか</summary>
+        public bool IsPvPMode { get; set; }
+
+        /// <summary>Co-opシナリオモードが有効かどうか</summary>
+        public bool IsScenarioMode { get; set; }
 
         // ============================================================
         // イベント

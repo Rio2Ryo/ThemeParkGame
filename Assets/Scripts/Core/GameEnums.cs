@@ -402,4 +402,57 @@ namespace ThemeParkGame.Core
         Follower,       // フォロワー（リーダーに追従）
         Child           // 子供（特別な行動パターン）
     }
+
+    /// <summary>ライバルパークとの外交アクション</summary>
+    public enum RivalDiplomacyAction
+    {
+        SendSpy,            // スパイ派遣（情報収集）
+        ProposePartnership, // 業務提携（共同イベント・相互送客）
+        BreakPartnership,   // 提携解消
+        AttemptAcquisition, // 買収提案
+        LaunchAdBlitz       // 広告攻勢（相手の客を奪う）
+    }
+
+    /// <summary>ライバルとの外交状態</summary>
+    public enum RivalRelationState
+    {
+        Neutral,        // 中立
+        Hostile,        // 敵対（スパイ発覚後等）
+        Partner,        // 提携中
+        Acquired        // 買収済み
+    }
+
+    /// <summary>PvP対戦モードの進行状態</summary>
+    public enum PvPMatchState
+    {
+        Lobby,          // 対戦ロビー（マッチング待ち）
+        Countdown,      // カウントダウン（開始前）
+        InProgress,     // 対戦中
+        Finished        // 対戦終了（結果表示）
+    }
+
+    /// <summary>PvP妨害アクション種別</summary>
+    public enum PvPSabotageType
+    {
+        AdBlitz,            // 広告攻勢（相手の来場者を奪う）
+        StaffPoaching,      // スタッフ引き抜き
+        PriceWar,           // 価格競争（一時的に値下げ攻勢）
+        EventSteal          // イベント横取り
+    }
+
+    /// <summary>Co-opシナリオの役割分担</summary>
+    public enum CoopRole
+    {
+        AttractionManager,  // アトラクション担当
+        StaffEconomyManager,// スタッフ・経済担当
+        FullAccess          // 全権限（通常Co-op）
+    }
+
+    /// <summary>モバイルUIレイアウトモード</summary>
+    public enum UILayoutMode
+    {
+        Desktop,        // デスクトップ（1920x1080基準）
+        Tablet,         // タブレット（768-1024px幅）
+        Mobile          // モバイル（768px未満）
+    }
 }

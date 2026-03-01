@@ -225,9 +225,37 @@ namespace ThemeParkGame.Park
             foreach (var rival in _rivals)
             {
                 if (rival.IsActive)
-                    totalSteal += rival.VisitorStealRate;
+                {
+                    float steal = rival.VisitorStealRate;
+
+                    // 外交システムによる修正
+                    var diplomacy = RivalDiplomacySystem.Instance;
+                    if (diplomacy != null)
+                    {
+                        // 提携中のライバルはペナルティ半減
+                        steal *= (1f - diplomacy.GetPartnerPenaltyReduction(rival.Id));
+                        // 広告攻勢中はさらに奪取
+                        steal -= diplomacy.GetAdBlitzStealRate(rival.Id);
+                    }
+
+                    totalSteal += Mathf.Max(0f, steal);
+                }
             }
             _competitionPenalty = Mathf.Min(0.4f, totalSteal);
+        }
+
+        /// <summary>外部からライバルを強制スポーンさせる（Co-opシナリオ用）</summary>
+        public void ForceSpawnRival()
+        {
+            SpawnRival();
+        }
+
+        /// <summary>指定IDのライバルを取得する</summary>
+        public RivalPark GetRivalById(int rivalId)
+        {
+            foreach (var rival in _rivals)
+                if (rival.Id == rivalId) return rival;
+            return null;
         }
 
         private void OnYearPassed(int year)
