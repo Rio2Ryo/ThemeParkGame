@@ -6,6 +6,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using ThemeParkGame.AI;
+using ThemeParkGame.Attraction;
 using ThemeParkGame.Economy;
 using ThemeParkGame.Park;
 
@@ -41,11 +42,12 @@ namespace ThemeParkGame.Core
         private GameObject _notifBadge;
         private Text _notifBadgeText;
 
-        // ---- 建設/スタッフ/研究/ローンボタン ----
+        // ---- 建設/スタッフ/研究/ローン/コースター設計ボタン ----
         private GameObject _buildBtn;
         private GameObject _staffBtn;
         private GameObject _researchBtn;
         private GameObject _loanBtn;
+        private GameObject _coasterBtn;
 
         // ================================================================
         // メニューボタン（画面左上）
@@ -170,6 +172,26 @@ namespace ThemeParkGame.Core
 
             var lLabel = MakeLabel(lrt, "Label", LocalizationData.BtnLoan, 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
             StretchFill(lLabel.rectTransform);
+
+            // COASTER DESIGN ボタン（LOANの右隣）
+            _coasterBtn = MakePanel(root, "CoasterBtn", 110f, 36f, new Color(0.55f, 0.25f, 0.45f, 0.9f));
+            var crt = _coasterBtn.GetComponent<RectTransform>();
+            crt.anchorMin = crt.anchorMax = new Vector2(0f, 1f);
+            crt.pivot = new Vector2(0f, 1f);
+            crt.anchoredPosition = new Vector2(510f, -10f);
+
+            var cImg = _coasterBtn.GetComponent<Image>();
+            cImg.raycastTarget = true;
+            var cBtn = _coasterBtn.AddComponent<Button>();
+            cBtn.targetGraphic = cImg;
+            var cc = cBtn.colors;
+            cc.highlightedColor = new Color(0.65f, 0.35f, 0.55f);
+            cc.pressedColor = new Color(0.4f, 0.18f, 0.32f);
+            cBtn.colors = cc;
+            cBtn.onClick.AddListener(OnCoasterDesignClicked);
+
+            var cLabel = MakeLabel(crt, "Label", "コースター設計", 13, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(cLabel.rectTransform);
         }
 
         private void OnBuildClicked()
@@ -208,6 +230,16 @@ namespace ThemeParkGame.Core
             bool show = !_loanPanel.activeSelf;
             _loanPanel.SetActive(show);
             if (show) RefreshLoanPanel();
+        }
+
+        private void OnCoasterDesignClicked()
+        {
+            // CoasterDesignSystemがなければ追加
+            if (CoasterDesignSystem.Instance == null)
+            {
+                gameObject.AddComponent<CoasterDesignSystem>();
+            }
+            ShowCoasterDesignPanel();
         }
 
         // ================================================================

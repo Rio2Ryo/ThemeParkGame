@@ -628,6 +628,20 @@ namespace ThemeParkGame.Attraction
         }
 
         // ================================================================
+        // カスタムアトラクション登録
+        // ================================================================
+
+        /// <summary>
+        /// カスタム設計されたアトラクションデータを登録する。
+        /// CoasterDesignSystemから呼ばれる。
+        /// </summary>
+        public void RegisterCustomAttraction(AttractionData customData)
+        {
+            if (customData == null) return;
+            WebGLOptimizer.LogVerbose($"[AttractionManager] カスタムアトラクション登録: {customData.NameJP} (ID: {customData.AttractionId})");
+        }
+
+        // ================================================================
         // 内部ヘルパー
         // ================================================================
 

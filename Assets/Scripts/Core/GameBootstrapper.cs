@@ -13,6 +13,7 @@ using ThemeParkGame.UI;
 using ThemeParkGame.Visitor;
 using ThemeParkGame.Park;
 using ThemeParkGame.Economy;
+using ThemeParkGame.Attraction;
 
 namespace ThemeParkGame.Core
 {
@@ -61,6 +62,12 @@ namespace ThemeParkGame.Core
             EnsureSaleCampaignSystem();
             EnsureNPCDialogueSystem();
             EnsureHooliganManager();
+
+            // パーク交通システム
+            EnsureBusSystem();
+
+            // コースター設計システム
+            EnsureCoasterDesignSystem();
 
             // ランタイムゲームセットアップ（ゲーム開始後にワールドを構築）
             EnsureRuntimeGameSetup();
@@ -332,6 +339,26 @@ namespace ThemeParkGame.Core
             var go = new GameObject("HooliganManager");
             go.AddComponent<HooliganManager>();
             WebGLOptimizer.LogVerbose("[GameBootstrapper] HooliganManager を生成");
+        }
+
+        // ================================================================
+        // パーク交通・コースター設計システム
+        // ================================================================
+
+        private static void EnsureBusSystem()
+        {
+            if (Park.BusSystem.Instance != null) return;
+            var go = new GameObject("BusSystem");
+            go.AddComponent<Park.BusSystem>();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] BusSystem を生成");
+        }
+
+        private static void EnsureCoasterDesignSystem()
+        {
+            if (CoasterDesignSystem.Instance != null) return;
+            var go = new GameObject("CoasterDesignSystem");
+            go.AddComponent<CoasterDesignSystem>();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] CoasterDesignSystem を生成");
         }
 
         // ================================================================

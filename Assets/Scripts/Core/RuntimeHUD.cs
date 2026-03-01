@@ -16,6 +16,7 @@
 //   RuntimeHUD_Economy.cs    - 研究, ローン, 月次レポート
 //   RuntimeHUD_Menu.cs       - メニュー, ポーズ, 結果, セーブ/ロード
 //   RuntimeHUD_ParkInfo.cs   - 評価, SNS, アラート, イベント, ゾーン
+//   RuntimeHUD_CoasterDesign.cs - カスタムコースター設計パネル
 // ============================================================
 
 using System.Collections.Generic;
@@ -139,6 +140,7 @@ namespace ThemeParkGame.Core
             BuildMonthlyReportPanel(_canvasRoot);
             BuildAnnualReportPanel(_canvasRoot);
             BuildFirstPersonOverlay(_canvasRoot);
+            BuildCoasterDesignPanel(_canvasRoot);
         }
 
         // ================================================================
@@ -173,6 +175,7 @@ namespace ThemeParkGame.Core
             if (_staffBtn != null) _staffBtn.SetActive(isPlaying);
             if (_researchBtn != null) _researchBtn.SetActive(isPlaying);
             if (_loanBtn != null) _loanBtn.SetActive(isPlaying);
+            if (_coasterBtn != null) _coasterBtn.SetActive(isPlaying);
             if (_zoneBar != null) _zoneBar.SetActive(isPlaying);
 
             // GameOver表示
