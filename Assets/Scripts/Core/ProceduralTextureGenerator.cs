@@ -99,7 +99,7 @@ namespace ThemeParkGame.Core
         /// <summary>芝生地面マテリアル（法線マップ付き）</summary>
         public static Material GrassGroundMaterial
         {
-            get { if (_grassGroundMat == null) _grassGroundMat = CreatePBRMaterial(Grass, GrassNormal, new Color(0.9f, 1f, 0.9f), 0f, 0.15f, 12f); return _grassGroundMat; }
+            get { if (_grassGroundMat == null) _grassGroundMat = CreatePBRMaterial(Grass, GrassNormal, new Color(0.9f, 1f, 0.9f), 0f, 0.15f, 8f); return _grassGroundMat; }
         }
 
         /// <summary>コンクリート通路マテリアル（法線マップ付き）</summary>
@@ -468,47 +468,61 @@ namespace ThemeParkGame.Core
             var tex = new Texture2D(TEX_SIZE, TEX_SIZE, TextureFormat.RGBA32, false);
             var pixels = new Color32[TEX_SIZE * TEX_SIZE];
 
+            // PS1「新テーマパーク」風 — 3色ディザリングパレット
+            Color32 grassDark   = new Color32(58, 140, 58, 255);   // #3A8C3A
+            Color32 grassMid    = new Color32(76, 166, 76, 255);   // #4CA64C
+            Color32 grassLight  = new Color32(90, 184, 90, 255);   // #5AB85A
+
+            // 4x4 Bayerディザ行列 (0-15の閾値)
+            int[,] bayer4 = {
+                { 0,  8,  2, 10 },
+                { 12, 4, 14,  6 },
+                { 3, 11,  1,  9 },
+                { 15, 7, 13,  5 }
+            };
+
             for (int y = 0; y < TEX_SIZE; y++)
             {
                 for (int x = 0; x < TEX_SIZE; x++)
                 {
-                    float n1 = FBM(x * 0.04f, y * 0.04f, 4);
-                    float n2 = FBM(x * 0.15f + 50f, y * 0.15f + 50f, 3);
-                    float n3 = FBM(x * 0.5f + 100f, y * 0.5f + 100f, 2);
+                    // ベースノイズ（大きなパッチを作る）
+                    float n1 = FBM(x * 0.03f, y * 0.03f, 3);
+                    // 細かいバリエーション
+                    float n2 = FBM(x * 0.12f + 50f, y * 0.12f + 50f, 2);
 
-                    float green = 0.42f + n1 * 0.22f + n2 * 0.08f;
-                    float red = green * 0.52f + n3 * 0.04f;
-                    float blue = green * 0.22f;
+                    // 0-1のベース明度値
+                    float baseValue = n1 * 0.7f + n2 * 0.3f;
 
-                    // 草の葉のストリーク
-                    float blade = FBM(x * 0.08f, y * 1.5f, 2);
-                    if (blade > 0.65f)
-                    {
-                        green += 0.08f;
-                        red -= 0.02f;
-                    }
+                    // Bayerディザ閾値 (0-1に正規化)
+                    float threshold = bayer4[y % 4, x % 4] / 16f;
 
-                    // 花のドット
+                    // ディザリングで3色パレットから選択
+                    Color32 pixel;
+                    float adjustedValue = baseValue + (threshold - 0.5f) * 0.25f;
+
+                    if (adjustedValue < 0.35f)
+                        pixel = grassDark;
+                    else if (adjustedValue < 0.6f)
+                        pixel = grassMid;
+                    else
+                        pixel = grassLight;
+
+                    // 花のドット（PS1風に少ない量で）
                     float flower = FBM(x * 0.3f + 200f, y * 0.3f + 200f, 2);
-                    if (flower > 0.88f)
+                    if (flower > 0.9f)
                     {
-                        red += 0.2f;
-                        green -= 0.05f;
-                        blue += 0.05f;
+                        pixel = new Color32(200, 100, 160, 255); // ピンクの花
                     }
 
-                    byte r = (byte)Mathf.Clamp(red * 255f, 0, 255);
-                    byte g = (byte)Mathf.Clamp(green * 255f, 0, 255);
-                    byte b = (byte)Mathf.Clamp(blue * 255f, 0, 255);
-                    pixels[y * TEX_SIZE + x] = new Color32(r, g, b, 255);
+                    pixels[y * TEX_SIZE + x] = pixel;
                 }
             }
 
             tex.SetPixels32(pixels);
             tex.Apply();
             tex.wrapMode = TextureWrapMode.Repeat;
-            tex.filterMode = FilterMode.Bilinear;
-            tex.name = "ProceduralGrass";
+            tex.filterMode = FilterMode.Point; // PS1風にPointフィルタリング（ドット感を維持）
+            tex.name = "ProceduralGrass_PS1Dither";
             return tex;
         }
 

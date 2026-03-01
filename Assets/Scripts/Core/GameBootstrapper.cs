@@ -121,13 +121,10 @@ namespace ThemeParkGame.Core
             var go = new GameObject("MainCamera");
             go.tag = "MainCamera";
             var cam = go.AddComponent<Camera>();
-            cam.clearFlags = CameraClearFlags.Skybox;
-            cam.fieldOfView = 60f;
             go.AddComponent<AudioListener>();
             go.AddComponent<FirstPersonCamera>();
-            go.transform.position = new Vector3(0f, 30f, -20f);
-            go.transform.rotation = Quaternion.Euler(60f, 0f, 0f);
-            WebGLOptimizer.LogVerbose("[GameBootstrapper] MainCamera を生成");
+            go.AddComponent<GameCameraController>();
+            WebGLOptimizer.LogVerbose("[GameBootstrapper] MainCamera を生成（アイソメトリックカメラ）");
         }
 
         private static void EnsureDirectionalLight()

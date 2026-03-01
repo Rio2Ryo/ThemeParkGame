@@ -1,6 +1,37 @@
 # ThemeParkGame ステータスレポート
 
-## 最終更新: 2026-03-01（Phase 6完了時点）
+## 最終更新: 2026-03-01（PS1グラフィック改善適用）
+
+---
+
+# PS1「新テーマパーク」グラフィック改善 (3エージェント並列実装)
+
+## 実装完了項目
+
+### Agent1: アイソメトリックカメラ ✅
+- **GameCameraController.cs** 新規作成
+- カメラをOrthographic投影に変更（Perspective廃止）
+- 角度を(26.565°, 45°, 0°)に固定 — 完璧な2:1アイソメトリック
+- orthographicSize=12でパーク全体を俯瞰
+- WASD/矢印キーでパン、マウスホイールでズーム(5〜25)
+- FirstPersonCamera復帰時に自動でアイソメトリック設定を復元
+- GameBootstrapper/SceneBootstrapper更新済み
+
+### Agent2: PS1風ステータスバー ✅
+- **RuntimeHUD_Scoreboard.cs** 全面書き換え
+- 旧スコアボード(740x80 入場者/収益/満足度)を廃止
+- 旧InfoBar(740x28 資金/時間/天候/スタッフ/混雑度)を廃止
+- 新PS1ステータスバー: 全幅54px、濃紺背景(#102060)
+- 3セクション: 総資金(黄ラベル+白数値) | 年度(黄) | 月日(白)
+- 速度パネルもPS1バー直下に移動
+
+### Agent3: 来場者デフォルメ + 草地ディザリング ✅
+- **ProceduralMeshGenerator.cs** 頭部スケール0.2→0.36(1.8倍)
+- 超デフォルメ/チビ体型で「新テーマパーク」の来場者スプライトを再現
+- **ProceduralTextureGenerator.cs** GenerateGrass全面書き換え
+- 3色パレット(#3A8C3A/#4CA64C/#5AB85A) + 4x4 Bayerディザリング
+- FilterMode.Pointでドット感を維持
+- タイルスケール12→8でディザパターンを視認可能に
 
 ---
 

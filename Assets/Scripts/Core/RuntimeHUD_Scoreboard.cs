@@ -1,6 +1,6 @@
 // ============================================================
-// RuntimeHUD - Scoreboard partial
-// スコアボード、情報バー、速度パネル
+// RuntimeHUD - Scoreboard partial (PS1「新テーマパーク」スタイル)
+// 濃紺ステータスバー: 総資金・年度・月日のみ表示
 // ============================================================
 
 using UnityEngine;
@@ -11,14 +11,19 @@ namespace ThemeParkGame.Core
 {
     public partial class RuntimeHUD
     {
-        // ---- スコアボード（画面上部中央） ----
+        // ---- 旧フィールド（互換性維持: RefreshAllから参照される） ----
         private Text _sbVisitorValue;
         private Text _sbRevenueValue;
         private Text _sbSatisfactionValue;
         private GameObject _sbSatisfactionBar;
         private Image _sbSatisfactionFill;
 
-        // ---- トップバー（スコアボード下） ----
+        // ---- PS1風ステータスバー ----
+        private Text _ps1MoneyValue;
+        private Text _ps1YearValue;
+        private Text _ps1DateValue;
+
+        // ---- トップバー互換フィールド ----
         private Text _moneyText;
         private Text _timeWeatherText;
         private Text _staffText;
@@ -29,131 +34,133 @@ namespace ThemeParkGame.Core
         private readonly string[] _speedLabels = { "\u23F8", "\u00BD", "\u25B6", "\u25B6\u25B6", "\u25B6\u25B6\u25B6" };
 
         // ================================================================
-        // スコアボード（画面上部中央 740x80）
-        // 入場者数・総収益・平均満足度を大きく目立つ表示
+        // PS1風ステータスバー（画面最上部・全幅）
         // ================================================================
 
         private void BuildScoreboard(RectTransform root)
         {
-            float boardW = 740f;
-            float boardH = 80f;
+            float barH = 54f;
 
-            var bg = MakePanel(root, "Scoreboard", boardW, boardH, BgDark);
-            var rt = bg.GetComponent<RectTransform>();
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
-            rt.pivot = new Vector2(0.5f, 1f);
-            rt.anchoredPosition = new Vector2(0f, -4f);
+            // ---- 全幅背景 (濃紺 #102060) ----
+            var bg = new GameObject("PS1StatusBar");
+            bg.transform.SetParent(root, false);
+            var bgRt = bg.AddComponent<RectTransform>();
+            bgRt.anchorMin = new Vector2(0f, 1f);
+            bgRt.anchorMax = new Vector2(1f, 1f);
+            bgRt.pivot = new Vector2(0.5f, 1f);
+            bgRt.anchoredPosition = Vector2.zero;
+            bgRt.sizeDelta = new Vector2(0f, barH);
+            var bgImg = bg.AddComponent<Image>();
+            bgImg.color = new Color(0.063f, 0.125f, 0.376f, 1f);
+            bgImg.raycastTarget = false;
 
-            float colW = boardW / 3f;
+            Color goldYellow = new Color(1f, 0.843f, 0f);  // #FFD700
 
-            // ---- 入場者数 ----
-            var visLabel = MakeLabel(rt, "VisLabel", LocalizationData.LabelVisitors, 13, new Color(0.5f, 0.6f, 0.7f),
+            // ---- セクション1: 総資金（左寄り） ----
+            // Label
+            var moneyLabel = MakeLabel(bgRt, "MoneyLabel", "総資金: ", 20, goldYellow,
+                FontStyle.Bold, TextAnchor.MiddleRight);
+            var mlRt = moneyLabel.rectTransform;
+            mlRt.anchorMin = new Vector2(0f, 0f);
+            mlRt.anchorMax = new Vector2(0f, 1f);
+            mlRt.pivot = new Vector2(0f, 0.5f);
+            mlRt.anchoredPosition = new Vector2(20f, 0f);
+            mlRt.sizeDelta = new Vector2(110f, 0f);
+
+            // Value
+            _ps1MoneyValue = MakeLabel(bgRt, "MoneyValue", "\u00A50", 22, Color.white,
+                FontStyle.Bold, TextAnchor.MiddleLeft);
+            var mvRt = _ps1MoneyValue.rectTransform;
+            mvRt.anchorMin = new Vector2(0f, 0f);
+            mvRt.anchorMax = new Vector2(0f, 1f);
+            mvRt.pivot = new Vector2(0f, 0.5f);
+            mvRt.anchoredPosition = new Vector2(132f, 0f);
+            mvRt.sizeDelta = new Vector2(200f, 0f);
+
+            // ---- 区切り線1 ----
+            var sep1 = MakePanel(bgRt, "Sep1", 2f, barH - 16f, new Color(0.3f, 0.4f, 0.6f, 0.7f));
+            var s1Rt = sep1.GetComponent<RectTransform>();
+            s1Rt.anchorMin = s1Rt.anchorMax = new Vector2(0.38f, 0.5f);
+            s1Rt.pivot = new Vector2(0.5f, 0.5f);
+            s1Rt.anchoredPosition = Vector2.zero;
+
+            // ---- セクション2: 年度（中央） ----
+            _ps1YearValue = MakeLabel(bgRt, "YearValue", "1年目", 22, goldYellow,
                 FontStyle.Bold, TextAnchor.MiddleCenter);
-            PlaceInParent(visLabel.rectTransform, 0f, boardH - 4f, colW, 20f, new Vector2(0f, 1f));
+            var yvRt = _ps1YearValue.rectTransform;
+            yvRt.anchorMin = new Vector2(0.38f, 0f);
+            yvRt.anchorMax = new Vector2(0.62f, 1f);
+            yvRt.pivot = new Vector2(0.5f, 0.5f);
+            yvRt.anchoredPosition = Vector2.zero;
+            yvRt.sizeDelta = Vector2.zero;
 
-            _sbVisitorValue = MakeLabel(rt, "VisValue", "0", 34, Color.white,
+            // ---- 区切り線2 ----
+            var sep2 = MakePanel(bgRt, "Sep2", 2f, barH - 16f, new Color(0.3f, 0.4f, 0.6f, 0.7f));
+            var s2Rt = sep2.GetComponent<RectTransform>();
+            s2Rt.anchorMin = s2Rt.anchorMax = new Vector2(0.62f, 0.5f);
+            s2Rt.pivot = new Vector2(0.5f, 0.5f);
+            s2Rt.anchoredPosition = Vector2.zero;
+
+            // ---- セクション3: 月日（右寄り） ----
+            _ps1DateValue = MakeLabel(bgRt, "DateValue", "4月2日", 22, Color.white,
                 FontStyle.Bold, TextAnchor.MiddleCenter);
-            PlaceInParent(_sbVisitorValue.rectTransform, 0f, boardH - 24f, colW, 42f, new Vector2(0f, 1f));
+            var dvRt = _ps1DateValue.rectTransform;
+            dvRt.anchorMin = new Vector2(0.62f, 0f);
+            dvRt.anchorMax = new Vector2(1f, 1f);
+            dvRt.pivot = new Vector2(0.5f, 0.5f);
+            dvRt.anchoredPosition = Vector2.zero;
+            dvRt.sizeDelta = Vector2.zero;
 
-            var visSub = MakeLabel(rt, "VisSub", "\u4EBA", 12, Muted, FontStyle.Normal, TextAnchor.MiddleCenter);
-            PlaceInParent(visSub.rectTransform, 0f, boardH - 66f, colW, 16f, new Vector2(0f, 1f));
-
-            // ---- 区切り線 1 ----
-            var sep1 = MakePanel(rt, "Sep1", 2f, boardH - 16f, new Color(0.3f, 0.35f, 0.45f, 0.5f));
-            var sep1Rt = sep1.GetComponent<RectTransform>();
-            sep1Rt.anchorMin = sep1Rt.anchorMax = new Vector2(0f, 0.5f);
-            sep1Rt.pivot = new Vector2(0.5f, 0.5f);
-            sep1Rt.anchoredPosition = new Vector2(colW, 0f);
-
-            // ---- 総収益 ----
-            var revLabel = MakeLabel(rt, "RevLabel", LocalizationData.LabelRevenue, 13, new Color(0.5f, 0.6f, 0.7f),
-                FontStyle.Bold, TextAnchor.MiddleCenter);
-            PlaceInParent(revLabel.rectTransform, colW, boardH - 4f, colW, 20f, new Vector2(0f, 1f));
-
-            _sbRevenueValue = MakeLabel(rt, "RevValue", "$0", 34, Green,
-                FontStyle.Bold, TextAnchor.MiddleCenter);
-            PlaceInParent(_sbRevenueValue.rectTransform, colW, boardH - 24f, colW, 42f, new Vector2(0f, 1f));
-
-            var revSub = MakeLabel(rt, "RevSub", "", 12, Muted, FontStyle.Normal, TextAnchor.MiddleCenter);
-            PlaceInParent(revSub.rectTransform, colW, boardH - 66f, colW, 16f, new Vector2(0f, 1f));
-
-            // ---- 区切り線 2 ----
-            var sep2 = MakePanel(rt, "Sep2", 2f, boardH - 16f, new Color(0.3f, 0.35f, 0.45f, 0.5f));
-            var sep2Rt = sep2.GetComponent<RectTransform>();
-            sep2Rt.anchorMin = sep2Rt.anchorMax = new Vector2(0f, 0.5f);
-            sep2Rt.pivot = new Vector2(0.5f, 0.5f);
-            sep2Rt.anchoredPosition = new Vector2(colW * 2f, 0f);
-
-            // ---- 平均満足度 ----
-            var satLabel = MakeLabel(rt, "SatLabel", LocalizationData.LabelSatisfaction, 13, new Color(0.5f, 0.6f, 0.7f),
-                FontStyle.Bold, TextAnchor.MiddleCenter);
-            PlaceInParent(satLabel.rectTransform, colW * 2f, boardH - 4f, colW, 20f, new Vector2(0f, 1f));
-
-            _sbSatisfactionValue = MakeLabel(rt, "SatValue", "0%", 34, Green,
-                FontStyle.Bold, TextAnchor.MiddleCenter);
-            PlaceInParent(_sbSatisfactionValue.rectTransform, colW * 2f, boardH - 24f, colW, 42f, new Vector2(0f, 1f));
-
-            // 満足度バー
-            float barW = colW - 40f;
-            float barH = 8f;
-            float barX = colW * 2f + 20f;
-            float barY = boardH - 70f;
-            var barBg = MakePanel(rt, "SatBarBg", barW, barH, new Color(0.15f, 0.18f, 0.25f));
-            PlaceInParent(barBg.GetComponent<RectTransform>(), barX, barY, barW, barH, new Vector2(0f, 1f));
-
-            var barFill = MakePanel(rt, "SatBarFill", barW, barH, Green);
-            PlaceInParent(barFill.GetComponent<RectTransform>(), barX, barY, barW, barH, new Vector2(0f, 1f));
-            _sbSatisfactionBar = barBg;
-            _sbSatisfactionFill = barFill.GetComponent<Image>();
+            // ---- 旧フィールド互換: 非表示ダミーテキスト ----
+            _sbVisitorValue = MakeLabel(bgRt, "_compat_vis", "", 1, Color.clear, FontStyle.Normal, TextAnchor.MiddleCenter);
+            _sbVisitorValue.gameObject.SetActive(false);
+            _sbRevenueValue = MakeLabel(bgRt, "_compat_rev", "", 1, Color.clear, FontStyle.Normal, TextAnchor.MiddleCenter);
+            _sbRevenueValue.gameObject.SetActive(false);
+            _sbSatisfactionValue = MakeLabel(bgRt, "_compat_sat", "", 1, Color.clear, FontStyle.Normal, TextAnchor.MiddleCenter);
+            _sbSatisfactionValue.gameObject.SetActive(false);
         }
 
         // ================================================================
-        // 情報バー（スコアボード下、資金・時間・天候・スタッフ）
+        // 情報バー（PS1スタイルでは非表示 — 互換性のため空メソッド）
         // ================================================================
 
         private void BuildInfoBar(RectTransform root)
         {
-            float barW = 740f;
-            float barH = 28f;
-
-            var bg = MakePanel(root, "InfoBar", barW, barH, new Color(0.05f, 0.07f, 0.13f, 0.85f));
-            var rt = bg.GetComponent<RectTransform>();
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
-            rt.pivot = new Vector2(0.5f, 1f);
-            rt.anchoredPosition = new Vector2(0f, -88f);
-
-            _moneyText = MakeLabel(rt, "Money", "", 14, Gold, FontStyle.Bold, TextAnchor.MiddleLeft);
-            PlaceInParent(_moneyText.rectTransform, 12f, barH, barW * 0.22f, barH, new Vector2(0f, 1f));
-
-            _timeWeatherText = MakeLabel(rt, "TimeWeather", "", 14, Color.white, FontStyle.Normal, TextAnchor.MiddleCenter);
-            PlaceInParent(_timeWeatherText.rectTransform, barW * 0.22f, barH, barW * 0.3f, barH, new Vector2(0f, 1f));
-
-            // 混雑度インジケーター
-            _congestionText = MakeLabel(rt, "Congestion", "通路: 空き", 13, Green, FontStyle.Normal, TextAnchor.MiddleLeft);
-            PlaceInParent(_congestionText.rectTransform, barW * 0.52f, barH, 85f, barH, new Vector2(0f, 1f));
-
-            // 混雑度バー
-            var barBg = MakePanel(rt, "CongBarBg", 60f, 10f, new Color(0.15f, 0.15f, 0.2f));
-            var barBgRt = barBg.GetComponent<RectTransform>();
-            barBgRt.anchorMin = barBgRt.anchorMax = new Vector2(0f, 0.5f);
-            barBgRt.pivot = new Vector2(0f, 0.5f);
-            barBgRt.anchoredPosition = new Vector2(barW * 0.52f + 86f, 0f);
-
-            var fill = MakePanel(barBgRt, "CongBarFill", 60f, 10f, Green);
-            var fillRt = fill.GetComponent<RectTransform>();
-            fillRt.anchorMin = new Vector2(0f, 0f);
-            fillRt.anchorMax = new Vector2(0f, 1f);
-            fillRt.pivot = new Vector2(0f, 0.5f);
-            fillRt.anchoredPosition = Vector2.zero;
-            fillRt.sizeDelta = new Vector2(0f, 0f); // 初期は0幅
-            _congestionBarFill = fill.GetComponent<Image>();
-
-            _staffText = MakeLabel(rt, "Staff", "", 14, Muted, FontStyle.Normal, TextAnchor.MiddleRight);
-            PlaceInParent(_staffText.rectTransform, barW * 0.76f, barH, barW * 0.22f, barH, new Vector2(0f, 1f));
+            // PS1スタイルでは上部ステータスバーに統合済み
+            // 旧フィールドはnullのまま（RefreshAllのnullチェックで安全）
         }
 
         // ================================================================
-        // 速度ボタンパネル（右上）
+        // PS1ステータスバー更新
+        // ================================================================
+
+        /// <summary>PS1風ステータスバーの表示を更新する</summary>
+        private void RefreshPS1StatusBar()
+        {
+            var gm = GameManager.Instance;
+            if (gm == null) return;
+
+            // 総資金
+            if (_ps1MoneyValue != null && gm.EconomyManager != null)
+            {
+                _ps1MoneyValue.text = $"\u00A5{gm.EconomyManager.CurrentMoney:N0}";
+            }
+
+            // 年度
+            if (_ps1YearValue != null && gm.TimeManager != null)
+            {
+                _ps1YearValue.text = $"{gm.TimeManager.CurrentYear}年目";
+            }
+
+            // 月日
+            if (_ps1DateValue != null && gm.TimeManager != null)
+            {
+                _ps1DateValue.text = $"{gm.TimeManager.CurrentMonth}月{gm.TimeManager.CurrentDay}日";
+            }
+        }
+
+        // ================================================================
+        // 速度ボタンパネル（PS1バーの下、右寄り）
         // ================================================================
 
         private void BuildSpeedPanel(RectTransform root)
@@ -161,11 +168,11 @@ namespace ThemeParkGame.Core
             float panelW = 276f;
             float panelH = 44f;
 
-            var bg = MakePanel(root, "SpeedPanel", panelW, panelH, BgDark);
+            var bg = MakePanel(root, "SpeedPanel", panelW, panelH, new Color(0.063f, 0.125f, 0.376f, 0.9f));
             var rt = bg.GetComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = new Vector2(1f, 1f);
             rt.pivot = new Vector2(1f, 1f);
-            rt.anchoredPosition = new Vector2(-10f, -122f);
+            rt.anchoredPosition = new Vector2(-10f, -60f);
 
             _speedBtnBgs = new Image[5];
             float btnW = 48f;

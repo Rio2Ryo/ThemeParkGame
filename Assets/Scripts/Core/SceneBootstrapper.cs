@@ -176,16 +176,12 @@ namespace ThemeParkGame.Core
             var go = new GameObject("MainCamera");
             go.tag = "MainCamera";
             var cam = go.AddComponent<Camera>();
-            cam.clearFlags = CameraClearFlags.Skybox;
-            cam.fieldOfView = 60f;
             go.AddComponent<AudioListener>();
-
-            // God View初期位置: パークを見下ろす斜め視点
-            go.transform.position = new Vector3(0f, 30f, -20f);
-            go.transform.rotation = Quaternion.Euler(60f, 0f, 0f);
+            go.AddComponent<FirstPersonCamera>();
+            go.AddComponent<GameCameraController>();
 
             if (verboseLogging)
-                WebGLOptimizer.LogVerbose("[SceneBootstrapper] MainCamera を自動生成しました");
+                WebGLOptimizer.LogVerbose("[SceneBootstrapper] MainCamera を自動生成しました（アイソメトリックカメラ）");
         }
 
         private void EnsureDirectionalLight()

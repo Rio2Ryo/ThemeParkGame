@@ -830,11 +830,11 @@ namespace ThemeParkGame.Core
             body.transform.localScale = new Vector3(1f, 1.4f, 0.85f);
             ApplyMaterial(body, bodyColor, 0f, 0.4f);
 
-            // 頭
-            var head = CreateSphereGameObject(0.2f, SEG_MED);
+            // 頭（PS1「新テーマパーク」風 — デフォルメ/ちびキャラ比率: 1.8倍サイズ）
+            var head = CreateSphereGameObject(0.36f, SEG_MED);
             head.name = "Head";
             head.transform.SetParent(root.transform, false);
-            head.transform.localPosition = new Vector3(0f, 1.25f, 0f);
+            head.transform.localPosition = new Vector3(0f, 1.35f, 0f);
             ApplyMaterial(head, new Color(0.95f, 0.82f, 0.72f), 0f, 0.4f);
 
             // 左腕

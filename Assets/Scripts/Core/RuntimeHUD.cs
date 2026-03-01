@@ -216,6 +216,9 @@ namespace ThemeParkGame.Core
             var gm = GameManager.Instance;
             if (gm == null) return;
 
+            // ---- PS1ステータスバー更新 ----
+            RefreshPS1StatusBar();
+
             // ---- スコアボード ----
             if (gm.VisitorManager != null)
             {
@@ -248,7 +251,8 @@ namespace ThemeParkGame.Core
             {
                 _sbRevenueValue.text = $"${gm.EconomyManager.TotalRevenueEarned:N0}";
                 float fee = gm.EconomyManager.Pricing?.EntranceFee ?? 0f;
-                _moneyText.text = $"資金: ${gm.EconomyManager.CurrentMoney:N0}  入場料: ${fee:N0}";
+                if (_moneyText != null)
+                    _moneyText.text = $"資金: ${gm.EconomyManager.CurrentMoney:N0}  入場料: ${fee:N0}";
             }
 
             // ---- 時間 + 天候 ----
@@ -261,7 +265,8 @@ namespace ThemeParkGame.Core
                 time = $"{tm.CurrentYear}年{tm.CurrentMonth}月{tm.CurrentDay}日 {h:D2}:{m:D2}";
             }
             string weather = gm.WeatherSystem != null ? WeatherLabel(gm.WeatherSystem.CurrentWeather) : "";
-            _timeWeatherText.text = $"{weather}  {time}";
+            if (_timeWeatherText != null)
+                _timeWeatherText.text = $"{weather}  {time}";
 
             // ---- スタッフ ----
             if (gm.StaffManager != null)
@@ -274,7 +279,8 @@ namespace ThemeParkGame.Core
                 int sci = sm.GetStaffCount(StaffType.Scientist);
                 int striking = sm.StrikingStaffCount;
                 string strikeWarn = striking > 0 ? $" <color=#FF4444>スト:{striking}</color>" : "";
-                _staffText.text = $"修:{mech} 掃:{cln} 芸:{ent} 警:{grd} 研:{sci}{strikeWarn}";
+                if (_staffText != null)
+                    _staffText.text = $"修:{mech} 掃:{cln} 芸:{ent} 警:{grd} 研:{sci}{strikeWarn}";
             }
 
             // ---- 通路混雑度 ----
