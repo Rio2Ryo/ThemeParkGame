@@ -189,6 +189,17 @@ namespace ThemeParkGame.Attraction
         [Min(30f)]
         public float TimeToAccidentAfterBreakdown = 180f;
 
+        // ---- 経年劣化パラメータ ----
+
+        [Header("経年劣化パラメータ")]
+        [Tooltip("基本耐久度（高いほど劣化が遅い）。1.0=標準、2.0=高耐久")]
+        [Range(0.5f, 3f)]
+        public float Durability = 1.0f;
+
+        [Tooltip("1回の運行サイクルで失われるコンディション値")]
+        [Range(0.01f, 1f)]
+        public float ConditionLossPerCycle = 0.15f;
+
         // ---- ヘルパーメソッド ----
 
         /// <summary>

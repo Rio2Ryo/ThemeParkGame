@@ -358,7 +358,8 @@ namespace ThemeParkGame.Staff
 
             foreach (var staff in allStaff.Values)
             {
-                totalPaid += staff.Salary;
+                // シフトに応じた給与倍率を適用（夜勤25%割増、終日50%割増）
+                totalPaid += staff.Salary * staff.ShiftSalaryMultiplier;
             }
 
             if (totalPaid > 0f)
@@ -585,6 +586,123 @@ namespace ThemeParkGame.Staff
         }
 
         // ============================================================
+        // シフト・ゾーン管理
+        // ============================================================
+
+        /// <summary>
+        /// スタッフの勤務シフトを設定する。
+        /// </summary>
+        public void SetStaffShift(int staffId, ShiftType shift)
+        {
+            if (allStaff.TryGetValue(staffId, out StaffMember staff))
+            {
+                staff.CurrentShift = shift;
+                WebGLOptimizer.LogVerbose($"[StaffManager] {staff.Name} のシフトを {shift} に設定しました");
+            }
+        }
+
+        /// <summary>
+        /// スタッフの担当ゾーンを設定する。
+        /// </summary>
+        public void SetStaffZone(int staffId, ThemeZone? zone)
+        {
+            if (allStaff.TryGetValue(staffId, out StaffMember staff))
+            {
+                staff.AssignedZone = zone;
+                string zoneName = zone.HasValue ? zone.Value.ToString() : "全エリア";
+                WebGLOptimizer.LogVerbose($"[StaffManager] {staff.Name} の担当ゾーンを {zoneName} に設定しました");
+            }
+        }
+
+        /// <summary>
+        /// 全スタッフの連続勤務日数を1日加算する。日次処理で呼ばれる。
+        /// シフトがAllDayのスタッフは毎日加算される。
+        /// </summary>
+        public void AdvanceShiftDay()
+        {
+            foreach (var staff in allStaff.Values)
+            {
+                if (staff.CurrentShift == ShiftType.AllDay)
+                {
+                    staff.ConsecutiveShiftDays++;
+                }
+                else
+                {
+                    // シフト制のスタッフは勤務外時間に休めるため連続勤務はリセット
+                    staff.ConsecutiveShiftDays = 0;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 現在勤務時間内のスタッフ数を種別ごとに取得する。
+        /// 人員不足の判定に使用。
+        /// </summary>
+        public int GetOnDutyStaffCount(StaffType type)
+        {
+            if (!staffByType.ContainsKey(type)) return 0;
+            int count = 0;
+            foreach (var staff in staffByType[type])
+            {
+                if (staff.IsOnDuty && !staff.IsOnStrike) count++;
+            }
+            return count;
+        }
+
+        /// <summary>
+        /// 指定ゾーンに配置されているスタッフ数を取得する。
+        /// </summary>
+        public int GetStaffCountInZone(StaffType type, ThemeZone zone)
+        {
+            if (!staffByType.ContainsKey(type)) return 0;
+            int count = 0;
+            foreach (var staff in staffByType[type])
+            {
+                if (staff.AssignedZone == zone && !staff.IsOnStrike) count++;
+            }
+            return count;
+        }
+
+        /// <summary>
+        /// シフト配置を自動最適化する。
+        /// 各シフトに均等に配置し、夜間は最低限の人数を確保する。
+        /// </summary>
+        public void AutoOptimizeShifts(StaffType type)
+        {
+            if (!staffByType.ContainsKey(type)) return;
+
+            var staffList = staffByType[type];
+            if (staffList.Count == 0) return;
+
+            int total = staffList.Count;
+            // 3人以下は全員AllDayのまま
+            if (total <= 3)
+            {
+                foreach (var s in staffList)
+                    s.CurrentShift = ShiftType.AllDay;
+                return;
+            }
+
+            // 4人以上: Morning/Day/Night を均等に、余りはDayに
+            int perShift = total / 3;
+            int remainder = total % 3;
+            int idx = 0;
+
+            for (int i = 0; i < perShift; i++)
+                staffList[idx++].CurrentShift = ShiftType.Morning;
+            for (int i = 0; i < perShift + (remainder > 0 ? 1 : 0); i++)
+                staffList[idx++].CurrentShift = ShiftType.Day;
+            remainder = remainder > 1 ? remainder - 1 : 0;
+            for (int i = 0; i < perShift + (remainder > 0 ? 1 : 0); i++)
+            {
+                if (idx >= total) break;
+                staffList[idx++].CurrentShift = ShiftType.Night;
+            }
+
+            WebGLOptimizer.LogVerbose($"[StaffManager] {type} のシフトを自動最適化しました（{total}名）");
+        }
+
+        // ============================================================
         // 検索・取得
         // ============================================================
 
@@ -807,7 +925,8 @@ namespace ThemeParkGame.Staff
                 AverageSkillLevel = list.Count > 0 ? (float)list.Average(s => s.SkillLevel) : 0f,
                 AverageFatigue = list.Count > 0 ? (float)list.Average(s => s.Fatigue) : 0f,
                 StrikingCount = list.Count(s => s.IsOnStrike),
-                TotalMonthlySalary = list.Sum(s => s.Salary)
+                TotalMonthlySalary = list.Sum(s => s.Salary * s.ShiftSalaryMultiplier),
+                OnDutyCount = list.Count(s => s.IsOnDuty && !s.IsOnStrike)
             };
         }
 
@@ -1001,10 +1120,11 @@ namespace ThemeParkGame.Staff
         public float AverageFatigue;
         public int StrikingCount;
         public float TotalMonthlySalary;
+        public int OnDutyCount;
 
         public override string ToString()
         {
-            return $"[{Type}] 人数:{Count}, 平均Lv:{AverageSkillLevel:F1}"
+            return $"[{Type}] 人数:{Count}, 勤務中:{OnDutyCount}, 平均Lv:{AverageSkillLevel:F1}"
                    + $", 平均疲労:{AverageFatigue:F0}, ストライキ:{StrikingCount}"
                    + $", 月給合計:{TotalMonthlySalary:F0}";
         }

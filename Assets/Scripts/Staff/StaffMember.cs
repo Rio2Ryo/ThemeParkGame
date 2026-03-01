@@ -81,6 +81,11 @@ namespace ThemeParkGame.Staff
 
         [SerializeField] private float salary = 500f;
 
+        [Header("Shift & Zone")]
+        [SerializeField] private ShiftType currentShift = ShiftType.AllDay;
+        [SerializeField] private ThemeZone? assignedZone = null;
+        [SerializeField] private int consecutiveShiftDays;
+
         [Header("Patrol")]
         [SerializeField] private List<Transform> patrolPoints = new List<Transform>();
         [SerializeField] private Bounds patrolArea;
@@ -146,6 +151,81 @@ namespace ThemeParkGame.Staff
         /// <summary>作業可能かどうか</summary>
         public bool IsAvailable => CurrentState == StaffBehaviorState.Idle
                                    || CurrentState == StaffBehaviorState.Working;
+
+        /// <summary>現在の勤務シフト</summary>
+        public ShiftType CurrentShift
+        {
+            get => currentShift;
+            set => currentShift = value;
+        }
+
+        /// <summary>担当テーマゾーン（nullなら制限なし）</summary>
+        public ThemeZone? AssignedZone
+        {
+            get => assignedZone;
+            set => assignedZone = value;
+        }
+
+        /// <summary>連続勤務日数（休日なしの連続稼働日数）</summary>
+        public int ConsecutiveShiftDays
+        {
+            get => consecutiveShiftDays;
+            set => consecutiveShiftDays = Mathf.Max(0, value);
+        }
+
+        /// <summary>現在のゲーム内時間で勤務時間内かどうか</summary>
+        public bool IsOnDuty
+        {
+            get
+            {
+                if (currentShift == ShiftType.AllDay) return true;
+
+                float hour = GetCurrentGameHour();
+                return currentShift switch
+                {
+                    ShiftType.Morning => hour >= 6f && hour < 14f,
+                    ShiftType.Day => hour >= 14f && hour < 22f,
+                    ShiftType.Night => hour >= 22f || hour < 6f,
+                    _ => true
+                };
+            }
+        }
+
+        /// <summary>夜勤シフトか</summary>
+        public bool IsNightShift => currentShift == ShiftType.Night;
+
+        /// <summary>
+        /// シフトに応じた疲労倍率。
+        /// AllDay=×1.5、Night=×1.2、連続勤務3日以上で追加×1.3
+        /// </summary>
+        public float ShiftFatigueMultiplier
+        {
+            get
+            {
+                float mul = currentShift switch
+                {
+                    ShiftType.AllDay => 1.5f,
+                    ShiftType.Night => 1.2f,
+                    _ => 1.0f
+                };
+
+                if (consecutiveShiftDays >= 3)
+                    mul *= 1.3f; // 連続勤務ペナルティ
+
+                return mul;
+            }
+        }
+
+        /// <summary>
+        /// シフトに応じた給与倍率。
+        /// Night=×1.25（夜間割増）、AllDay=×1.5（終日割増）
+        /// </summary>
+        public float ShiftSalaryMultiplier => currentShift switch
+        {
+            ShiftType.Night => 1.25f,
+            ShiftType.AllDay => 1.5f,
+            _ => 1.0f
+        };
 
         /// <summary>パトロールエリアが割り当てられているか</summary>
         public bool HasPatrolArea => patrolPoints.Count > 0 || patrolArea.size.sqrMagnitude > 0f;
@@ -273,7 +353,8 @@ namespace ThemeParkGame.Staff
                 case StaffBehaviorState.MovingToTask:
                     // スキルが高いほど疲労蓄積が緩やか (スキル5で60%に軽減)
                     float fatigueReduction = 1f - (SkillLevel - 1) * 0.1f;
-                    Fatigue += BaseFatigueIncreaseRate * fatigueReduction * deltaTime;
+                    // シフトによる疲労倍率を適用
+                    Fatigue += BaseFatigueIncreaseRate * fatigueReduction * ShiftFatigueMultiplier * deltaTime;
                     timeSinceLastRest += deltaTime;
 
                     // 作業経験値の蓄積（Working状態のみ）
@@ -430,6 +511,14 @@ namespace ThemeParkGame.Staff
         /// <summary>セーブ用: 経験値を設定する</summary>
         public void SetWorkExperience(float exp) { _workExperience = exp; }
 
+        /// <summary>現在のゲーム内時間（0-24h）を取得する</summary>
+        private float GetCurrentGameHour()
+        {
+            if (GameManager.Instance?.TimeManager != null)
+                return GameManager.Instance.TimeManager.CurrentHour;
+            return 12f; // フォールバック: 昼
+        }
+
         // ============================================================
         // AI行動ループ
         // ============================================================
@@ -445,6 +534,13 @@ namespace ThemeParkGame.Staff
         /// </summary>
         private void ExecuteBehaviorLoop()
         {
+            // シフト時間外は休息に移行
+            if (!IsOnDuty && CurrentState != StaffBehaviorState.Resting)
+            {
+                BeginResting();
+                return;
+            }
+
             switch (CurrentState)
             {
                 case StaffBehaviorState.Idle:

@@ -63,9 +63,10 @@ namespace ThemeParkGame.Attraction
         [SerializeField] private RideCycleState currentCycleState = RideCycleState.WaitingForRiders;
         public RideCycleState CurrentCycleState => currentCycleState;
 
-        /// <summary>稼働中か（故障・事故でなく、アクティブ状態）</summary>
+        /// <summary>稼働中か（故障・事故・コンディション強制停止でなく、アクティブ状態）</summary>
         public bool IsOperating => IsActive && currentCycleState != RideCycleState.BrokenDown
-                                             && currentCycleState != RideCycleState.Accident;
+                                             && currentCycleState != RideCycleState.Accident
+                                             && !_conditionForcedStop && !IsUnderOverhaul;
 
         /// <summary>故障中か</summary>
         public bool IsBrokenDown => currentCycleState == RideCycleState.BrokenDown;
@@ -82,7 +83,18 @@ namespace ThemeParkGame.Attraction
 
         /// <summary>待ち行列（FIFO）</summary>
         private readonly Queue<int> _visitorQueue = new Queue<int>();
-        public int QueueLength => _visitorQueue.Count;
+
+        /// <summary>ファストパス優先キュー（FIFO）。通常キューより先に搭乗</summary>
+        private readonly Queue<int> _fastPassQueue = new Queue<int>();
+
+        /// <summary>全体の待ち行列長（通常+ファストパス）</summary>
+        public int QueueLength => _visitorQueue.Count + _fastPassQueue.Count;
+
+        /// <summary>通常キューの長さ</summary>
+        public int NormalQueueLength => _visitorQueue.Count;
+
+        /// <summary>ファストパスキューの長さ</summary>
+        public int FastPassQueueLength => _fastPassQueue.Count;
 
         /// <summary>待ち行列の最大長（これを超えると来場者は並ばない）</summary>
         [Header("Queue Settings")]
@@ -228,6 +240,27 @@ namespace ThemeParkGame.Attraction
         /// <summary>累計事故回数</summary>
         public int TotalAccidentCount { get; private set; }
 
+        // ---- 経年劣化（コンディション）システム ----
+
+        /// <summary>
+        /// アトラクションのコンディション（0～100%）。
+        /// 運行サイクルごとに低下し、メンテナンスで回復する。
+        /// 50%以下で故障率上昇、20%以下で強制運行停止。
+        /// </summary>
+        [Header("Condition")]
+        [SerializeField] private float condition = 100f;
+        public float Condition => condition;
+
+        /// <summary>コンディション20%以下で強制停止中か</summary>
+        public bool IsConditionCritical => condition <= 20f;
+
+        /// <summary>コンディション低下による強制停止中か</summary>
+        private bool _conditionForcedStop;
+        public bool IsConditionForcedStop => _conditionForcedStop;
+
+        /// <summary>オーバーホール中か（メカニックが大規模修繕実施中）</summary>
+        public bool IsUnderOverhaul { get; set; }
+
         // ---- 満足度 ----
 
         /// <summary>
@@ -280,6 +313,8 @@ namespace ThemeParkGame.Attraction
                 BuildCost = attractionData.BuildCost;
                 currentBreakdownProbability = attractionData.BaseBreakdownRate;
                 _lastMaintenanceTime = Time.time;
+                condition = 100f;
+                _conditionForcedStop = false;
 
                 if (ticketPrice <= 0)
                     ticketPrice = attractionData.SuggestedTicketPrice;
@@ -293,6 +328,7 @@ namespace ThemeParkGame.Attraction
             base.Update();
             if (!IsActive || attractionData == null) return;
 
+            UpdateConditionCheck();
             UpdateBreakdownProbability();
             UpdateRideCycle();
         }
@@ -355,14 +391,22 @@ namespace ThemeParkGame.Attraction
         {
             _cycleTimer += Time.deltaTime;
 
-            // キューから定員分の乗客をライドに移す
+            // キューから定員分の乗客をライドに移す（ファストパスキュー優先）
             int capacity = EffectiveCapacity;
+
+            // まずファストパスキューから乗車
+            while (_currentRiders.Count < capacity && _fastPassQueue.Count > 0)
+            {
+                int vid = _fastPassQueue.Dequeue();
+                _currentRiders.Add(vid);
+                NotifyVisitorStartRiding(vid);
+            }
+
+            // 残り座席に通常キューから乗車
             while (_currentRiders.Count < capacity && _visitorQueue.Count > 0)
             {
                 int vid = _visitorQueue.Dequeue();
                 _currentRiders.Add(vid);
-
-                // VisitorAI に搭乗開始を通知（WaitingInQueue → RidingAttraction）
                 NotifyVisitorStartRiding(vid);
             }
 
@@ -454,19 +498,34 @@ namespace ThemeParkGame.Attraction
             int riderCount = _currentRiders.Count;
             if (riderCount == 0) return;
 
-            // 収益計上（EconomyManager経由で正式に計上する）
-            float cycleRevenue = riderCount * ticketPrice;
+            // 収益計上（ファストパス/フリーパス保有者はチケット料金免除）
+            float cycleRevenue = 0f;
+            foreach (int vid in _currentRiders)
+            {
+                bool ticketExempt = false;
+                if (Economy.FastPassSystem.Instance != null && attractionData != null)
+                {
+                    ticketExempt = Economy.FastPassSystem.Instance.TryConsumeRideTicket(
+                        vid, FacilityId, attractionData.PrimaryThemeZone);
+                }
+
+                if (!ticketExempt)
+                {
+                    cycleRevenue += ticketPrice;
+                }
+            }
+
             TodayRevenue += cycleRevenue;
             TotalRevenue += cycleRevenue;
             TodayRiderCount += riderCount;
             TotalRiderCount += riderCount;
 
-            if (GameManager.Instance != null && GameManager.Instance.EconomyManager != null)
+            if (cycleRevenue > 0f && GameManager.Instance != null && GameManager.Instance.EconomyManager != null)
             {
                 GameManager.Instance.EconomyManager.AddRevenue(
                     cycleRevenue, RevenueCategory.AttractionFee, FacilityId);
             }
-            else
+            else if (cycleRevenue > 0f)
             {
                 // EconomyManager未初期化時のフォールバック
                 GameEvents.FireRevenueEarned(cycleRevenue);
@@ -491,6 +550,9 @@ namespace ThemeParkGame.Attraction
                 AudioManager.Instance.PlayCheerSE();
 
             _currentRiders.Clear();
+
+            // 経年劣化: 1回の運行サイクルでコンディション低下
+            ApplyConditionDegradation();
         }
 
         /// <summary>
@@ -589,6 +651,14 @@ namespace ThemeParkGame.Attraction
                     currentBreakdownProbability *= upgrade.BreakdownRateMultiplier;
             }
 
+            // コンディション低下による故障率増加
+            // コンディション50%以下で故障率が急上昇する
+            if (condition < 50f)
+            {
+                float conditionPenalty = 1f + (50f - condition) / 50f * 3f; // 50%で×1.0、0%で×4.0
+                currentBreakdownProbability *= conditionPenalty;
+            }
+
             // 難易度による故障率補正（Easy:0.6 Normal:1.0 Hard:1.5）
             currentBreakdownProbability *= GameManager.GetBreakdownRateMultiplier(
                 GameManager.Instance != null ? GameManager.Instance.CurrentDifficulty : GameDifficulty.Normal);
@@ -615,6 +685,11 @@ namespace ThemeParkGame.Attraction
             }
 
             // 待ち行列の来場者も解放する（WaitingInQueue → Idle）
+            while (_fastPassQueue.Count > 0)
+            {
+                int vid = _fastPassQueue.Dequeue();
+                NotifyVisitorQueueAbandoned(vid);
+            }
             while (_visitorQueue.Count > 0)
             {
                 int vid = _visitorQueue.Dequeue();
@@ -641,6 +716,11 @@ namespace ThemeParkGame.Attraction
             TotalAccidentCount++;
 
             // 待ち行列の来場者を全員追い出す
+            while (_fastPassQueue.Count > 0)
+            {
+                int vid = _fastPassQueue.Dequeue();
+                NotifyVisitorQueueAbandoned(vid);
+            }
             while (_visitorQueue.Count > 0)
             {
                 int vid = _visitorQueue.Dequeue();
@@ -698,13 +778,93 @@ namespace ThemeParkGame.Attraction
 
         /// <summary>
         /// メカニックが定期点検を行った時に呼ばれる。
-        /// 故障確率を基本値にリセットする。
+        /// 故障確率を基本値にリセットし、コンディションを部分回復する。
         /// </summary>
         public void OnMaintenancePerformed()
         {
             _lastMaintenanceTime = Time.time;
             currentBreakdownProbability = attractionData.BaseBreakdownRate;
-            WebGLOptimizer.LogVerbose($"[Attraction] 定期点検完了: {DisplayName} (ID: {FacilityId})");
+
+            // 点検でコンディション+20回復（上限100）
+            condition = Mathf.Min(100f, condition + 20f);
+            WebGLOptimizer.LogVerbose($"[Attraction] 定期点検完了: {DisplayName} (ID: {FacilityId}, コンディション: {condition:F0}%)");
+        }
+
+        /// <summary>
+        /// オーバーホール完了時に呼ばれる（メカニックの大規模修繕）。
+        /// コンディションを100%に完全回復し、故障確率もリセットする。
+        /// </summary>
+        public void OnOverhaulCompleted()
+        {
+            condition = 100f;
+            _conditionForcedStop = false;
+            IsUnderOverhaul = false;
+            _lastMaintenanceTime = Time.time;
+            currentBreakdownProbability = attractionData.BaseBreakdownRate;
+            WebGLOptimizer.LogVerbose($"[Attraction] オーバーホール完了: {DisplayName} (ID: {FacilityId}, コンディション: 100%)");
+        }
+
+        // ---- 経年劣化システム ----
+
+        /// <summary>
+        /// コンディション強制停止チェック。
+        /// コンディション20%以下でオーバーホールが必要。
+        /// </summary>
+        private void UpdateConditionCheck()
+        {
+            if (_conditionForcedStop || IsUnderOverhaul) return;
+
+            if (condition <= 20f && !IsBrokenDown && !HasAccident)
+            {
+                _conditionForcedStop = true;
+
+                // キューの来場者を解放
+                while (_fastPassQueue.Count > 0)
+                {
+                    int vid = _fastPassQueue.Dequeue();
+                    NotifyVisitorQueueAbandoned(vid);
+                }
+                while (_visitorQueue.Count > 0)
+                {
+                    int vid = _visitorQueue.Dequeue();
+                    NotifyVisitorQueueAbandoned(vid);
+                }
+
+                GameManager.Instance?.ShowNotification(
+                    $"{DisplayName} のコンディションが危険水準！オーバーホールが必要です", NotifLevel.Warning);
+                WebGLOptimizer.LogWarning($"[Attraction] コンディション強制停止: {DisplayName} (ID: {FacilityId}, コンディション: {condition:F0}%)");
+            }
+        }
+
+        /// <summary>
+        /// 1運行サイクルごとのコンディション低下処理。
+        /// 耐久度(Durability)が高いほど劣化が遅い。
+        /// アップグレードによる故障率軽減もコンディション維持に寄与する。
+        /// </summary>
+        private void ApplyConditionDegradation()
+        {
+            if (attractionData == null) return;
+
+            float loss = attractionData.ConditionLossPerCycle;
+
+            // 耐久度で劣化を軽減（Durability 1.0=標準、2.0=半減）
+            loss /= Mathf.Max(0.1f, attractionData.Durability);
+
+            // アップグレードによる劣化軽減
+            for (int i = 1; i <= upgradeLevel; i++)
+            {
+                var upgrade = attractionData.GetUpgradeLevel(i);
+                if (upgrade != null)
+                    loss *= upgrade.BreakdownRateMultiplier; // 故障率軽減はコンディション維持にも寄与
+            }
+
+            condition = Mathf.Max(0f, condition - loss);
+
+            if (condition <= 50f && condition + loss > 50f)
+            {
+                GameManager.Instance?.ShowNotification(
+                    $"{DisplayName} のコンディションが50%を下回りました", NotifLevel.Info);
+            }
         }
 
         // ---- アップグレード ----
@@ -727,6 +887,9 @@ namespace ThemeParkGame.Attraction
 
             // アップグレード費用はEconomyManager経由で支払われることを想定
             upgradeLevel = nextLevel;
+
+            // アップグレードでコンディション+10回復（ボーナス）
+            condition = Mathf.Min(100f, condition + 10f);
 
             // アップグレード後の外観に切り替え
             if (upgradeData.UpgradedVisualPrefab != null)
@@ -778,12 +941,28 @@ namespace ThemeParkGame.Attraction
 
         /// <summary>
         /// 来場者を待ち行列に追加する。
+        /// ファストパス/フリーパス/ゾーンパス保有者は優先キューに入る。
         /// </summary>
         public override bool OnVisitorArrive(int visitorId)
         {
             if (!CanAcceptVisitor(visitorId)) return false;
 
-            _visitorQueue.Enqueue(visitorId);
+            // ファストパス/フリーパス/ゾーンパスで優先キューに入るか判定
+            bool hasPriority = false;
+            if (Economy.FastPassSystem.Instance != null && attractionData != null)
+            {
+                hasPriority = Economy.FastPassSystem.Instance.HasPriorityAccess(
+                    visitorId, FacilityId, attractionData.PrimaryThemeZone);
+            }
+
+            if (hasPriority)
+            {
+                _fastPassQueue.Enqueue(visitorId);
+            }
+            else
+            {
+                _visitorQueue.Enqueue(visitorId);
+            }
             return true;
         }
 
@@ -800,18 +979,31 @@ namespace ThemeParkGame.Attraction
         /// <summary>
         /// 来場者が待ち行列から自主離脱する（忍耐切れ等）。
         /// Queue は先頭以外の要素を直接削除できないため、再構築する。
+        /// 通常キューとファストパスキューの両方から検索する。
         /// </summary>
         public void RemoveFromQueue(int visitorId)
         {
-            if (_visitorQueue.Count == 0) return;
-
-            int count = _visitorQueue.Count;
-            for (int i = 0; i < count; i++)
+            // ファストパスキューから検索・削除
+            if (_fastPassQueue.Count > 0)
             {
-                int id = _visitorQueue.Dequeue();
-                if (id != visitorId)
+                int count = _fastPassQueue.Count;
+                for (int i = 0; i < count; i++)
                 {
-                    _visitorQueue.Enqueue(id);
+                    int id = _fastPassQueue.Dequeue();
+                    if (id != visitorId)
+                        _fastPassQueue.Enqueue(id);
+                }
+            }
+
+            // 通常キューから検索・削除
+            if (_visitorQueue.Count > 0)
+            {
+                int count = _visitorQueue.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    int id = _visitorQueue.Dequeue();
+                    if (id != visitorId)
+                        _visitorQueue.Enqueue(id);
                 }
             }
         }
@@ -885,6 +1077,12 @@ namespace ThemeParkGame.Attraction
             // 満足度の評判が魅力度に影響
             appeal *= (0.5f + satisfactionRating * 0.5f);
 
+            // コンディション低下で魅力度減少（見た目の劣化が来場者に伝わる）
+            if (condition < 70f)
+            {
+                appeal *= (0.5f + condition / 70f * 0.5f); // 70%未満で魅力度低下
+            }
+
             return Mathf.Clamp01(appeal);
         }
 
@@ -908,6 +1106,7 @@ namespace ThemeParkGame.Attraction
         protected override void OnDemolished()
         {
             // 待ち行列と乗客を全員解放
+            _fastPassQueue.Clear();
             _visitorQueue.Clear();
             _currentRiders.Clear();
         }

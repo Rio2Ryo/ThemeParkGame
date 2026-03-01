@@ -130,6 +130,22 @@ namespace ThemeParkGame.Core
         OnStrike
     }
 
+    /// <summary>
+    /// 勤務シフト。スタッフの稼働時間帯を定義する。
+    /// 【ゲームデザイン】
+    /// ・Morning (6:00-14:00): 通常給与。開園直後の来場者対応。
+    /// ・Day (14:00-22:00): 通常給与。ピークタイム対応。
+    /// ・Night (22:00-6:00): 夜間割増25%。夜間パレードやメンテナンスに対応。
+    /// ・AllDay: 終日勤務。連続勤務による疲労蓄積ペナルティあり。
+    /// </summary>
+    public enum ShiftType
+    {
+        Morning,    // 朝シフト (6:00-14:00)
+        Day,        // 昼シフト (14:00-22:00)
+        Night,      // 夜シフト (22:00-6:00) ※夜間割増25%
+        AllDay      // 終日勤務 ※疲労蓄積×1.5
+    }
+
     /// <summary>アトラクションカテゴリ</summary>
     public enum AttractionCategory
     {

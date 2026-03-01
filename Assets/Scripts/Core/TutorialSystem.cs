@@ -23,6 +23,11 @@ namespace ThemeParkGame.Core
         CheckVisitor,         // 来場者をクリックしてみよう
         SpeedControl,         // ゲーム速度を変更
         SaveGame,             // セーブのやり方
+        WeatherTips,          // 天候対策（台風・雷雨への対応）
+        MaintenanceTips,      // メンテナンスのコツ（経年劣化・オーバーホール）
+        TicketSystem,         // チケットシステム（ファストパス/フリーパス）
+        VIPGuest,             // VIPゲスト対応
+        StaffShift,           // スタッフシフト管理
         Completed             // チュートリアル完了
     }
 
@@ -217,14 +222,71 @@ namespace ThemeParkGame.Core
                     "こまめなセーブを忘れずに！",
                 RequiresAction = false
             });
+            // ---- 上級チュートリアル（Phase 2機能） ----
+            _steps.Add(new TutorialStepData
+            {
+                Step = TutorialStep.WeatherTips,
+                Title = "天候変化に備えよう",
+                Description = "パークは天候の影響を受けます。\n" +
+                    "  台風: 来場者がほぼ来なくなり、維持費2.5倍\n" +
+                    "  雷雨: 来場者が大幅減少、幸福度低下\n" +
+                    "  猛暑: ウォーターライドが人気に\n" +
+                    "室内アトラクションは天候の影響を受けにくい！",
+                RequiresAction = false
+            });
+            _steps.Add(new TutorialStepData
+            {
+                Step = TutorialStep.MaintenanceTips,
+                Title = "アトラクションのメンテナンス",
+                Description = "アトラクションは運行するほど劣化します。\n" +
+                    "  コンディション50%以下: 故障率が急上昇\n" +
+                    "  コンディション20%以下: 強制運行停止！\n" +
+                    "メカニックの定期点検で+20%回復。\n" +
+                    "オーバーホールで100%に完全復旧します。",
+                RequiresAction = false
+            });
+            _steps.Add(new TutorialStepData
+            {
+                Step = TutorialStep.TicketSystem,
+                Title = "チケットシステム活用",
+                Description = "3種類の特別チケットで収益UP！\n" +
+                    "  ファストパス: 優先搭乗権（1回限り）\n" +
+                    "  フリーパス: 全アトラクション乗り放題\n" +
+                    "  ゾーンパス: 特定ゾーン内乗り放題\n" +
+                    "人気アトラクションにはファストパスが効果的！",
+                RequiresAction = false
+            });
+            _steps.Add(new TutorialStepData
+            {
+                Step = TutorialStep.VIPGuest,
+                Title = "VIPゲストをもてなそう",
+                Description = "VIPゲストはランク別に3種類：\n" +
+                    "  Silver: 報酬$500 + 知名度2.0\n" +
+                    "  Gold: 報酬$1000 + 知名度3.0\n" +
+                    "  Platinum: 報酬$2000 + 知名度5.0\n" +
+                    "VIPリクエストを達成して大きな報酬を得よう！",
+                RequiresAction = false
+            });
+            _steps.Add(new TutorialStepData
+            {
+                Step = TutorialStep.StaffShift,
+                Title = "スタッフシフト管理",
+                Description = "スタッフにシフトを割り当てて効率UP！\n" +
+                    "  朝シフト(6-14時): 開園直後の対応\n" +
+                    "  昼シフト(14-22時): ピークタイム対応\n" +
+                    "  夜シフト(22-6時): 夜間割増25%\n" +
+                    "連続3日以上の終日勤務は疲労蓄積に注意！",
+                RequiresAction = false
+            });
             _steps.Add(new TutorialStepData
             {
                 Step = TutorialStep.Completed,
                 Title = "チュートリアル完了！",
-                Description = "基本操作はこれでバッチリです！\n" +
+                Description = "基本操作も上級テクニックもバッチリです！\n" +
                     "ヒント:\n" +
                     "  - 来場者の満足度が0になると退園します\n" +
                     "  - 天候変化にも注意しましょう\n" +
+                    "  - メンテナンスを怠ると事故が発生します\n" +
                     "  - シナリオモードで目標達成に挑戦！\n" +
                     "素敵なテーマパークを作ってくださいね！",
                 RequiresAction = false

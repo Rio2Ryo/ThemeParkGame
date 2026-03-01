@@ -33,11 +33,17 @@ namespace ThemeParkGame.Staff
         /// <summary>基本点検時間（秒）</summary>
         private const float BaseInspectionDuration = 5f;
 
+        /// <summary>基本オーバーホール時間（秒）。修理の3倍。</summary>
+        private const float BaseOverhaulDuration = 30f;
+
         /// <summary>点検によって蓄積される安全ポイント</summary>
         private const float InspectionSafetyBonus = 15f;
 
         /// <summary>修理完了時に回復する耐久値</summary>
         private const float RepairDurabilityRestore = 100f;
+
+        /// <summary>オーバーホールが必要なコンディション閾値</summary>
+        private const float OverhaulConditionThreshold = 30f;
 
         // ============================================================
         // フィールド
@@ -51,6 +57,9 @@ namespace ThemeParkGame.Staff
 
         /// <summary>現在の作業が修理か点検か</summary>
         private bool isRepairing;
+
+        /// <summary>現在の作業がオーバーホールか</summary>
+        private bool isOverhauling;
 
         /// <summary>作業の経過時間</summary>
         private float workTimer;
@@ -107,7 +116,8 @@ namespace ThemeParkGame.Staff
         /// <summary>
         /// タスクを検索する優先順位:
         /// 1. 修理キューから故障アトラクションを取得
-        /// 2. パトロールエリア内で点検が必要なアトラクションを探す
+        /// 2. コンディション低下でオーバーホールが必要なアトラクションを探す
+        /// 3. パトロールエリア内で点検が必要なアトラクションを探す
         /// </summary>
         protected override bool FindAndAssignTask()
         {
@@ -117,7 +127,13 @@ namespace ThemeParkGame.Staff
                 return true;
             }
 
-            // 次点: 巡回中に発見した点検対象
+            // 次点: オーバーホールが必要な対象
+            if (TryFindOverhaulTarget())
+            {
+                return true;
+            }
+
+            // 巡回中に発見した点検対象
             if (TryFindInspectionTarget())
             {
                 return true;
@@ -149,12 +165,72 @@ namespace ThemeParkGame.Staff
                 claimedAttractions.Add(attractionId);
                 targetAttractionId = attractionId;
                 isRepairing = true;
+                isOverhauling = false;
                 workDuration = CalculateRepairDuration();
                 workTimer = 0f;
 
                 NavigateTo(attractionPos);
                 CurrentState = StaffBehaviorState.MovingToTask;
                 WebGLOptimizer.LogVerbose($"[Mechanic] {Name} がアトラクション {attractionId} の修理に向かいます");
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>オーバーホールが必要なアトラクションを探す（コンディション30%以下）</summary>
+        private bool TryFindOverhaulTarget()
+        {
+            Collider[] hits = Physics.OverlapSphere(transform.position, detectionRadius);
+            Transform bestTarget = null;
+            float worstCondition = OverhaulConditionThreshold;
+            int bestAttrId = -1;
+
+            foreach (var hit in hits)
+            {
+                if (!hit.CompareTag("Attraction")) continue;
+                if (!IsWithinPatrolArea(hit.transform.position)) continue;
+
+                var facility = hit.GetComponent<Attraction.FacilityBase>();
+                if (facility == null) continue;
+
+                int attrId = facility.FacilityId;
+                if (claimedAttractions.Contains(attrId)) continue;
+
+                var attraction = hit.GetComponent<Attraction.Attraction>();
+                if (attraction == null) continue;
+
+                // コンディション30%以下またはコンディション強制停止中のアトラクションを優先
+                if (attraction.Condition <= OverhaulConditionThreshold || attraction.IsConditionForcedStop)
+                {
+                    if (attraction.IsUnderOverhaul) continue; // 既にオーバーホール中
+
+                    if (attraction.Condition < worstCondition || attraction.IsConditionForcedStop)
+                    {
+                        worstCondition = attraction.Condition;
+                        bestTarget = hit.transform;
+                        bestAttrId = attrId;
+                    }
+                }
+            }
+
+            if (bestTarget != null)
+            {
+                claimedAttractions.Add(bestAttrId);
+                targetAttractionId = bestAttrId;
+                isRepairing = false;
+                isOverhauling = true;
+                workDuration = CalculateOverhaulDuration();
+                workTimer = 0f;
+
+                // オーバーホール開始をアトラクションに通知
+                var attraction = bestTarget.GetComponent<Attraction.Attraction>();
+                if (attraction != null)
+                    attraction.IsUnderOverhaul = true;
+
+                NavigateTo(bestTarget.position);
+                CurrentState = StaffBehaviorState.MovingToTask;
+                WebGLOptimizer.LogVerbose($"[Mechanic] {Name} がアトラクション {bestAttrId} のオーバーホールに向かいます");
                 return true;
             }
 
@@ -194,6 +270,7 @@ namespace ThemeParkGame.Staff
             {
                 claimedAttractions.Add(targetAttractionId);
                 isRepairing = false;
+                isOverhauling = false;
                 workDuration = CalculateInspectionDuration();
                 workTimer = 0f;
 
@@ -217,6 +294,10 @@ namespace ThemeParkGame.Staff
             if (isRepairing)
             {
                 WebGLOptimizer.LogVerbose($"[Mechanic] {Name} がアトラクション {targetAttractionId} の修理を開始します");
+            }
+            else if (isOverhauling)
+            {
+                WebGLOptimizer.LogVerbose($"[Mechanic] {Name} がアトラクション {targetAttractionId} のオーバーホールを開始します");
             }
             else
             {
@@ -242,6 +323,10 @@ namespace ThemeParkGame.Staff
                 {
                     CompleteRepair();
                 }
+                else if (isOverhauling)
+                {
+                    CompleteOverhaul();
+                }
                 else
                 {
                     CompleteInspection();
@@ -256,6 +341,34 @@ namespace ThemeParkGame.Staff
                       + $"（所要時間: {workTimer:F1}秒）");
 
             GameEvents.FireAttractionRepaired(targetAttractionId);
+
+            ReleaseTarget();
+            CompleteCurrentTask();
+        }
+
+        /// <summary>オーバーホールを完了する</summary>
+        private void CompleteOverhaul()
+        {
+            WebGLOptimizer.LogVerbose($"[Mechanic] {Name} がアトラクション {targetAttractionId} のオーバーホールを完了しました"
+                      + $"（所要時間: {workTimer:F1}秒）");
+
+            var attractionObj = FindAttractionById(targetAttractionId);
+            if (attractionObj != null)
+            {
+                var attraction = attractionObj.GetComponent<Attraction.Attraction>();
+                if (attraction != null)
+                {
+                    attraction.OnOverhaulCompleted();
+                    WebGLOptimizer.LogVerbose($"[Mechanic] {Name} のオーバーホールにより {attraction.DisplayName} のコンディションが100%に回復");
+                }
+            }
+
+            if (NotificationSystem.Instance != null)
+            {
+                NotificationSystem.Instance.Notify(
+                    $"オーバーホール完了！コンディション100%に回復",
+                    NotifLevel.Success);
+            }
 
             ReleaseTarget();
             CompleteCurrentTask();
@@ -312,6 +425,15 @@ namespace ThemeParkGame.Staff
         private float CalculateInspectionDuration()
         {
             return BaseInspectionDuration / WorkEfficiencyMultiplier;
+        }
+
+        /// <summary>
+        /// オーバーホール時間を算出する。
+        /// スキルレベル1で30秒、スキルレベル5で15秒。
+        /// </summary>
+        private float CalculateOverhaulDuration()
+        {
+            return BaseOverhaulDuration / WorkEfficiencyMultiplier;
         }
 
         // ============================================================
