@@ -71,11 +71,10 @@
 **影響範囲**: 新規 DisasterSystem.cs / AccidentEventSystem連携 / ParkManager / EconomyManager / VisitorAI(パニック行動) / DoctorStaff拡張
 **工数目安**: 大
 
-### H4. カスタムコースター設計ツール ⬜ 未実装（Phase 7予定）
+### H4. カスタムコースター設計ツール ✅ Phase 7完了
 **概要**: GForceカテゴリのアトラクションについて、コースのレイアウト（上昇・降下・ループ・旋回）をプレイヤーがノードベースで設計可能に。設計に応じて興奮度・嘔吐率・安全性が動的に算出。テスト走行プレビュー付き。
-**理由**: テーマパーク経営シミュの花形機能。現在は定型アトラクションの配置のみで、プレイヤーの創造性を活かす場がない。RollerCoaster Tycoonシリーズの最大の魅力がこの機能。
-**影響範囲**: 新規 CoasterDesigner.cs, CoasterTrack.cs, CoasterPhysics.cs / AttractionDatabase拡張 / RuntimeBuildPanel / ProceduralMeshGenerator連携
-**工数目安**: 特大
+**実装**: CoasterDesignSystem.cs(747行) — RailElementType14種、速度/高低差4段階、設計品質自動計算、AttractionData動的生成、RuntimeHUD_CoasterDesign.csで設計UI提供
+**コミット**: `96ee639`
 
 ### H5. リアルタイム対戦モード（パーク経営バトル） ✅ Phase 6完了
 
@@ -223,14 +222,14 @@
 | Phase 4 | H2(スタッフ育成) + M7(AIパーソナリティ) + M5(レビュー) + M9(マーケティング) | ✅ **完了** |
 | Phase 5 | H3(災害イベント) + M8(インタラクティブ) + M1(グループ行動) + M10(園内交通) | ✅ **完了** |
 | Phase 6 | M6(ライバル強化) + L5(Co-op) + H5(対戦モード) + L7(モバイルUI) | ✅ **完了** |
-| Phase 7 | H4(コースター設計) | ⬜ 未着手 |
+| Phase 7 | H4(コースター設計) | ✅ **完了** `96ee639` |
 
 ### 進捗サマリー（全25件）
-- **完了**: 24件 / 25件（96%）
-  - HIGH: 5/6完了（H1✅ H2✅ H3✅ H5✅ H6✅ / H4⬜）
+- **完了**: 25件 / 25件（100%） 🎉
+  - HIGH: 6/6完了（H1✅ H2✅ H3✅ H4✅ H5✅ H6✅）
   - MEDIUM: 10/10完了（M1✅ M2✅ M3✅ M4✅ M5✅ M6✅ M7✅ M8✅ M9✅ M10✅）
   - LOW: 9/9完了（L1✅ L2✅ L3✅ L4✅ L5✅ L6✅ L7✅ L8✅ L9✅）
-- **未実装**: 1件（H4: カスタムコースター設計ツール = Phase 7）
+- **全25機能の実装が完了しました。**
 
 ---
 
