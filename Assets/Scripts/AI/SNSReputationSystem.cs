@@ -718,6 +718,66 @@ namespace ThemeParkGame.AI
             WebGLOptimizer.LogVerbose($"[SNSReputation] Photo spot boost from {visitorName}: +{post.SentimentScore:F2}");
         }
 
+        /// <summary>
+        /// インフルエンサーの退園時バイラル投稿を生成する。
+        /// 通常の来場者より3倍のいいね/リツイートを獲得し、レピュテーションへの影響も大きい。
+        /// </summary>
+        public void ApplyInfluencerViralPost(int visitorId, string visitorName, float happiness)
+        {
+            string[] influencerPositive = new[]
+            {
+                "【PR】このテーマパーク、マジで神！全アトラクション制覇したい #テーマパーク #PR案件",
+                "フォロワーのみんな！ここのパーク最高すぎ！行って損なし！ #おすすめ #テーマパーク",
+                "今日一日パークを満喫！コンテンツの宝庫すぎる #vlog素材 #テーマパーク日記",
+            };
+            string[] influencerNeutral = new[]
+            {
+                "テーマパークに来てます。まあまあ楽しい #テーマパーク #日常",
+                "パーク来たけど混んでるなー。アトラクションはまあ良かった #テーマパーク",
+            };
+            string[] influencerNegative = new[]
+            {
+                "正直微妙なパークだった…期待してたのに残念 #テーマパーク #残念",
+                "待ち時間長すぎ！スタッフの対応もイマイチ #テーマパーク #改善希望",
+            };
+
+            string content;
+            PostSentiment sentiment;
+            float sentimentScore;
+
+            if (happiness >= 60f)
+            {
+                content = influencerPositive[UnityEngine.Random.Range(0, influencerPositive.Length)];
+                sentiment = PostSentiment.Positive;
+                sentimentScore = UnityEngine.Random.Range(0.80f, 0.98f);
+            }
+            else if (happiness >= 40f)
+            {
+                content = influencerNeutral[UnityEngine.Random.Range(0, influencerNeutral.Length)];
+                sentiment = PostSentiment.Neutral;
+                sentimentScore = UnityEngine.Random.Range(0.40f, 0.60f);
+            }
+            else
+            {
+                content = influencerNegative[UnityEngine.Random.Range(0, influencerNegative.Length)];
+                sentiment = PostSentiment.Negative;
+                sentimentScore = UnityEngine.Random.Range(0.10f, 0.30f);
+            }
+
+            var post = CreatePost(visitorId, visitorName, content, false);
+            post.Sentiment = sentiment;
+            post.SentimentScore = sentimentScore;
+            post.Topic = "インフルエンサー";
+            post.Likes = UnityEngine.Random.Range(100, 500);   // インフルエンサーは高エンゲージ
+            post.Retweets = UnityEngine.Random.Range(30, 150);
+
+            UpdateReputationFromPost(post);
+            RecalculateTrendingTopics();
+
+            WebGLOptimizer.LogVerbose($"[SNSReputation] Influencer viral post from {visitorName}: " +
+                $"sentiment={sentiment}, score={sentimentScore:F2}, likes={post.Likes}");
+        }
+
         // ================================================================
         // Save/Load
         // ================================================================

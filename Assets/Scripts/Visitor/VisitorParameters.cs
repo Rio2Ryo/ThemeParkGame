@@ -302,6 +302,13 @@ namespace ThemeParkGame.Visitor
                     Happiness = UnityEngine.Random.Range(50f, 65f);
                     Excitement = UnityEngine.Random.Range(30f, 50f);
                     break;
+
+                case VisitorType.Influencer:
+                    // インフルエンサー: 所持金多め、好奇心旺盛、全体験を試したい
+                    Cash = UnityEngine.Random.Range(200f, 400f);
+                    Happiness = UnityEngine.Random.Range(60f, 75f);
+                    Excitement = UnityEngine.Random.Range(50f, 70f);
+                    break;
             }
 
             // 難易度に応じた所持金補正（Easy:1.3 Normal:1.0 Hard:0.8）
@@ -622,6 +629,7 @@ namespace ThemeParkGame.Visitor
                 case VisitorType.Couple: return 0.9f;
                 case VisitorType.Senior: return 1.5f;  // 酔いやすい
                 case VisitorType.VIP:    return 1.0f;
+                case VisitorType.Influencer: return 0.8f; // やや酔いにくい
                 default: return 1.0f;
             }
         }
@@ -637,6 +645,7 @@ namespace ThemeParkGame.Visitor
                 case VisitorType.Couple: return 0.9f;
                 case VisitorType.Senior: return 0.8f;
                 case VisitorType.VIP:    return 1.0f;
+                case VisitorType.Influencer: return 1.0f;
                 default: return 1.0f;
             }
         }
@@ -652,6 +661,7 @@ namespace ThemeParkGame.Visitor
                 case VisitorType.Couple: return 1.0f;
                 case VisitorType.Senior: return 1.4f;  // トイレが近い
                 case VisitorType.VIP:    return 1.0f;
+                case VisitorType.Influencer: return 0.9f;
                 default: return 1.0f;
             }
         }

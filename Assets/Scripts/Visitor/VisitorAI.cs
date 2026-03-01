@@ -436,7 +436,8 @@ namespace ThemeParkGame.Visitor
                     {
                         // パレードが近い → 観に行く
                         float watchChance = visitorType == VisitorType.Kids ? 0.6f :
-                                            visitorType == VisitorType.Family ? 0.5f : 0.3f;
+                                            visitorType == VisitorType.Family ? 0.5f :
+                                            visitorType == VisitorType.Influencer ? 0.7f : 0.3f;
                         if (UnityEngine.Random.value < watchChance)
                         {
                             currentTarget = null;
@@ -449,9 +450,12 @@ namespace ThemeParkGame.Visitor
             }
 
             // 優先度3.7: フォトスポット撮影（幸福度が高い時に発動）
+            // インフルエンサーは撮影確率が高い（15% vs 通常3%）
+            float photoChance = visitorType == VisitorType.Influencer ? 0.15f : 0.03f;
+            float photoHappinessThreshold = visitorType == VisitorType.Influencer ? 40f : 55f;
             if (currentState != VisitorBehaviorState.TakingPhoto &&
-                parameters.Happiness >= 55f &&
-                UnityEngine.Random.value < 0.03f)
+                parameters.Happiness >= photoHappinessThreshold &&
+                UnityEngine.Random.value < photoChance)
             {
                 if (TryFindAndNavigateTo(FacilityType.PhotoSpot))
                 {
@@ -657,12 +661,13 @@ namespace ThemeParkGame.Visitor
             // 来場者タイプ補正
             switch (visitorType)
             {
-                case VisitorType.VIP:    baseChance *= 3.0f; break;
-                case VisitorType.Couple: baseChance *= 2.0f; break;
-                case VisitorType.Family: baseChance *= 1.5f; break;
-                case VisitorType.Kids:   baseChance *= 1.2f; break;
-                case VisitorType.Young:  baseChance *= 0.8f; break;
-                case VisitorType.Senior: baseChance *= 1.0f; break;
+                case VisitorType.VIP:        baseChance *= 3.0f; break;
+                case VisitorType.Influencer: baseChance *= 2.5f; break;
+                case VisitorType.Couple:     baseChance *= 2.0f; break;
+                case VisitorType.Family:     baseChance *= 1.5f; break;
+                case VisitorType.Kids:       baseChance *= 1.2f; break;
+                case VisitorType.Young:      baseChance *= 0.8f; break;
+                case VisitorType.Senior:     baseChance *= 1.0f; break;
             }
 
             // 幸福度ボーナス（高いほど買いたくなる）
@@ -1217,10 +1222,29 @@ namespace ThemeParkGame.Visitor
         private void OnLeftPark()
         {
             // SNS投稿生成（幸福度に応じて）
-            if (UnityEngine.Random.value < 0.3f)
+            // インフルエンサーは必ず投稿し、影響力が3倍
+            float postChance = visitorType == VisitorType.Influencer ? 1.0f : 0.3f;
+            if (UnityEngine.Random.value < postChance)
             {
                 string snsContent = profile.GenerateSNSPostContent(parameters);
                 GameEvents.FireSNSPostGenerated(visitorId, snsContent);
+
+                // インフルエンサーの追加影響: SNSReputationSystemに高エンゲージ投稿
+                if (visitorType == VisitorType.Influencer)
+                {
+                    var snsSystem = AI.SNSReputationSystem.Instance;
+                    if (snsSystem != null)
+                    {
+                        float sentiment = parameters.Happiness >= 60f ? 0.85f :
+                                          parameters.Happiness >= 40f ? 0.5f : 0.2f;
+                        var sentimentType = parameters.Happiness >= 60f ? AI.PostSentiment.Positive :
+                                            parameters.Happiness >= 40f ? AI.PostSentiment.Neutral :
+                                            AI.PostSentiment.Negative;
+                        string influencerPost = $"[インフルエンサー] {profile.VisitorName}: {snsContent}";
+                        snsSystem.AddTemplatePost(visitorId, profile.VisitorName, influencerPost,
+                            sentimentType, sentiment);
+                    }
+                }
             }
 
             // リピーターシステムに退園を記録
@@ -2044,6 +2068,7 @@ namespace ThemeParkGame.Visitor
                 case VisitorType.Couple: return 3.2f;
                 case VisitorType.Senior: return 2.2f;
                 case VisitorType.VIP:    return 3.5f;
+                case VisitorType.Influencer: return 3.8f;
                 default: return 3.5f;
             }
         }

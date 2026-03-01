@@ -240,8 +240,28 @@ namespace ThemeParkGame.Staff
         /// <summary>パトロール地点リスト</summary>
         public IReadOnlyList<Transform> PatrolPoints => patrolPoints;
 
-        /// <summary>スキルレベルに応じた作業効率倍率 (1.0 ~ 2.0)</summary>
-        public float WorkEfficiencyMultiplier => 1f + (SkillLevel - 1) * 0.25f;
+        /// <summary>スキルレベルに応じた作業効率倍率 (1.0 ~ 2.0)。スキルツリーボーナスを含む。</summary>
+        public float WorkEfficiencyMultiplier
+        {
+            get
+            {
+                float baseEff = 1f + (SkillLevel - 1) * 0.25f;
+                // スキルツリーの作業速度系ボーナスを加算
+                float treeBonus = GetSkillTreeBonus("work_speed");
+                return baseEff + treeBonus;
+            }
+        }
+
+        /// <summary>
+        /// スキルツリーから指定タイプのボーナス値を取得する。
+        /// StaffSkillTreeSystemが存在しない場合は0を返す。
+        /// </summary>
+        public float GetSkillTreeBonus(string bonusType)
+        {
+            var skillTree = StaffSkillTreeSystem.Instance;
+            if (skillTree == null) return 0f;
+            return skillTree.GetCombinedBonus(id, bonusType);
+        }
 
         /// <summary>現在の作業経験値</summary>
         public float WorkExperience => _workExperience;

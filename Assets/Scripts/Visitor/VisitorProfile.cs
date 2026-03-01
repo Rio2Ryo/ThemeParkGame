@@ -90,6 +90,14 @@ namespace ThemeParkGame.Visitor
                     traits.Frugality = UnityEngine.Random.Range(0.0f, 0.2f);
                     traits.Curiosity = UnityEngine.Random.Range(0.5f, 0.9f);
                     break;
+
+                case VisitorType.Influencer:
+                    traits.Extroversion = UnityEngine.Random.Range(0.7f, 1.0f);
+                    traits.Adventurousness = UnityEngine.Random.Range(0.5f, 0.9f);
+                    traits.Patience = UnityEngine.Random.Range(0.2f, 0.5f);
+                    traits.Frugality = UnityEngine.Random.Range(0.1f, 0.4f);
+                    traits.Curiosity = UnityEngine.Random.Range(0.7f, 1.0f);
+                    break;
             }
 
             return traits;
@@ -550,6 +558,7 @@ namespace ThemeParkGame.Visitor
                 case VisitorType.Couple: return UnityEngine.Random.Range(18, 40);
                 case VisitorType.Senior: return UnityEngine.Random.Range(55, 75);
                 case VisitorType.VIP:    return UnityEngine.Random.Range(25, 60);
+                case VisitorType.Influencer: return UnityEngine.Random.Range(20, 35);
                 default: return 30;
             }
         }
@@ -583,6 +592,11 @@ namespace ThemeParkGame.Visitor
 
                 case VisitorType.VIP:
                     return RelationshipGroup.Solo;
+
+                case VisitorType.Influencer:
+                    return UnityEngine.Random.value > 0.7f
+                        ? RelationshipGroup.FriendGroup
+                        : RelationshipGroup.Solo;
 
                 default:
                     return RelationshipGroup.Solo;
@@ -648,6 +662,15 @@ namespace ThemeParkGame.Visitor
                     favoriteRideTypes.Add(AttractionCategory.ShowAttraction);
                     favoriteRideTypes.Add(AttractionCategory.GForce);
                     favoriteRideTypes.Add(AttractionCategory.Observation);
+                    break;
+
+                case VisitorType.Influencer:
+                    // インフルエンサー: 映える体験を求める。ショー系＆G系＆展望系
+                    favoriteRideTypes.Add(AttractionCategory.ShowAttraction);
+                    favoriteRideTypes.Add(AttractionCategory.GForce);
+                    favoriteRideTypes.Add(AttractionCategory.Observation);
+                    if (UnityEngine.Random.value > 0.3f)
+                        favoriteRideTypes.Add(AttractionCategory.RideAttraction);
                     break;
             }
         }

@@ -464,6 +464,20 @@ namespace ThemeParkGame.Visitor
                 return VisitorType.VIP;
             }
 
+            // インフルエンサー判定（知名度40以上 & 1%基本確率、マーケティングキャンペーンで増加）
+            float influencerChance = 0.01f;
+            var marketingSystem = Economy.MarketingSystem.Instance;
+            if (marketingSystem != null)
+            {
+                float typeMul = marketingSystem.GetTypeSpawnMultiplier(VisitorType.Influencer);
+                if (typeMul > 1f)
+                    influencerChance *= typeMul;
+            }
+            if (fame >= 40f && UnityEngine.Random.value < influencerChance)
+            {
+                return VisitorType.Influencer;
+            }
+
             // 通常タイプの抽選（基本比率）
             // 【ゲームデザイン】基本比率: Family 30%, Young 25%, Kids 15%, Couple 15%, Senior 15%
             float roll = UnityEngine.Random.value;
@@ -520,6 +534,17 @@ namespace ThemeParkGame.Visitor
                 if (eventMul > 0f)
                 {
                     interval /= eventMul; // 倍率1.5 → 間隔を2/3に短縮
+                }
+            }
+
+            // マーケティングキャンペーン倍率
+            var marketingSystem = Economy.MarketingSystem.Instance;
+            if (marketingSystem != null)
+            {
+                float marketingMul = marketingSystem.GetCurrentSpawnMultiplier();
+                if (marketingMul > 1f)
+                {
+                    interval /= marketingMul;
                 }
             }
 
