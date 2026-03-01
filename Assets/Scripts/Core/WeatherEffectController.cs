@@ -732,6 +732,13 @@ namespace ThemeParkGame.Core
                 return;
             }
 
+            // アクセシビリティ: フラッシュ軽減モードの場合、ホワイトフラッシュを抑制
+            if (AccessibilitySystem.Instance != null && AccessibilitySystem.Instance.ReduceFlashEnabled)
+            {
+                _isThunderFlashing = false;
+                return;
+            }
+
             if (_isThunderFlashing)
             {
                 // フラッシュ中: オーバーレイを白くフラッシュ

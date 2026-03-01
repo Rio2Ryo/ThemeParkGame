@@ -1,6 +1,6 @@
 # ThemeParkGame ステータスレポート
 
-## 最終更新: 2026-02-28
+## 最終更新: 2026-03-01
 
 ---
 
@@ -282,7 +282,7 @@
 
 # Part C: Phase 1 実装完了レポート（2026-02-28）
 
-## Phase 1: L3(実績拡充) + L1(ゾーン別BGM) + L9(待ち列演出) — 完了
+## Phase 1: L3(実績拡充) + L6(アクセシビリティ) + L1(ゾーン別BGM) + L9(待ち列演出) — 全完了
 
 ### L3. 実績拡充 — AchievementSystem 新実績12件追加（計95件 → 107件）
 
@@ -352,6 +352,43 @@
 - パフォーマンス中に近くのアトラクションの`HasQueueEntertainer`フラグを自動設定
 - パフォーマンス完了時にフラグをリセット
 
+### L6. アクセシビリティ設定の充実 — AccessibilitySystem 全面拡張
+
+**色覚多様性対応（カラーフィルター切替）**
+| モード | フィルター | 説明 |
+|---|---|---|
+| None | なし | フィルターOFF |
+| Protanopia | シアン系(alpha 0.10) | 1型色覚（赤色覚異常）補助 |
+| Deuteranopia | マゼンタ系(alpha 0.10) | 2型色覚（緑色覚異常）補助 |
+| Tritanopia | アンバー系(alpha 0.08) | 3型色覚（青色覚異常）補助 |
+
+- 専用Canvas(sortingOrder=44)に全画面オーバーレイで色補正
+- 切替ボタンで4モードをサイクル
+
+**テキストサイズ3段階**
+| レベル | スケール | 対象 |
+|---|---|---|
+| 通常 | 1.0x | — |
+| 大 | 1.3x | fontSize 16以下のText |
+| 特大 | 1.6x | fontSize 16以下のText |
+
+- 旧`LargeFont`設定からの自動移行対応
+
+**画面フラッシュ軽減**
+- ON時、WeatherEffectController.UpdateThunderFlash()の雷雨ホワイトフラッシュを完全抑制
+- 雷雨の暗い画面・雨パーティクル・フォグ等の演出は維持（フラッシュのみ除去）
+
+**ナレーションログ（読み上げ支援）**
+- GameEvents連携で主要イベントを自動テキスト化:
+  - 天候変化、アトラクション故障/修理、VIP来場、パークイベント開始/終了、研究完了、事故発生
+- Rキーでログパネル表示/非表示（最新15件）
+- ゲーム内時刻のタイムスタンプ付き
+
+**設定UI拡張**
+- 設定項目: 6項目（ハイコントラスト / テキストサイズ / 色覚フィルター / フラッシュ軽減 / ナレーション / キーボード操作）
+- 全設定PlayerPrefs永続化
+- ショートカット一覧にRキー追加
+
 ## Phase 1 修正ファイル一覧
 
 | # | ファイル | 変更内容 |
@@ -364,3 +401,5 @@
 | 6 | `Assets/Scripts/Attraction/Attraction.cs` | QueueThemeLevel+EstimatedWaitTime+アップグレード |
 | 7 | `Assets/Scripts/Visitor/VisitorAI.cs` | キューテーマ効果+推定待ち時間フィルタ |
 | 8 | `Assets/Scripts/Staff/EntertainerStaff.cs` | キューエンターテイナーフラグ自動管理 |
+| 9 | `Assets/Scripts/Core/AccessibilitySystem.cs` | 色覚フィルター+テキスト3段階+フラッシュ軽減+ナレーション |
+| 10 | `Assets/Scripts/Core/WeatherEffectController.cs` | フラッシュ軽減チェック追加 |
