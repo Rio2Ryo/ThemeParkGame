@@ -548,6 +548,30 @@ namespace ThemeParkGame.Visitor
                 }
             }
 
+            // 入場料の価格弾力性（高すぎると来場者がゼロに）
+            var pricingSystem = GameManager.Instance?.EconomyManager?.Pricing;
+            if (pricingSystem != null)
+            {
+                float parkRating = GetParkFame();
+                float priceElasticity = pricingSystem.GetEntranceFeeElasticityMultiplier(parkRating);
+                if (priceElasticity <= 0f)
+                {
+                    return 9999f; // 実質スポーン停止
+                }
+                interval /= priceElasticity; // 弾力性が低いほど間隔が伸びる
+            }
+
+            // バスシステムによる来場者増加ボーナス
+            var busSystem = Park.BusSystem.Instance;
+            if (busSystem != null && busSystem.BusStopCount > 0)
+            {
+                float busMul = busSystem.CurrentSpawnMultiplier;
+                if (busMul > 1f)
+                {
+                    interval /= busMul;
+                }
+            }
+
             // 災害時のスポーン抑制
             var disasterSystem = Park.DisasterEventSystem.Instance;
             if (disasterSystem != null && disasterSystem.IsDisasterActive)

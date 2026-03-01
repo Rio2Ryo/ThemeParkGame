@@ -4,9 +4,11 @@
 // ============================================================
 
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using ThemeParkGame.Economy;
+using ThemeParkGame.Park;
 
 namespace ThemeParkGame.Core
 {
@@ -44,6 +46,21 @@ namespace ThemeParkGame.Core
         private Text _mrDetails;
         private float _monthlyReportAutoClose;
         private int _lastReportMonth = -1;
+
+        // ---- 年次決算パネル ----
+        private GameObject _annualReportPanel;
+        private Text _arTitle;
+        private Text _arRevenueSummary;
+        private Text _arExpenseSummary;
+        private Text _arProfitSummary;
+        private Text _arVisitorSummary;
+        private Text _arRevenueBreakdown;
+        private Text _arExpenseBreakdown;
+        private Text _arTrendGraph;
+        private Text _arGrowthRate;
+        private Text _arBestWorstMonth;
+        private Text _arRatingInfo;
+        private int _lastAnnualReportYear = -1;
 
         // ================================================================
         // 研究パネル
@@ -729,6 +746,244 @@ namespace ThemeParkGame.Core
 
             _monthlyReportPanel.SetActive(true);
             _monthlyReportAutoClose = 15f; // 15秒後に自動で閉じる
+        }
+
+        // ================================================================
+        // 年次決算レポートパネル
+        // ================================================================
+
+        private void BuildAnnualReportPanel(RectTransform root)
+        {
+            float panelW = 550f, panelH = 600f;
+            _annualReportPanel = MakePanel(root, "AnnualReportPanel", panelW, panelH,
+                new Color(0.05f, 0.08f, 0.18f, 0.97f));
+            var rt = _annualReportPanel.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
+
+            float y = 10f;
+
+            // タイトル
+            _arTitle = MakeLabel(rt, "ARTitle", "年次決算報告", 26, Gold, FontStyle.Bold, TextAnchor.MiddleCenter);
+            SetAnchoredTopLeft(_arTitle.rectTransform, 10f, y, panelW - 20f, 32f);
+            y += 38f;
+
+            // 収入サマリー
+            _arRevenueSummary = MakeLabel(rt, "ARRevenue", "年間総収入: ---", 20, Green, FontStyle.Normal, TextAnchor.MiddleLeft);
+            SetAnchoredTopLeft(_arRevenueSummary.rectTransform, 20f, y, panelW - 40f, 26f);
+            y += 28f;
+
+            // 支出サマリー
+            _arExpenseSummary = MakeLabel(rt, "ARExpense", "年間総支出: ---", 20, Red, FontStyle.Normal, TextAnchor.MiddleLeft);
+            SetAnchoredTopLeft(_arExpenseSummary.rectTransform, 20f, y, panelW - 40f, 26f);
+            y += 28f;
+
+            // 利益サマリー
+            _arProfitSummary = MakeLabel(rt, "ARProfit", "年間純利益: ---", 22, Gold, FontStyle.Bold, TextAnchor.MiddleLeft);
+            SetAnchoredTopLeft(_arProfitSummary.rectTransform, 20f, y, panelW - 40f, 28f);
+            y += 32f;
+
+            // 来場者サマリー
+            _arVisitorSummary = MakeLabel(rt, "ARVisitors", "年間来場者: ---", 16, Cyan, FontStyle.Normal, TextAnchor.MiddleLeft);
+            SetAnchoredTopLeft(_arVisitorSummary.rectTransform, 20f, y, panelW - 40f, 22f);
+            y += 26f;
+
+            // 区切り線
+            var sep1 = MakeLabel(rt, "ARSep1", "──────────────────────────────", 10, Muted, FontStyle.Normal, TextAnchor.MiddleCenter);
+            SetAnchoredTopLeft(sep1.rectTransform, 10f, y, panelW - 20f, 14f);
+            y += 16f;
+
+            // 収入内訳セクション
+            var revHeader = MakeLabel(rt, "ARRevHeader", "【収入内訳】", 14, Muted, FontStyle.Bold, TextAnchor.MiddleLeft);
+            SetAnchoredTopLeft(revHeader.rectTransform, 20f, y, panelW - 40f, 18f);
+            y += 18f;
+
+            _arRevenueBreakdown = MakeLabel(rt, "ARRevBreakdown", "", 13, Color.white, FontStyle.Normal, TextAnchor.UpperLeft);
+            _arRevenueBreakdown.horizontalOverflow = HorizontalWrapMode.Wrap;
+            SetAnchoredTopLeft(_arRevenueBreakdown.rectTransform, 30f, y, panelW - 60f, 56f);
+            y += 56f;
+
+            // 支出内訳セクション
+            var expHeader = MakeLabel(rt, "ARExpHeader", "【支出内訳】", 14, Muted, FontStyle.Bold, TextAnchor.MiddleLeft);
+            SetAnchoredTopLeft(expHeader.rectTransform, 20f, y, panelW - 40f, 18f);
+            y += 18f;
+
+            _arExpenseBreakdown = MakeLabel(rt, "ARExpBreakdown", "", 13, Color.white, FontStyle.Normal, TextAnchor.UpperLeft);
+            _arExpenseBreakdown.horizontalOverflow = HorizontalWrapMode.Wrap;
+            SetAnchoredTopLeft(_arExpenseBreakdown.rectTransform, 30f, y, panelW - 60f, 80f);
+            y += 80f;
+
+            // 区切り線
+            var sep2 = MakeLabel(rt, "ARSep2", "──────────────────────────────", 10, Muted, FontStyle.Normal, TextAnchor.MiddleCenter);
+            SetAnchoredTopLeft(sep2.rectTransform, 10f, y, panelW - 20f, 14f);
+            y += 16f;
+
+            // 月別利益トレンド（ASCIIバーチャート）
+            _arTrendGraph = MakeLabel(rt, "ARTrend", "", 11, Color.white, FontStyle.Normal, TextAnchor.UpperLeft);
+            _arTrendGraph.horizontalOverflow = HorizontalWrapMode.Overflow;
+            _arTrendGraph.verticalOverflow = VerticalWrapMode.Overflow;
+            SetAnchoredTopLeft(_arTrendGraph.rectTransform, 20f, y, panelW - 40f, 80f);
+            y += 80f;
+
+            // 前年比成長率
+            _arGrowthRate = MakeLabel(rt, "ARGrowth", "前年比成長率: ---", 15, Green, FontStyle.Normal, TextAnchor.MiddleLeft);
+            SetAnchoredTopLeft(_arGrowthRate.rectTransform, 20f, y, panelW - 40f, 20f);
+            y += 22f;
+
+            // 最優秀/最低月
+            _arBestWorstMonth = MakeLabel(rt, "ARBestWorst", "最優秀月: ---  最低月: ---", 14, Muted, FontStyle.Normal, TextAnchor.MiddleLeft);
+            SetAnchoredTopLeft(_arBestWorstMonth.rectTransform, 20f, y, panelW - 40f, 20f);
+            y += 22f;
+
+            // パーク評価情報
+            _arRatingInfo = MakeLabel(rt, "ARRating", "", 13, Cyan, FontStyle.Normal, TextAnchor.UpperLeft);
+            _arRatingInfo.horizontalOverflow = HorizontalWrapMode.Wrap;
+            SetAnchoredTopLeft(_arRatingInfo.rectTransform, 20f, y, panelW - 40f, 50f);
+
+            // 閉じるボタン（中央下）
+            var closeGo = MakePanel(rt, "CloseBtn", 100f, 34f, new Color(0.3f, 0.35f, 0.5f, 0.9f));
+            var closeRt = closeGo.GetComponent<RectTransform>();
+            closeRt.anchorMin = closeRt.anchorMax = new Vector2(0.5f, 0f);
+            closeRt.pivot = new Vector2(0.5f, 0f);
+            closeRt.anchoredPosition = new Vector2(0f, 10f);
+            var closeImg = closeGo.GetComponent<Image>();
+            closeImg.raycastTarget = true;
+            var closeBtn = closeGo.AddComponent<Button>();
+            closeBtn.targetGraphic = closeImg;
+            closeBtn.onClick.AddListener(() => _annualReportPanel.SetActive(false));
+            var closeLabel = MakeLabel(closeRt, "Label", "OK", 16, Color.white, FontStyle.Bold, TextAnchor.MiddleCenter);
+            StretchFill(closeLabel.rectTransform);
+
+            _annualReportPanel.SetActive(false);
+        }
+
+        private void ShowAnnualReport(int newYear)
+        {
+            if (_annualReportPanel == null) return;
+            var gm = GameManager.Instance;
+            if (gm == null || gm.EconomyManager == null) return;
+            if (gm.CurrentState != GameState.Playing) return;
+
+            // 前年度のレポートを表示
+            int reportYear = newYear - 1;
+            var report = gm.EconomyManager.GetYearlyReport(reportYear);
+            if (report == null) return;
+
+            // 同じ年のレポートを二重表示しない
+            if (reportYear == _lastAnnualReportYear) return;
+            _lastAnnualReportYear = reportYear;
+
+            WebGLOptimizer.LogVerbose($"[RuntimeHUD] 年次決算レポート表示: {reportYear}年度");
+
+            // タイトル
+            _arTitle.text = $"年次決算報告  {reportYear}年度";
+
+            // 収入・支出・利益サマリー
+            _arRevenueSummary.text = $"年間総収入:  ${report.TotalRevenue:N0}";
+            _arExpenseSummary.text = $"年間総支出:  ${report.TotalExpenses:N0}";
+
+            float profit = report.NetProfit;
+            float profitMargin = report.TotalRevenue > 0f ? (profit / report.TotalRevenue) * 100f : 0f;
+            _arProfitSummary.text = $"年間純利益:  ${profit:N0}  (利益率: {profitMargin:F1}%)";
+            _arProfitSummary.color = profit >= 0 ? Gold : Red;
+
+            // 来場者サマリー
+            _arVisitorSummary.text = $"年間来場者: {report.TotalVisitors:N0}名  平均支出: ${report.AverageVisitorSpending:N0}";
+
+            // 収入内訳
+            float totalRev = report.TotalRevenue;
+            float entranceFees = report.MonthlyReports.Sum(r => r.Revenue.EntranceFees);
+            float attractionFees = report.MonthlyReports.Sum(r => r.Revenue.AttractionFees);
+            float shopSales = report.MonthlyReports.Sum(r => r.Revenue.ShopSales);
+            float otherRev = report.MonthlyReports.Sum(r => r.Revenue.OtherRevenue);
+            _arRevenueBreakdown.text =
+                $"入場料: ${entranceFees:N0} ({Pct(entranceFees, totalRev)})\n" +
+                $"アトラクション: ${attractionFees:N0} ({Pct(attractionFees, totalRev)})\n" +
+                $"ショップ: ${shopSales:N0} ({Pct(shopSales, totalRev)})\n" +
+                $"その他: ${otherRev:N0} ({Pct(otherRev, totalRev)})";
+
+            // 支出内訳
+            float totalExp = report.TotalExpenses;
+            float staffSalaries = report.MonthlyReports.Sum(r => r.Expenses.StaffSalaries);
+            float maintenance = report.MonthlyReports.Sum(r => r.Expenses.Maintenance);
+            float research = report.MonthlyReports.Sum(r => r.Expenses.Research);
+            float construction = report.MonthlyReports.Sum(r => r.Expenses.Construction);
+            float loanRepayment = report.MonthlyReports.Sum(r => r.Expenses.LoanRepayment);
+            float otherExp = report.MonthlyReports.Sum(r => r.Expenses.OtherExpenses);
+            _arExpenseBreakdown.text =
+                $"人件費: ${staffSalaries:N0} ({Pct(staffSalaries, totalExp)})\n" +
+                $"メンテナンス: ${maintenance:N0} ({Pct(maintenance, totalExp)})\n" +
+                $"研究開発: ${research:N0} ({Pct(research, totalExp)})\n" +
+                $"建設: ${construction:N0} ({Pct(construction, totalExp)})\n" +
+                $"ローン返済: ${loanRepayment:N0} ({Pct(loanRepayment, totalExp)})\n" +
+                $"その他: ${otherExp:N0} ({Pct(otherExp, totalExp)})";
+
+            // 月別利益トレンド（ASCIIバーチャート）
+            var profitTrend = report.MonthlyProfitTrend;
+            float maxAbsProfit = 1f;
+            foreach (var p in profitTrend)
+            {
+                float abs = Mathf.Abs(p);
+                if (abs > maxAbsProfit) maxAbsProfit = abs;
+            }
+
+            var trendSb = new System.Text.StringBuilder();
+            for (int i = 0; i < profitTrend.Count; i++)
+            {
+                float val = profitTrend[i];
+                int barLen = Mathf.RoundToInt((Mathf.Abs(val) / maxAbsProfit) * 10f);
+                string bar = new string('\u2588', barLen);
+                string pad = new string(' ', 10 - barLen);
+                string prefix = val >= 0 ? " " : "-";
+                trendSb.AppendLine($"{i + 1,2}月: {prefix}{bar}{pad} ${val:N0}");
+            }
+            _arTrendGraph.text = trendSb.ToString().TrimEnd();
+
+            // 前年比成長率
+            var previousReport = gm.EconomyManager.GetYearlyReport(reportYear - 1);
+            float growthRate = report.CalculateGrowthRate(previousReport);
+            if (previousReport != null && previousReport.TotalRevenue > 0f)
+            {
+                string sign = growthRate >= 0 ? "+" : "";
+                _arGrowthRate.text = $"前年比成長率: {sign}{growthRate:F1}%";
+                _arGrowthRate.color = growthRate >= 0 ? Green : Red;
+            }
+            else
+            {
+                _arGrowthRate.text = "前年比成長率: --- (初年度)";
+                _arGrowthRate.color = Muted;
+            }
+
+            // 最優秀/最低月
+            _arBestWorstMonth.text = $"最優秀月: {report.BestMonth}月  最低月: {report.WorstMonth}月";
+
+            // パーク評価情報
+            if (gm.ParkManager != null && gm.ParkManager.Rating != null)
+            {
+                var rating = gm.ParkManager.Rating;
+                float fame = rating.GetCategoryScore(CertificateCategory.Fame);
+                float safety = rating.GetCategoryScore(CertificateCategory.Safety);
+                float comfort = rating.GetCategoryScore(CertificateCategory.Comfort);
+                float excitement = rating.GetCategoryScore(CertificateCategory.Excitement);
+                float mood = rating.GetCategoryScore(CertificateCategory.Mood);
+                _arRatingInfo.text =
+                    $"パーク評価 (総合: {rating.OverallRating:F0})\n" +
+                    $"  知名度: {fame:F0}  安全性: {safety:F0}  快適性: {comfort:F0}  興奮度: {excitement:F0}  ムード: {mood:F0}";
+            }
+            else
+            {
+                _arRatingInfo.text = "パーク評価: データなし";
+            }
+
+            _annualReportPanel.SetActive(true);
+        }
+
+        /// <summary>パーセンテージ文字列ヘルパー</summary>
+        private static string Pct(float value, float total)
+        {
+            if (total <= 0f) return "0.0%";
+            return $"{(value / total) * 100f:F1}%";
         }
     }
 }

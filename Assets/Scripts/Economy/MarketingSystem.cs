@@ -643,6 +643,34 @@ namespace ThemeParkGame.Economy
             return penalty;
         }
 
+        /// <summary>
+        /// 過度な広告による清潔度ペナルティを取得する。
+        /// 同時キャンペーン数がOverAdvertisingThresholdを超えた場合、
+        /// 広告による集客増がゴミ散乱を招き、清潔度が低下する。
+        /// PS1「新テーマパーク」の仕様を再現。
+        /// </summary>
+        /// <returns>清潔度ペナルティ係数（0-1、1.0=ペナルティなし）</returns>
+        public float GetCleanlinessPenaltyMultiplier()
+        {
+            int activeCount = activeCampaigns.Count;
+            if (activeCount <= OverAdvertisingThreshold)
+            {
+                return 1.0f; // ペナルティなし
+            }
+
+            int excessCount = activeCount - OverAdvertisingThreshold;
+            // 超過1キャンペーンあたり15%の清潔度低下
+            float penalty = excessCount * 0.15f;
+
+            float result = Mathf.Max(0.3f, 1.0f - penalty); // 最低30%まで低下
+
+            WebGLOptimizer.LogVerbose(
+                $"[MarketingSystem] 清潔度ペナルティ: {result:F2} " +
+                $"（超過キャンペーン数: {excessCount}）");
+
+            return result;
+        }
+
         // ========================================================================
         // 日次更新処理
         // ========================================================================

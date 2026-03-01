@@ -228,7 +228,17 @@ namespace ThemeParkGame.Park
 
             // クリーナー1人で来場者10人分の清掃能力
             float coverage = (float)cleaners * 10f / visitors;
-            return Mathf.Clamp01(coverage);
+            float baseCleanliness = Mathf.Clamp01(coverage);
+
+            // 広告過剰によるゴミ散乱ペナルティ（PS1「新テーマパーク」仕様）
+            var marketingSystem = Economy.MarketingSystem.Instance;
+            if (marketingSystem != null)
+            {
+                float adPenalty = marketingSystem.GetCleanlinessPenaltyMultiplier();
+                baseCleanliness *= adPenalty;
+            }
+
+            return Mathf.Clamp01(baseCleanliness);
         }
 
         /// <summary>施設充足率（ParkManagerのグリッドベース）</summary>

@@ -78,9 +78,12 @@ namespace ThemeParkGame.Core
 
         private void Start()
         {
-            // TimeManagerの月変更イベントを購読して月次レポートを表示
+            // TimeManagerの月変更・年変更イベントを購読してレポートを表示
             if (GameManager.Instance != null && GameManager.Instance.TimeManager != null)
+            {
                 GameManager.Instance.TimeManager.OnMonthChanged += ShowMonthlyReport;
+                GameManager.Instance.TimeManager.OnYearChanged += ShowAnnualReport;
+            }
         }
 
         private void OnDestroy()
@@ -89,7 +92,10 @@ namespace ThemeParkGame.Core
             GameEvents.OnGoldenTicketEarned -= OnGoldenTicketCelebration;
             GameEvents.OnCertificateAwarded -= OnCertificateCelebration;
             if (GameManager.Instance != null && GameManager.Instance.TimeManager != null)
+            {
                 GameManager.Instance.TimeManager.OnMonthChanged -= ShowMonthlyReport;
+                GameManager.Instance.TimeManager.OnYearChanged -= ShowAnnualReport;
+            }
         }
 
         private void BuildCanvas()
@@ -131,6 +137,7 @@ namespace ThemeParkGame.Core
             BuildLoanPanel(_canvasRoot);
             BuildZoneBar(_canvasRoot);
             BuildMonthlyReportPanel(_canvasRoot);
+            BuildAnnualReportPanel(_canvasRoot);
             BuildFirstPersonOverlay(_canvasRoot);
         }
 

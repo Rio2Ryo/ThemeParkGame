@@ -1,6 +1,6 @@
 # ThemeParkGame ステータスレポート
 
-## 最終更新: 2026-03-01（PS1グラフィック改善適用）
+## 最終更新: 2026-03-01（PS1仕様ギャップ5機能実装）
 
 ---
 
@@ -970,3 +970,69 @@
 | 8 | `Assets/Scripts/Core/InputManager.cs` | スワイプジェスチャー検出+3本指タップイベント |
 | 9 | `Assets/Scripts/Core/RuntimeHUD.cs` | MobileUIOptimizer自動初期化 |
 | 10 | `status-report.md` | Phase 6完了レポート追加 |
+
+---
+
+## PS1「新テーマパーク」仕様ギャップ実装 — 5機能 (3エージェント並列実装)
+
+### Feature ①: 入場料高額→来場者ゼロロジック ✅ [HIGH]
+- **PricingSystem.cs** `GetEntranceFeeElasticityMultiplier()` 修正
+  - 旧: `Mathf.Max(0.1f, ...)` で最低10%（ゼロにならない）
+  - 新: 3段階弾力性モデル
+    - 推奨以下: 最大1.3倍の集客ボーナス
+    - 推奨の1〜3倍: 線形に1.0→0.05へ低下
+    - 推奨の3倍超: **完全に来場者ゼロ**（PS1仕様再現）
+- **VisitorManager.cs** `CalculateSpawnInterval()` に価格弾力性統合
+  - elasticity <= 0 → interval=9999（スポーン完全停止）
+  - 低弾力性 → interval増加（来場者減少）
+
+### Feature ②: 広告過剰→清潔評価悪化ペナルティ ✅ [HIGH]
+- **MarketingSystem.cs** 新メソッド `GetCleanlinessPenaltyMultiplier()` 追加
+  - 同時キャンペーン数 > OverAdvertisingThreshold(2) → 清潔度ペナルティ発動
+  - 超過1件あたり15%の清潔度低下（最低30%まで）
+  - PS1「新テーマパーク」の「広告やりすぎ→ゴミ評価悪化」仕様再現
+- **ParkRatingEvaluator.cs** `CalculateCleanliness()` 修正
+  - baseCleanliness × adPenalty で清潔度を補正
+
+### Feature ③: 年次決算UI強化 ✅ [HIGH]
+- **RuntimeHUD_Economy.cs** 新パネル `BuildAnnualReportPanel()` (550x600)
+  - 年間総収入/支出/純利益/利益率
+  - 来場者数・平均支出
+  - 収入内訳: 入場料/アトラクション/ショップ/その他（金額+割合%）
+  - 支出内訳: 人件費/メンテナンス/研究/建設/ローン/その他
+  - 月別利益ASCIIバーチャート（█ブロック文字使用）
+  - 前年比成長率（Green=成長/Red=減少）
+  - 最優秀月/最低月
+  - パーク評価5カテゴリスコア表示
+- **RuntimeHUD.cs** Start/OnDestroyに `OnYearChanged += ShowAnnualReport` 購読追加
+
+### Feature ④: バスシステム ✅ [MEDIUM]
+- **BusSystem.cs** 新規作成（Singleton MonoBehaviour）
+  - バス停配置→来場者スポーンボーナス（PS1仕様再現）
+  - 逓減効果モデル: +10%/停 × 0.85^n（最大5停で+35%）
+  - 建設費$500、月間維持費$50/停
+  - AddBusStop/RemoveBusStop/RestoreFromSave API
+- **VisitorManager.cs** `CalculateSpawnInterval()` にバスボーナス統合
+  - interval /= busMultiplier でスポーン加速
+
+### Feature ⑤: 消費者団体視察イベント ✅ [MEDIUM]
+- **ParkEventSystem.cs** に `ConsumerInspection` イベント追加
+  - ParkEventType enum に新タイプ追加
+  - 60秒ごとに3%確率で発生（同月1回まで）
+  - 視察結果は3段階（パーク総合評価に基づく）:
+    - 75以上: 知名度+5ボーナス + 推薦リスト掲載通知
+    - 50-74: 改善提案（弱いカテゴリを指摘）
+    - 50未満: 知名度ペナルティ（最大-5）+ 営業許可警告
+
+### PS1仕様ギャップ 修正ファイル一覧
+
+| # | ファイル | 変更内容 |
+|---|---|---|
+| 1 | `Assets/Scripts/Economy/PricingSystem.cs` | 3段階弾力性モデル（3倍超→来場者ゼロ） |
+| 2 | `Assets/Scripts/Economy/MarketingSystem.cs` | `GetCleanlinessPenaltyMultiplier()` 新規追加 |
+| 3 | `Assets/Scripts/Park/ParkRatingEvaluator.cs` | CalculateCleanliness()に広告ペナルティ統合 |
+| 4 | `Assets/Scripts/Visitor/VisitorManager.cs` | 価格弾力性+バスボーナスをSpawnIntervalに統合 |
+| 5 | `Assets/Scripts/Core/RuntimeHUD_Economy.cs` | 年次決算パネル新規（550x600、内訳+トレンド+評価） |
+| 6 | `Assets/Scripts/Core/RuntimeHUD.cs` | BuildAnnualReportPanel統合+年末イベント購読 |
+| 7 | `Assets/Scripts/Park/BusSystem.cs` | **新規**: バスシステム（逓減ボーナス+維持費） |
+| 8 | `Assets/Scripts/Park/ParkEventSystem.cs` | 消費者団体視察イベント（3段階評価結果） |

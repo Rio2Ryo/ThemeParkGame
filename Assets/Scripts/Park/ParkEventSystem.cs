@@ -21,7 +21,8 @@ namespace ThemeParkGame.Park
         SpecialShow,    // 特別ショー（毎日スケジュール）
         LimitedTime,    // 期間限定イベント（ランダム発生）
         Anniversary,    // 周年記念（年単位）
-        Disaster        // 災害イベント（ランダム発生、パークに深刻な影響）
+        Disaster,           // 災害イベント（ランダム発生、パークに深刻な影響）
+        ConsumerInspection  // 消費者団体視察（定期発生、パーク評価に影響）
     }
 
     /// <summary>イベントの状態</summary>
@@ -145,6 +146,12 @@ namespace ThemeParkGame.Park
         private const float LimitedEventCheckInterval = 30f;
         private Season _lastSeason;
         private int _lastMonth;
+
+        // ---- 消費者視察 ----
+        private float _inspectionTimer;
+        private const float InspectionCheckInterval = 60f; // 60秒ごとにチェック
+        private const float InspectionBaseChance = 0.03f; // 基本3%/チェック
+        private int _lastInspectionMonth = -1;
 
         // ---- 外部公開プロパティ ----
 
@@ -425,6 +432,24 @@ namespace ThemeParkGame.Park
                 SatisfactionBonus = 8f
             });
 
+            // ==== 消費者団体視察 ====
+            _eventDatabase.Add(new ParkEventData
+            {
+                Id = "consumer_inspection",
+                DisplayName = "消費者団体視察",
+                Description = "消費者団体がパーク内を視察。評価に問題があれば厳しい指摘を受ける。",
+                Type = ParkEventType.ConsumerInspection,
+                TargetMonth = 0,
+                StartHour = 10f,
+                EndHour = 16f,
+                DurationDays = 1,
+                HappinessBonus = 0f,
+                SpawnRateMultiplier = 1.0f,
+                RevenueMultiplier = 1.0f,
+                RatingBonus = 0f,
+                SatisfactionBonus = 0f
+            });
+
             WebGLOptimizer.LogVerbose($"[ParkEventSystem] イベントDB構築完了: {_eventDatabase.Count}件");
         }
 
@@ -455,6 +480,13 @@ namespace ThemeParkGame.Park
             {
                 _limitedEventTimer = 0f;
                 TryTriggerLimitedEvent();
+            }
+
+            _inspectionTimer += dt;
+            if (_inspectionTimer >= InspectionCheckInterval)
+            {
+                _inspectionTimer = 0f;
+                TryTriggerConsumerInspection();
             }
 
             // アクティブイベントの経過時間を更新
@@ -598,6 +630,105 @@ namespace ThemeParkGame.Park
 
             WebGLOptimizer.LogVerbose($"[ParkEventSystem] 期間限定イベント発生: {selected.DisplayName} " +
                       $"({selected.DurationDays}日間)");
+        }
+
+        // ================================================================
+        // 消費者団体視察
+        // ================================================================
+
+        private void TryTriggerConsumerInspection()
+        {
+            var gm = GameManager.Instance;
+            if (gm == null || gm.TimeManager == null) return;
+
+            // 同月に複数回発生しない
+            int currentMonth = gm.TimeManager.CurrentYear * 100 + gm.TimeManager.CurrentMonth;
+            if (currentMonth == _lastInspectionMonth) return;
+
+            // 視察が既にアクティブなら発生しない
+            if (IsEventActive("consumer_inspection")) return;
+
+            // 発生確率チェック
+            if (UnityEngine.Random.value > InspectionBaseChance) return;
+
+            _lastInspectionMonth = currentMonth;
+
+            // 視察イベント開始
+            var inspectionData = GetEventData("consumer_inspection");
+            if (inspectionData == null) return;
+
+            var ae = CreateActiveEvent(inspectionData);
+            _activeEvents.Add(ae);
+
+            NotificationSystem.Instance?.Notify(
+                "消費者団体がパークの視察に来ています！パークの状態に注意しましょう。",
+                NotifLevel.Warning);
+
+            GameEvents.FireParkEventStarted("consumer_inspection", "消費者団体視察");
+
+            WebGLOptimizer.LogVerbose("[ParkEventSystem] 消費者団体視察開始");
+
+            // 視察結果を予約（視察終了時に評価）
+            // 遅延実行: 視察時間後に結果を処理
+            Invoke(nameof(ProcessInspectionResult), 10f); // ゲーム内10秒後に結果
+        }
+
+        /// <summary>
+        /// 消費者団体視察の結果を処理する。
+        /// パーク評価に基づいてフィードバック＋ペナルティ/ボーナスを付与。
+        /// PS1「新テーマパーク」の消費者団体視察仕様を再現。
+        /// </summary>
+        private void ProcessInspectionResult()
+        {
+            var gm = GameManager.Instance;
+            if (gm == null || gm.ParkManager == null) return;
+
+            float overallRating = gm.ParkManager.GetOverallRating();
+            var rating = gm.ParkManager.Rating;
+
+            float comfort = rating.GetCategoryScore(CertificateCategory.Comfort);
+            float safety = rating.GetCategoryScore(CertificateCategory.Safety);
+            float mood = rating.GetCategoryScore(CertificateCategory.Mood);
+
+            string resultMessage;
+
+            if (overallRating >= 75f)
+            {
+                // 高評価: ボーナス
+                rating.ApplyExternalBonus(CertificateCategory.Fame, 5f);
+                resultMessage = "消費者団体: 「素晴らしいパークです！推薦リストに掲載します。」 知名度+5";
+                NotificationSystem.Instance?.Notify(resultMessage, NotifLevel.Success);
+            }
+            else if (overallRating >= 50f)
+            {
+                // 中評価: 改善提案
+                string issues = "";
+                if (comfort < 50f) issues += "清潔感の改善、";
+                if (safety < 60f) issues += "安全管理の強化、";
+                if (mood < 50f) issues += "来場者の満足度向上、";
+                if (issues.Length > 0) issues = issues.TrimEnd('、');
+                else issues = "細部の品質向上";
+
+                resultMessage = $"消費者団体: 「概ね良好ですが、{issues}が必要です。」";
+                NotificationSystem.Instance?.Notify(resultMessage, NotifLevel.Info);
+            }
+            else
+            {
+                // 低評価: ペナルティ
+                float penaltyAmount = (50f - overallRating) / 10f; // 最大5ポイント
+                rating.ApplyExternalBonus(CertificateCategory.Fame, -penaltyAmount);
+
+                string severity = overallRating < 30f ? "深刻な問題" : "複数の問題";
+                resultMessage = $"消費者団体: 「{severity}が見つかりました。改善しなければ営業許可の見直しも。」 知名度-{penaltyAmount:F0}";
+                NotificationSystem.Instance?.Notify(resultMessage, NotifLevel.Warning);
+            }
+
+            WebGLOptimizer.LogVerbose(
+                $"[ParkEventSystem] 消費者視察結果: 総合={overallRating:F1}, " +
+                $"快適={comfort:F1}, 安全={safety:F1}, ムード={mood:F1}");
+
+            // 視察イベントを終了
+            EndEventById("consumer_inspection");
         }
 
         // ================================================================
@@ -813,6 +944,7 @@ namespace ThemeParkGame.Park
                     ParkEventType.SpecialShow => "ショー開演",
                     ParkEventType.LimitedTime => "期間限定",
                     ParkEventType.Anniversary => "周年記念",
+                    ParkEventType.ConsumerInspection => "視察",
                     _ => "イベント"
                 };
                 NotificationSystem.Instance.Notify(
@@ -872,6 +1004,7 @@ namespace ThemeParkGame.Park
                     ParkEventType.SpecialShow => "[演]",
                     ParkEventType.LimitedTime => "[限]",
                     ParkEventType.Anniversary => "[記]",
+                    ParkEventType.ConsumerInspection => "[視]",
                     _ => ""
                 };
                 sb.Append($"{typeIcon}{ae.Data.DisplayName}");

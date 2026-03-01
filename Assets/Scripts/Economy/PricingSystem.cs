@@ -405,11 +405,22 @@ namespace ThemeParkGame.Economy
                 // 推奨以下: 安ければ安いほど来場者が増える（最大1.3倍）
                 return Mathf.Lerp(1.3f, 1.0f, priceRatio);
             }
+            else if (priceRatio <= 3.0f)
+            {
+                // 推奨超過〜3倍: 線形に低下（1.0 → 0.05）
+                // priceRatio 1.0 → 1.0, priceRatio 3.0 → 0.05
+                float t = (priceRatio - 1.0f) / 2.0f; // 0〜1
+                float multiplier = Mathf.Lerp(1.0f, 0.05f, t);
+                WebGLOptimizer.LogVerbose(
+                    $"[PricingSystem] 入場料弾力性: priceRatio={priceRatio:F2}, multiplier={multiplier:F3}");
+                return multiplier;
+            }
             else
             {
-                // 推奨超過: 高いほど来場者が減る
-                float overcharge = priceRatio - 1.0f;
-                return Mathf.Max(0.1f, 1.0f - overcharge * ENTRANCE_FEE_ELASTICITY);
+                // 推奨の3倍超: 来場者ゼロ（入場料が高すぎて誰も来ない）
+                WebGLOptimizer.LogVerbose(
+                    $"[PricingSystem] 入場料が推奨の{priceRatio:F1}倍 — 来場者ゼロ");
+                return 0f;
             }
         }
 
