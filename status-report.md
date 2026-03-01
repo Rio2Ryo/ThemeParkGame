@@ -187,7 +187,7 @@
 |---|---|---|
 | Phase 1 | L3(実績拡充) + L6(アクセシビリティ) + L1(ゾーンBGM) + L9(待ち列演出) | **完了** |
 | Phase 2 | H6(経年劣化) + M3(ファストパス) + M4(シフト管理) + L4(チュートリアル) | **完了** |
-| Phase 3 | H1(ナイトパレード) + M2(デコレーション) + L2(フォトスポット) + L8(リピーター) | 中〜大 |
+| Phase 3 | H1(ナイトパレード) + M2(デコレーション) + L2(フォトスポット) + L8(リピーター) | **完了** |
 | Phase 4 | H2(スタッフ育成) + M7(AIパーソナリティ) + M5(レビュー) + M9(マーケティング) | 大 |
 | Phase 5 | H3(災害イベント) + M8(インタラクティブ) + M1(グループ行動) + M10(園内交通) | 大 |
 | Phase 6 | M6(ライバル強化) + L5(Co-op) + H5(対戦モード) + L7(モバイルUI) | 大（マルチ統合） |
@@ -497,3 +497,150 @@
 | 7 | `Assets/Scripts/Staff/StaffManager.cs` | シフト設定/ゾーン設定/自動最適化/勤務中カウント |
 | 8 | `Assets/Scripts/Core/TutorialSystem.cs` | 上級チュートリアル5ステップ追加 |
 | 9 | `status-report.md` | Phase 2完了レポート追加 |
+
+---
+
+# Part E: Phase 3 実装完了レポート（2026-03-01）
+
+## Phase 3: H1(ナイトパレード) + M2(デコレーション) + L2(フォトスポット) + L8(リピーター) — 全完了
+
+### H1. ナイトパレードシステム
+
+**ParadeSystem.cs (新規: 658行)**
+
+| パラメータ | 値 |
+|---|---|
+| パレード時間帯 | 18:00〜22:00 |
+| パレード速度 | 3.0 m/s |
+| 鑑賞範囲 | 半径15m |
+| 鑑賞時間 | 20秒 |
+| 幸福度ボーナス | +10〜20（鑑賞完了時） |
+| 興奮度ボーナス | +15〜30（鑑賞完了時） |
+
+**パレードフロート（5種）**
+| フロート名 | テーマ | 興奮度 | 幸福度 | 価格 |
+|---|---|---|---|---|
+| ロイヤルキャッスル号 | LostKingdom | 3 | 5 | $3,000 |
+| ゴーストシップ号 | HalloweenWorld | 4 | 4 | $3,500 |
+| マジカルドリーム号 | Wonderland | 2 | 6 | $2,500 |
+| コスモライナー号 | SpaceZone | 5 | 3 | $4,000 |
+| ネオンシティ号 | FutureCity | 4 | 5 | $4,500 |
+
+**システム機能**
+- フロート購入・管理（EconomyManager連携）
+- パレードルート定義（ルートノード＋停止時間）
+- 18:00自動開始 / 22:00自動終了
+- 来場者の自動鑑賞行動（WatchingParade状態）
+- ParkEventSystemとの連携（night_paradeイベント: 幸福+15, 収益×1.3, 評価+5）
+- パレード鑑賞者数カウント・統計
+
+**来場者AI拡張**
+- `VisitorBehaviorState.WatchingParade` 追加
+- パレード開催中は近くの来場者が自動的に鑑賞
+- VisitorType別の鑑賞確率（Kids:60%, Family:50%, その他:30%）
+- 鑑賞完了で幸福度+10〜20、興奮度+15〜30
+
+### M2. 季節デコレーションシステム
+
+**DecorationSystem.cs (新規: 566行)**
+
+**季節テーマ（6種）**
+| テーマ | 月 | 表示名 |
+|---|---|---|
+| Spring | 3〜5月 | 春の花 |
+| Summer | 6〜8月 | 夏祭り |
+| Autumn | 9, 11月 | 秋の紅葉 |
+| Winter | 1〜2月 | 冬のイルミネーション |
+| Halloween | 10月 | ハロウィン |
+| Christmas | 12月 | クリスマス |
+
+**デコレーションレベル（4段階）**
+| レベル | コスト | ムード | SNS |
+|---|---|---|---|
+| None | - | 0 | 0 |
+| Basic | $500 | +2 | +1 |
+| Enhanced | $1,500 | +5 | +3 |
+| Premium | $3,000 | +10 | +5 |
+
+**ゾーン別デコレーション**
+- 5ゾーン（LostKingdom/HalloweenWorld/Wonderland/SpaceZone/FutureCity）それぞれに独立設定
+- ゾーンごとのアップグレード（EconomyManager連携）
+- 園芸師シナジー: 園芸師が作業したゾーンのデコレーション効果+30%
+
+**GardenerStaff連携**
+- 園芸作業完了時にDecorationSystem.ApplyGardenerSynergy()呼び出し
+- AssignedZone（M4シフト管理）から作業ゾーンを推定
+
+### L2. フォトスポット施設
+
+**GameEnums拡張**
+- `FacilityType.PhotoSpot` 追加
+- `VisitorBehaviorState.TakingPhoto` 追加
+
+**来場者AI拡張**
+- 幸福度55以上で3%の確率でフォトスポットを探す
+- 撮影時間: 5秒（無料）
+- 撮影完了で幸福度+5〜12
+
+**SNSレピュテーション連携**
+- `SNSReputationSystem.ApplyPhotoSpotBoost()` 追加
+- フォトスポット撮影は必ずポジティブ投稿を生成
+- 投稿テンプレート5種（映えスポット系）
+- いいね20-80件、リツイート5-30件（通常投稿より多め）
+- パーク評判スコアへの効率的なブースト手段
+
+### L8. 来場者リピートシステム＆長期記憶
+
+**RepeaterSystem.cs (新規: 579行)**
+
+**リピーター登録条件**
+| パラメータ | 値 |
+|---|---|
+| 最低満足度 | 60以上 |
+| 最短再来園日 | 退園後30日 |
+| 最長再来園日 | 退園後60日 |
+| 基本再来園確率 | 15% (per check cycle) |
+| 1日最大リピーター | 5人 |
+
+**ロイヤリティシステム**
+- 来園ごとに+10ロイヤリティポイント（満足度ボーナス付）
+- ロイヤリティが高いほど再来園確率UP（+0.5% per point）
+- 高満足度ほど再来園間隔が短い
+
+**リピーターボーナス**
+| 項目 | 計算式 |
+|---|---|
+| 所持金倍率 | 1.0 + 0.1 × min(来園回数, 5) |
+| SNS口コミ倍率 | 1.0 + 0.15 × min(来園回数, 5) |
+| 来園時幸福度 | +10ボーナス |
+
+**VisitorProfile拡張**
+- `GetTopAttractionNames(count)`: 満足度上位N件のアトラクション名取得
+- `GetWorstAttractionName()`: 最低満足度アトラクション名取得
+- `TotalSpent`: 総支出額トラッキング
+- `VisitedAttractionCount`: 体験アトラクション数
+
+**VisitorManager連携**
+- `RepeaterSystem.OnRepeaterSpawnRequested`イベント購読
+- リピーター自動スポーン（通常スポーンと別枠）
+- リピーターデータ（お気に入りアトラクション・所持金ボーナス）を来場者AIに設定
+
+**VisitorAI連携**
+- `SetRepeaterData()`: リピーターフラグ設定+お気に入りアトラクション情報
+- 退園時に`RepeaterSystem.RecordVisitorDeparture()`で記録
+
+## Phase 3 修正ファイル一覧
+
+| # | ファイル | 変更内容 |
+|---|---|---|
+| 1 | `Assets/Scripts/Core/GameEnums.cs` | WatchingParade/TakingPhoto/PhotoSpot追加 |
+| 2 | `Assets/Scripts/Park/ParadeSystem.cs` | **新規**: ナイトパレード管理（フロート/ルート/統計） |
+| 3 | `Assets/Scripts/Park/DecorationSystem.cs` | **新規**: 季節デコレーション管理（ゾーン別/園芸師シナジー） |
+| 4 | `Assets/Scripts/Visitor/RepeaterSystem.cs` | **新規**: リピーター管理（記録/スポーン/ボーナス） |
+| 5 | `Assets/Scripts/Visitor/VisitorAI.cs` | パレード鑑賞+フォト撮影+リピーター行動 |
+| 6 | `Assets/Scripts/Visitor/VisitorProfile.cs` | リピーター用ヘルパー（Top/Worst/TotalSpent） |
+| 7 | `Assets/Scripts/Visitor/VisitorManager.cs` | リピータースポーンハンドラ+イベント購読 |
+| 8 | `Assets/Scripts/Park/ParkEventSystem.cs` | night_paradeイベントデータ追加 |
+| 9 | `Assets/Scripts/Staff/GardenerStaff.cs` | デコレーションシナジー+ゾーン推定 |
+| 10 | `Assets/Scripts/AI/SNSReputationSystem.cs` | ApplyPhotoSpotBoost()追加 |
+| 11 | `status-report.md` | Phase 3完了レポート追加 |

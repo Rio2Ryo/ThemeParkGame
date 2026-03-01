@@ -112,6 +112,20 @@ namespace ThemeParkGame.Visitor
         /// <summary>ショー鑑賞にかかる時間（秒）</summary>
         private const float ShowWatchDuration = 15f;
 
+        /// <summary>パレード鑑賞にかかる時間（秒）</summary>
+        private const float ParadeWatchDuration = 20f;
+
+        /// <summary>フォトスポット撮影にかかる時間（秒）</summary>
+        private const float PhotoTakeDuration = 5f;
+
+        // ---- リピーターフラグ ----
+
+        /// <summary>リピーター（再来園者）かどうか</summary>
+        private bool isRepeater;
+
+        /// <summary>リピーター時のお気に入りアトラクション名リスト</summary>
+        private List<string> repeaterFavoriteAttractions = new List<string>();
+
         // ---- プロパティ ----
 
         /// <summary>来場者の一意ID</summary>
@@ -141,6 +155,9 @@ namespace ThemeParkGame.Visitor
 
         /// <summary>ライフサイクルFSMへの読み取り専用アクセス</summary>
         public VisitorStateMachine StateMachine => stateMachine;
+
+        /// <summary>リピーター（再来園者）かどうか</summary>
+        public bool IsRepeater => isRepeater;
 
         // ---- Unity ライフサイクル ----
 
@@ -399,6 +416,49 @@ namespace ThemeParkGame.Visitor
                     }
                 }
                 return;
+            }
+
+            // 優先度3.5: パレード鑑賞（パレード開催中＆近くにいる場合）
+            if (currentState != VisitorBehaviorState.WatchingParade)
+            {
+                var paradeSystem = ParadeSystem.Instance;
+                if (paradeSystem != null && paradeSystem.IsParadeActive)
+                {
+                    Vector3 paradePos = paradeSystem.GetParadePosition();
+                    if (paradeSystem.IsWithinViewingRange(transform.position))
+                    {
+                        // 既に鑑賞範囲内 → そのまま鑑賞開始
+                        actionTimer = 0f;
+                        TransitionTo(VisitorBehaviorState.WatchingParade);
+                        return;
+                    }
+                    else if (Vector3.Distance(transform.position, paradePos) < facilitySearchRadius)
+                    {
+                        // パレードが近い → 観に行く
+                        float watchChance = visitorType == VisitorType.Kids ? 0.6f :
+                                            visitorType == VisitorType.Family ? 0.5f : 0.3f;
+                        if (UnityEngine.Random.value < watchChance)
+                        {
+                            currentTarget = null;
+                            NavigateTo(paradePos);
+                            TransitionTo(VisitorBehaviorState.WalkingToAttraction);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // 優先度3.7: フォトスポット撮影（幸福度が高い時に発動）
+            if (currentState != VisitorBehaviorState.TakingPhoto &&
+                parameters.Happiness >= 55f &&
+                UnityEngine.Random.value < 0.03f)
+            {
+                if (TryFindAndNavigateTo(FacilityType.PhotoSpot))
+                {
+                    targetFacilityType = FacilityType.PhotoSpot;
+                    TransitionTo(VisitorBehaviorState.WalkingToShop);
+                    return;
+                }
             }
 
             // 優先度4: 興奮を求める → アトラクションに行く（所持金がある場合のみ）
@@ -664,6 +724,14 @@ namespace ThemeParkGame.Visitor
                     ExecuteTimedAction(deltaTime, MapLookDuration, OnFinishLookingAtMap);
                     break;
 
+                case VisitorBehaviorState.WatchingParade:
+                    ExecuteTimedAction(deltaTime, ParadeWatchDuration, OnFinishWatchingParade);
+                    break;
+
+                case VisitorBehaviorState.TakingPhoto:
+                    ExecuteTimedAction(deltaTime, PhotoTakeDuration, OnFinishTakingPhoto);
+                    break;
+
                 case VisitorBehaviorState.Vomiting:
                     ExecuteTimedAction(deltaTime, VomitDuration, OnFinishVomiting);
                     break;
@@ -852,6 +920,43 @@ namespace ThemeParkGame.Visitor
             TransitionTo(VisitorBehaviorState.Idle);
         }
 
+        private void OnFinishWatchingParade()
+        {
+            // パレード鑑賞完了: 大きな幸福度UP + 興奮度UP
+            parameters.ModifyHappiness(UnityEngine.Random.Range(10f, 20f));
+            parameters.ModifyExcitement(UnityEngine.Random.Range(15f, 30f));
+
+            // パレードシステムに鑑賞者をカウント
+            var paradeSystem = ParadeSystem.Instance;
+            if (paradeSystem != null)
+                paradeSystem.RecordViewer();
+
+            if (emotionBubble != null)
+                emotionBubble.ShowBubble(EmotionBubbleType.LovingIt, EmotionBubbleColor.Blue);
+
+            WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} finished watching parade. {parameters}");
+            TransitionTo(VisitorBehaviorState.Idle);
+        }
+
+        private void OnFinishTakingPhoto()
+        {
+            // フォトスポット撮影完了: 幸福度UP + SNS投稿ブースト
+            parameters.ModifyHappiness(UnityEngine.Random.Range(5f, 12f));
+
+            // SNSレピュテーションにフォトスポットブーストを適用
+            var sns = ThemeParkGame.AI.SNSReputationSystem.Instance;
+            if (sns != null)
+            {
+                sns.ApplyPhotoSpotBoost(visitorId, profile.VisitorName);
+            }
+
+            if (emotionBubble != null)
+                emotionBubble.ShowBubble(EmotionBubbleType.Interesting, EmotionBubbleColor.White);
+
+            WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} took a photo at photo spot. {parameters}");
+            TransitionTo(VisitorBehaviorState.Idle);
+        }
+
         private void OnFinishLookingAtMap()
         {
             TransitionTo(VisitorBehaviorState.Idle);
@@ -1010,6 +1115,13 @@ namespace ThemeParkGame.Visitor
                     break;
 
                 case VisitorBehaviorState.WalkingToShop:
+                    // フォトスポットの場合は撮影開始（無料）
+                    if (targetFacilityType == FacilityType.PhotoSpot)
+                    {
+                        actionTimer = 0f;
+                        TransitionTo(VisitorBehaviorState.TakingPhoto);
+                        break;
+                    }
                     OnArrivedAtShop();
                     break;
 
@@ -1109,6 +1221,24 @@ namespace ThemeParkGame.Visitor
             {
                 string snsContent = profile.GenerateSNSPostContent(parameters);
                 GameEvents.FireSNSPostGenerated(visitorId, snsContent);
+            }
+
+            // リピーターシステムに退園を記録
+            var repeaterSystem = RepeaterSystem.Instance;
+            if (repeaterSystem != null)
+            {
+                var favoriteAttractions = profile.GetTopAttractionNames(3);
+                var worstAttraction = profile.GetWorstAttractionName();
+                repeaterSystem.RecordVisitorDeparture(
+                    profile.VisitorName,
+                    visitorType,
+                    parameters.Satisfaction,
+                    parameters.Happiness,
+                    profile.VisitedAttractionCount,
+                    favoriteAttractions,
+                    worstAttraction,
+                    profile.TotalSpent
+                );
             }
 
             GameEvents.FireVisitorLeavePark(visitorId);
@@ -1642,6 +1772,8 @@ namespace ThemeParkGame.Visitor
                 case VisitorBehaviorState.Vomiting:
                 case VisitorBehaviorState.LookingAtMap:
                 case VisitorBehaviorState.WatchingEntertainment:
+                case VisitorBehaviorState.WatchingParade:
+                case VisitorBehaviorState.TakingPhoto:
                     StopNavigation();
                     break;
 
@@ -1714,6 +1846,8 @@ namespace ThemeParkGame.Visitor
                 case VisitorBehaviorState.Resting:
                 case VisitorBehaviorState.Vomiting:
                 case VisitorBehaviorState.WatchingEntertainment:
+                case VisitorBehaviorState.WatchingParade:
+                case VisitorBehaviorState.TakingPhoto:
                 case VisitorBehaviorState.LookingAtMap:
                 case VisitorBehaviorState.RidingAttraction:
                 case VisitorBehaviorState.TalkingToPlayer:
@@ -1825,6 +1959,16 @@ namespace ThemeParkGame.Visitor
             StopNavigation();
 
             GameEvents.FireNPCConversationStarted(visitorId, "player_initiated");
+        }
+
+        /// <summary>リピーターデータを設定する（VisitorManagerから呼ばれる）</summary>
+        public void SetRepeaterData(List<string> favoriteAttractions, float cashMultiplier)
+        {
+            isRepeater = true;
+            repeaterFavoriteAttractions = favoriteAttractions ?? new List<string>();
+            parameters.AddCash(parameters.Cash * (cashMultiplier - 1f)); // 所持金ボーナス
+            parameters.ModifyHappiness(10f); // リピーターは来園時に幸福度ボーナス
+            WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} is a repeater (favorites: {string.Join(", ", repeaterFavoriteAttractions)})");
         }
 
         /// <summary>AI会話を終了する</summary>
@@ -1957,6 +2101,7 @@ namespace ThemeParkGame.Visitor
             { FacilityType.Decoration,   "Decoration" },
             { FacilityType.StaffRoom,    "StaffRoom" },
             { FacilityType.ResearchLab,  "ResearchLab" },
+            { FacilityType.PhotoSpot,    "PhotoSpot" },
         };
 
         /// <summary>FacilityTypeに対応するタグ名を返す</summary>

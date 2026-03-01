@@ -56,7 +56,9 @@ namespace ThemeParkGame.Core
         LookingAtMap,
         Vomiting,
         LeavingPark,
-        TalkingToPlayer  // AI会話中
+        TalkingToPlayer,  // AI会話中
+        WatchingParade,   // パレード鑑賞中
+        TakingPhoto       // フォトスポットで撮影中
     }
 
     /// <summary>感情バブルの色</summary>
@@ -171,7 +173,8 @@ namespace ThemeParkGame.Core
         Pathway,
         Decoration,
         StaffRoom,
-        ResearchLab
+        ResearchLab,
+        PhotoSpot       // フォトスポット
     }
 
     /// <summary>天候</summary>

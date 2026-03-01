@@ -684,6 +684,41 @@ namespace ThemeParkGame.AI
         }
 
         // ================================================================
+        // フォトスポット連携
+        // ================================================================
+
+        /// <summary>
+        /// フォトスポットでの撮影によるSNS評判ブースト。
+        /// 【ゲームデザイン】フォトスポットで撮影した来場者は高確率でSNS投稿し、
+        /// ポジティブな投稿が生成される。パークの評判を効率的に上げる手段。
+        /// </summary>
+        public void ApplyPhotoSpotBoost(int visitorId, string visitorName)
+        {
+            // フォトスポット投稿は必ずポジティブ（撮影時は幸福度が高い）
+            string[] photoTemplates = new[]
+            {
+                "パークのフォトスポットで記念撮影！最高の思い出！ #映えスポット #テーマパーク",
+                "このフォトスポット、めっちゃ映える！みんなも来てみて！ #パーク写真 #おすすめ",
+                "フォトスポット発見！素敵な写真が撮れた♪ #テーマパーク #記念写真",
+                "パークの景色が綺麗すぎて写真撮りまくり！ #パーク好き #映えスポット",
+                "フォトスポットで最高の1枚が撮れた！友達にも自慢する！ #テーマパーク日和"
+            };
+
+            string content = photoTemplates[UnityEngine.Random.Range(0, photoTemplates.Length)];
+            var post = CreatePost(visitorId, visitorName, content, false);
+            post.Sentiment = PostSentiment.Positive;
+            post.SentimentScore = UnityEngine.Random.Range(0.75f, 0.95f);
+            post.Topic = "雰囲気";
+            post.Likes = UnityEngine.Random.Range(20, 80); // フォト投稿はいいね多め
+            post.Retweets = UnityEngine.Random.Range(5, 30);
+
+            UpdateReputationFromPost(post);
+            RecalculateTrendingTopics();
+
+            WebGLOptimizer.LogVerbose($"[SNSReputation] Photo spot boost from {visitorName}: +{post.SentimentScore:F2}");
+        }
+
+        // ================================================================
         // Save/Load
         // ================================================================
 

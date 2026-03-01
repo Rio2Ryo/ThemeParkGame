@@ -422,6 +422,33 @@ namespace ThemeParkGame.Visitor
         }
 
         /// <summary>
+        /// リピーター（再来園者）をスポーンさせる。
+        /// RepeaterSystemからのイベントを受けて呼ばれる。
+        /// 【ゲームデザイン】リピーターは前回の記憶を持ち、
+        /// お気に入りアトラクションへの再訪行動を取る。
+        /// 回数に応じて所持金・SNS口コミ効果にボーナス。
+        /// </summary>
+        private void HandleRepeaterSpawnRequested(RepeaterData data)
+        {
+            if (data?.LastVisit == null) return;
+            if (activeVisitors.Count >= maxVisitors) return;
+
+            VisitorAI visitor = SpawnVisitor(data.LastVisit.Type);
+            if (visitor == null) return;
+
+            // リピーターボーナスを適用
+            var repeaterSystem = RepeaterSystem.Instance;
+            if (repeaterSystem != null)
+            {
+                var (cashMultiplier, _) = repeaterSystem.GetRepeaterBonus(data.LastVisit.VisitorName);
+                visitor.SetRepeaterData(data.LastVisit.FavoriteAttractionNames, cashMultiplier);
+            }
+
+            WebGLOptimizer.LogVerbose($"[VisitorManager] Repeater spawned: {data.LastVisit.VisitorName} " +
+                $"(visit #{data.TotalVisits}, loyalty: {data.LoyaltyScore:F0})");
+        }
+
+        /// <summary>
         /// スポーンする来場者のタイプを決定する。
         /// 【ゲームデザイン】タイプの出現比率はパークの特性によって変動する。
         /// スリル系アトラクションが多い → Young率UP
@@ -722,6 +749,10 @@ namespace ThemeParkGame.Visitor
             GameEvents.OnParkClosed += HandleParkClosed;
             GameEvents.OnVisitorSelected += HandleVisitorSelected;
             GameEvents.OnWeatherChanged += HandleWeatherChanged;
+
+            // リピーターシステムのスポーン要求を購読
+            if (RepeaterSystem.Instance != null)
+                RepeaterSystem.Instance.OnRepeaterSpawnRequested += HandleRepeaterSpawnRequested;
         }
 
         private void UnsubscribeEvents()
@@ -730,6 +761,9 @@ namespace ThemeParkGame.Visitor
             GameEvents.OnParkClosed -= HandleParkClosed;
             GameEvents.OnVisitorSelected -= HandleVisitorSelected;
             GameEvents.OnWeatherChanged -= HandleWeatherChanged;
+
+            if (RepeaterSystem.Instance != null)
+                RepeaterSystem.Instance.OnRepeaterSpawnRequested -= HandleRepeaterSpawnRequested;
         }
 
         private void HandleParkOpened()

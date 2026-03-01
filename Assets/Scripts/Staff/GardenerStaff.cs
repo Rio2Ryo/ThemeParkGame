@@ -335,6 +335,17 @@ namespace ThemeParkGame.Staff
                 pm.Rating.ApplyExternalBonus(CertificateCategory.Mood, bonus);
             }
 
+            // デコレーションシステムとの相乗効果: 園芸師が作業したゾーンのデコレーション効果UP
+            var decorationSystem = DecorationSystem.Instance;
+            if (decorationSystem != null)
+            {
+                var zone = EstimateCurrentZone();
+                if (zone.HasValue)
+                {
+                    decorationSystem.ApplyGardenerSynergy(zone.Value);
+                }
+            }
+
             string taskName = _currentTaskType switch
             {
                 GardenTaskType.Maintenance => "手入れ",
@@ -436,6 +447,16 @@ namespace ThemeParkGame.Staff
         // ============================================================
         // ユーティリティ
         // ============================================================
+
+        /// <summary>
+        /// 現在位置からゾーンを推定する。
+        /// 【簡易実装】AssignedZone（シフト管理で設定されたゾーン）から判定。
+        /// </summary>
+        private ThemeZone? EstimateCurrentZone()
+        {
+            // AssignedZone（StaffMember.cs M4シフト管理で追加済み）を使用
+            return AssignedZone;
+        }
 
         /// <summary>指定地点の近くに装飾オブジェクトがあるかを判定する</summary>
         private bool HasDecorationNearby(Vector3 position)

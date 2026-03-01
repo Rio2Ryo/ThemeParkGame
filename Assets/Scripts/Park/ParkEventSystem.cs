@@ -314,6 +314,24 @@ namespace ThemeParkGame.Park
                 SatisfactionBonus = 5f
             });
 
+            // ナイトパレード（ParadeSystemが有効な場合に連動）
+            _eventDatabase.Add(new ParkEventData
+            {
+                Id = "night_parade",
+                DisplayName = "ナイトパレード",
+                Description = "きらびやかなフロートが夜のパークを彩る。パレード鑑賞で幸福度が大幅UP。",
+                Type = ParkEventType.SpecialShow,
+                TargetMonth = 0,
+                StartHour = 18f,
+                EndHour = 22f,
+                DurationDays = 1,
+                HappinessBonus = 15f,
+                SpawnRateMultiplier = 1.2f,
+                RevenueMultiplier = 1.3f,
+                RatingBonus = 5f,
+                SatisfactionBonus = 8f
+            });
+
             // ==== 期間限定イベント ====
 
             _eventDatabase.Add(new ParkEventData

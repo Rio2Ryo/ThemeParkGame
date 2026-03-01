@@ -374,6 +374,42 @@ namespace ThemeParkGame.Visitor
             return dislikedRideTypes.Contains(category);
         }
 
+        // ---- リピーターシステム用ヘルパー ----
+
+        /// <summary>体験したアトラクション数</summary>
+        public int VisitedAttractionCount => attractionMemories.Count;
+
+        /// <summary>総支出額（来場者パラメータ側で追跡）</summary>
+        public float TotalSpent { get; set; }
+
+        /// <summary>
+        /// 満足度の高い上位N件のアトラクション名を取得する。
+        /// リピーターシステムのお気に入り記録に使用。
+        /// </summary>
+        public List<string> GetTopAttractionNames(int count)
+        {
+            var result = new List<string>();
+            if (attractionMemories.Count == 0) return result;
+
+            // 満足度でソート（降順）
+            var sorted = new List<AttractionMemory>(attractionMemories);
+            sorted.Sort((a, b) => b.SatisfactionScore.CompareTo(a.SatisfactionScore));
+
+            for (int i = 0; i < Mathf.Min(count, sorted.Count); i++)
+            {
+                if (!string.IsNullOrEmpty(sorted[i].AttractionName))
+                    result.Add(sorted[i].AttractionName);
+            }
+            return result;
+        }
+
+        /// <summary>最もつまらなかったアトラクション名を取得する</summary>
+        public string GetWorstAttractionName()
+        {
+            var worst = WorstAttraction;
+            return worst?.AttractionName ?? "";
+        }
+
         // ---- LLMプロンプト生成 ----
 
         /// <summary>
