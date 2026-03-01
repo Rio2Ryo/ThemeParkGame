@@ -31,12 +31,20 @@ namespace ThemeParkGame.Core
             GameEvents.OnParkClosed -= HandleParkClosed;
         }
 
-        /// <summary>パーク閉園時にワールドをリセットして再構築可能にする</summary>
+        /// <summary>パーク閉園時（毎日22:00）は施設を維持する。クリーンアップは行わない。</summary>
         private void HandleParkClosed()
+        {
+            // 日常の閉園では施設を破棄しない。
+            // ワールドリセットが必要な場合は ResetForNewGame() を明示的に呼ぶこと。
+            WebGLOptimizer.LogVerbose("[RuntimeGameSetup] パーク閉園 → 施設維持（クリーンアップなし）");
+        }
+
+        /// <summary>ゲームリスタート/メインメニュー遷移時にワールドを破棄してリセットする</summary>
+        public void ResetForNewGame()
         {
             if (!_isSetUp) return;
 
-            WebGLOptimizer.LogVerbose("[RuntimeGameSetup] パーク閉園 → ワールドクリーンアップ");
+            WebGLOptimizer.LogVerbose("[RuntimeGameSetup] ゲームリセット → ワールドクリーンアップ");
             CleanupGameWorld();
             _isSetUp = false;
         }

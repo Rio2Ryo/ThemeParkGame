@@ -1146,6 +1146,31 @@ namespace ThemeParkGame.UI
             return CreateFacilityObject(item, position);
         }
 
+        private static GameObject CreateAttractionVisual(AttractionCategory category, string baseName)
+        {
+            string visualName = baseName + "_Visual";
+            switch (category)
+            {
+                case AttractionCategory.GForce:
+                    return ProceduralMeshGenerator.CreateRollerCoaster(visualName);
+                case AttractionCategory.Observation:
+                    return ProceduralMeshGenerator.CreateFerrisWheel(visualName);
+                case AttractionCategory.HorizontalRotation:
+                    return ProceduralMeshGenerator.CreateMerryGoRound(visualName);
+                case AttractionCategory.VerticalRotation:
+                    return ProceduralMeshGenerator.CreateSpinningCups(visualName);
+                case AttractionCategory.ShowAttraction:
+                    return ProceduralMeshGenerator.CreateHauntedHouse(visualName);
+                default:
+                {
+                    Color color = GetAttractionColor(category);
+                    var fallback = ProceduralMeshGenerator.CreateBoxGameObject(new Vector3(5f, 4f, 5f));
+                    ProceduralMeshGenerator.ApplyMaterial(fallback, color, 0.1f, 0.4f);
+                    return fallback;
+                }
+            }
+        }
+
         private GameObject CreateAttractionObject(BuildableItem item, Vector3 position)
         {
             // AttractionDataをランタイム生成
@@ -1184,23 +1209,11 @@ namespace ThemeParkGame.UI
             col.size = new Vector3(sizeX, 4f, sizeZ);
             col.center = new Vector3(0f, 2f, 0f);
 
-            // ビジュアル
-            var visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            // ProceduralMeshGeneratorでアトラクション種別ごとのビジュアル生成
+            GameObject visual = CreateAttractionVisual(data.Category, item.NameJa);
             visual.name = "Visual";
             visual.transform.SetParent(go.transform);
-            visual.transform.localPosition = new Vector3(0f, 2f, 0f);
-            visual.transform.localScale = new Vector3(sizeX - 0.5f, 4f, sizeZ - 0.5f);
-            UnityEngine.Object.Destroy(visual.GetComponent<Collider>());
-
-            var renderer = visual.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                Color color = GetAttractionColor(data.Category);
-                var shader = Shader.Find("Standard");
-                if (shader == null) shader = Shader.Find("UI/Default");
-                if (shader != null)
-                    renderer.material = new Material(shader) { color = color };
-            }
+            visual.transform.localPosition = Vector3.zero;
 
             go.AddComponent<FacilityDirt>();
 
@@ -1250,28 +1263,17 @@ namespace ThemeParkGame.UI
             col.size = new Vector3(4f, 3f, 4f);
             col.center = new Vector3(0f, 1.5f, 0f);
 
-            var visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Color shopColor;
+            switch (facType)
+            {
+                case FacilityType.FoodShop: shopColor = ProceduralMeshGenerator.Palette.FoodOrange; break;
+                case FacilityType.DrinkShop: shopColor = ProceduralMeshGenerator.Palette.DrinkCyan; break;
+                default: shopColor = ProceduralMeshGenerator.Palette.SouvenirPink; break;
+            }
+            var visual = ProceduralMeshGenerator.CreateShopBuilding(item.NameJa + "_Visual", shopColor);
             visual.name = "Visual";
             visual.transform.SetParent(go.transform);
-            visual.transform.localPosition = new Vector3(0f, 1.5f, 0f);
-            visual.transform.localScale = new Vector3(3.5f, 3f, 3.5f);
-            UnityEngine.Object.Destroy(visual.GetComponent<Collider>());
-
-            var renderer = visual.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                Color color;
-                switch (facType)
-                {
-                    case FacilityType.FoodShop: color = new Color(1.0f, 0.6f, 0.2f); break;
-                    case FacilityType.DrinkShop: color = new Color(0.2f, 0.8f, 1.0f); break;
-                    default: color = new Color(1.0f, 0.4f, 0.8f); break;
-                }
-                var shader = Shader.Find("Standard");
-                if (shader == null) shader = Shader.Find("UI/Default");
-                if (shader != null)
-                    renderer.material = new Material(shader) { color = color };
-            }
+            visual.transform.localPosition = Vector3.zero;
 
             go.AddComponent<FacilityDirt>();
 
@@ -1330,21 +1332,26 @@ namespace ThemeParkGame.UI
             col.size = size;
             col.center = new Vector3(0f, size.y * 0.5f, 0f);
 
-            var visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            GameObject visual;
+            switch (item.Type)
+            {
+                case "Toilet":
+                    visual = ProceduralMeshGenerator.CreateToiletBuilding(item.NameJa + "_Visual");
+                    break;
+                case "Bench":
+                    visual = ProceduralMeshGenerator.CreateBench(item.NameJa + "_Visual");
+                    break;
+                case "StaffRoom":
+                    visual = ProceduralMeshGenerator.CreateStaffRoom(item.NameJa + "_Visual");
+                    break;
+                default:
+                    visual = ProceduralMeshGenerator.CreateBoxGameObject(size * 0.9f);
+                    ProceduralMeshGenerator.ApplyMaterial(visual, color, 0f, 0.4f);
+                    break;
+            }
             visual.name = "Visual";
             visual.transform.SetParent(go.transform);
-            visual.transform.localPosition = col.center;
-            visual.transform.localScale = size * 0.9f;
-            UnityEngine.Object.Destroy(visual.GetComponent<Collider>());
-
-            var renderer = visual.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                var shader = Shader.Find("Standard");
-                if (shader == null) shader = Shader.Find("UI/Default");
-                if (shader != null)
-                    renderer.material = new Material(shader) { color = color };
-            }
+            visual.transform.localPosition = new Vector3(0f, size.y * 0.5f, 0f);
 
             // スタッフルームの場合、StaffManagerに登録
             if (item.Type == "StaffRoom")

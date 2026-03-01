@@ -361,6 +361,7 @@ namespace ThemeParkGame.Core
         public void RestartGame()
         {
             Time.timeScale = 1f;
+            FindObjectOfType<RuntimeGameSetup>()?.ResetForNewGame();
             GameEvents.FireParkClosed();
             StartNewGame(ThemeZone.LostKingdom, CurrentDifficulty);
             WebGLOptimizer.LogVerbose("[GameManager] ゲームをリスタートしました");
@@ -371,6 +372,8 @@ namespace ThemeParkGame.Core
         {
             CurrentState = GameState.MainMenu;
             Time.timeScale = 1f;
+
+            FindObjectOfType<RuntimeGameSetup>()?.ResetForNewGame();
 
             // スポーン停止（ParkClosedイベント経由でVisitorManagerが対応）
             GameEvents.FireParkClosed();

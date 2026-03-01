@@ -752,10 +752,8 @@ namespace ThemeParkGame.UI
         /// <summary>プレビュー用のプロシージャルメッシュを生成する</summary>
         private GameObject CreateProceduralPreview(BuildItemData itemData)
         {
-            PrimitiveType shape = IsAttractionCategory(itemData.Category)
-                ? PrimitiveType.Cylinder : PrimitiveType.Cube;
-            GameObject obj = GameObject.CreatePrimitive(shape);
-            obj.name = $"Preview_{itemData.DisplayName}";
+            string previewName = $"Preview_{itemData.DisplayName}";
+            GameObject obj = CreateMeshForCategory(itemData.Category, previewName);
             obj.transform.localScale = itemData.PlacementSize;
             return obj;
         }
@@ -767,11 +765,7 @@ namespace ThemeParkGame.UI
         private GameObject CreateProceduralFacility(BuildItemData itemData, Vector3 position, Quaternion rotation)
         {
             string objName = itemData.DisplayName ?? $"Facility_{itemData.Category}";
-            PrimitiveType shape = IsAttractionCategory(itemData.Category)
-                ? PrimitiveType.Cylinder : PrimitiveType.Cube;
-
-            GameObject obj = GameObject.CreatePrimitive(shape);
-            obj.name = objName;
+            GameObject obj = CreateMeshForCategory(itemData.Category, objName);
             obj.transform.position = position;
             obj.transform.rotation = rotation;
             obj.transform.localScale = itemData.PlacementSize;
@@ -780,15 +774,6 @@ namespace ThemeParkGame.UI
             string tag = GetTagForCategory(itemData.Category);
             try { obj.tag = tag; }
             catch (UnityException) { /* タグが未登録の場合は無視 */ }
-
-            // マテリアル設定
-            var renderer = obj.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                var mat = new Material(Shader.Find("Standard") ?? Shader.Find("Sprites/Default"));
-                mat.color = GetColorForCategory(itemData.Category);
-                renderer.material = mat;
-            }
 
             // カテゴリに応じたコンポーネントのアタッチ
             AttachComponentsForCategory(obj, itemData);
@@ -867,6 +852,47 @@ namespace ThemeParkGame.UI
                 || category == BuildCategory.Observation
                 || category == BuildCategory.ShowAttraction
                 || category == BuildCategory.RideAttraction;
+        }
+
+        /// <summary>カテゴリに応じたProceduralMeshGeneratorメッシュを生成する</summary>
+        private static GameObject CreateMeshForCategory(BuildCategory category, string name)
+        {
+            switch (category)
+            {
+                case BuildCategory.GForce:
+                    return ProceduralMeshGenerator.CreateRollerCoaster(name);
+                case BuildCategory.Observation:
+                    return ProceduralMeshGenerator.CreateFerrisWheel(name);
+                case BuildCategory.HorizontalRotation:
+                    return ProceduralMeshGenerator.CreateMerryGoRound(name);
+                case BuildCategory.VerticalRotation:
+                    return ProceduralMeshGenerator.CreateSpinningCups(name);
+                case BuildCategory.ShowAttraction:
+                    return ProceduralMeshGenerator.CreateHauntedHouse(name);
+                case BuildCategory.RideAttraction:
+                    return ProceduralMeshGenerator.CreateRollerCoaster(name);
+                case BuildCategory.FoodShop:
+                    return ProceduralMeshGenerator.CreateShopBuilding(name, ProceduralMeshGenerator.Palette.FoodOrange);
+                case BuildCategory.DrinkShop:
+                    return ProceduralMeshGenerator.CreateShopBuilding(name, ProceduralMeshGenerator.Palette.DrinkCyan);
+                case BuildCategory.SouvenirShop:
+                    return ProceduralMeshGenerator.CreateShopBuilding(name, ProceduralMeshGenerator.Palette.SouvenirPink);
+                case BuildCategory.Toilet:
+                    return ProceduralMeshGenerator.CreateToiletBuilding(name);
+                case BuildCategory.Bench:
+                    return ProceduralMeshGenerator.CreateBench(name);
+                case BuildCategory.StaffRoom:
+                    return ProceduralMeshGenerator.CreateStaffRoom(name);
+                case BuildCategory.TrashCan:
+                    return ProceduralMeshGenerator.CreateTrashCan(name);
+                default:
+                {
+                    var box = ProceduralMeshGenerator.CreateBoxGameObject(Vector3.one);
+                    box.name = name;
+                    ProceduralMeshGenerator.ApplyMaterial(box, GetColorForCategory(category));
+                    return box;
+                }
+            }
         }
 
         /// <summary>カテゴリに対応するタグ名を返す</summary>
