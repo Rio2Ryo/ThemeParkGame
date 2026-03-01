@@ -20,7 +20,8 @@ namespace ThemeParkGame.Park
         Seasonal,       // 季節イベント（自動発生）
         SpecialShow,    // 特別ショー（毎日スケジュール）
         LimitedTime,    // 期間限定イベント（ランダム発生）
-        Anniversary     // 周年記念（年単位）
+        Anniversary,    // 周年記念（年単位）
+        Disaster        // 災害イベント（ランダム発生、パークに深刻な影響）
     }
 
     /// <summary>イベントの状態</summary>

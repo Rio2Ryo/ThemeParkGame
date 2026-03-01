@@ -118,6 +118,9 @@ namespace ThemeParkGame.Visitor
         /// <summary>フォトスポット撮影にかかる時間（秒）</summary>
         private const float PhotoTakeDuration = 5f;
 
+        /// <summary>園内交通乗車にかかる時間（秒）</summary>
+        private const float TransportRideDuration = 15f;
+
         // ---- リピーターフラグ ----
 
         /// <summary>リピーター（再来園者）かどうか</summary>
@@ -505,6 +508,26 @@ namespace ThemeParkGame.Visitor
                 }
             }
 
+            // 優先度5.8: 園内交通の利用（疲れている時 or 遠いゾーンに行きたい時）
+            if (currentState != VisitorBehaviorState.RidingTransport &&
+                parameters.Happiness < 70f && UnityEngine.Random.value < 0.08f)
+            {
+                var transport = ParkTransportSystem.Instance;
+                if (transport != null && transport.HasAvailableRoute())
+                {
+                    float fare = transport.GetCheapestFare();
+                    if (parameters.Cash >= fare)
+                    {
+                        if (TryFindAndNavigateTo(FacilityType.TransportStation))
+                        {
+                            targetFacilityType = FacilityType.TransportStation;
+                            TransitionTo(VisitorBehaviorState.WalkingToShop);
+                            return;
+                        }
+                    }
+                }
+            }
+
             // 優先度6: お土産欲求（一定条件で発動）
             // 幸福度が高い時にお土産を買いたくなる。VIPとCoupleは確率が高い。
             if (ShouldBuySouvenir())
@@ -737,6 +760,14 @@ namespace ThemeParkGame.Visitor
                     ExecuteTimedAction(deltaTime, PhotoTakeDuration, OnFinishTakingPhoto);
                     break;
 
+                case VisitorBehaviorState.RidingTransport:
+                    ExecuteTimedAction(deltaTime, TransportRideDuration, OnFinishRidingTransport);
+                    break;
+
+                case VisitorBehaviorState.Evacuating:
+                    ExecuteLeavingPark(deltaTime); // 避難は退園と同じ移動ロジック
+                    break;
+
                 case VisitorBehaviorState.Vomiting:
                     ExecuteTimedAction(deltaTime, VomitDuration, OnFinishVomiting);
                     break;
@@ -962,6 +993,25 @@ namespace ThemeParkGame.Visitor
             TransitionTo(VisitorBehaviorState.Idle);
         }
 
+        private void OnFinishRidingTransport()
+        {
+            // 園内交通乗車完了: 幸福度UP + 目的地ゾーンへ移動完了
+            parameters.ModifyHappiness(UnityEngine.Random.Range(3f, 8f));
+
+            // ParkTransportSystemのサティスファクションボーナスを適用
+            var transport = ParkTransportSystem.Instance;
+            if (transport != null)
+            {
+                transport.OnPassengerArrived(visitorId);
+            }
+
+            if (emotionBubble != null)
+                emotionBubble.ShowBubble(EmotionBubbleType.Interesting, EmotionBubbleColor.White);
+
+            WebGLOptimizer.LogVerbose($"[VisitorAI] Visitor {visitorId} finished riding transport. {parameters}");
+            TransitionTo(VisitorBehaviorState.Idle);
+        }
+
         private void OnFinishLookingAtMap()
         {
             TransitionTo(VisitorBehaviorState.Idle);
@@ -1149,6 +1199,22 @@ namespace ThemeParkGame.Visitor
         /// </summary>
         private void CheckEmergencyConditions()
         {
+            // 災害避難チェック（最優先）
+            if (currentState != VisitorBehaviorState.Evacuating &&
+                currentState != VisitorBehaviorState.LeavingPark)
+            {
+                var disaster = DisasterEventSystem.Instance;
+                if (disaster != null && disaster.IsDisasterActive)
+                {
+                    // 災害発生中 → パニック＆避難開始
+                    parameters.ModifyHappiness(-20f);
+                    InterruptCurrentAction();
+                    actionTimer = 0f;
+                    TransitionTo(VisitorBehaviorState.Evacuating);
+                    return;
+                }
+            }
+
             // 嘔吐チェック
             if (parameters.IsAboutToVomit && currentState != VisitorBehaviorState.Vomiting)
             {
@@ -1798,11 +1864,16 @@ namespace ThemeParkGame.Visitor
                 case VisitorBehaviorState.WatchingEntertainment:
                 case VisitorBehaviorState.WatchingParade:
                 case VisitorBehaviorState.TakingPhoto:
+                case VisitorBehaviorState.RidingTransport:
                     StopNavigation();
                     break;
 
                 case VisitorBehaviorState.LeavingPark:
                     NavigateToExit();
+                    break;
+
+                case VisitorBehaviorState.Evacuating:
+                    NavigateToExit(); // 避難は出口へ向かう
                     break;
             }
         }
@@ -1875,6 +1946,8 @@ namespace ThemeParkGame.Visitor
                 case VisitorBehaviorState.LookingAtMap:
                 case VisitorBehaviorState.RidingAttraction:
                 case VisitorBehaviorState.TalkingToPlayer:
+                case VisitorBehaviorState.RidingTransport:
+                case VisitorBehaviorState.Evacuating:
                     return true;
                 default:
                     return false;
@@ -2127,6 +2200,7 @@ namespace ThemeParkGame.Visitor
             { FacilityType.StaffRoom,    "StaffRoom" },
             { FacilityType.ResearchLab,  "ResearchLab" },
             { FacilityType.PhotoSpot,    "PhotoSpot" },
+            { FacilityType.TransportStation, "TransportStation" },
         };
 
         /// <summary>FacilityTypeに対応するタグ名を返す</summary>

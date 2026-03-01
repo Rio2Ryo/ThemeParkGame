@@ -1,20 +1,21 @@
 # ThemeParkGame ステータスレポート
 
-## 最終更新: 2026-03-01（Phase 4完了時点）
+## 最終更新: 2026-03-01（Phase 5完了時点）
 
 ---
 
 # Part A: 次期開発 機能提案一覧
 
-## 現状のシステム概要（109スクリプト / 64,152行 / 10シナリオ / 5ゾーン / 6カテゴリ+24アトラクション）
+## 現状のシステム概要（116スクリプト / 70,615行 / 10シナリオ / 5ゾーン / 6カテゴリ+24アトラクション）
 
 **既存コアシステム**: GameManager, TimeManager, EconomyManager, ParkManager, WeatherSystem, SaveSystem, ScenarioManager
-**来場者**: VisitorAI(欲求駆動FSM), VisitorParameters, VIPVisitorSystem, Hooligan/HooliganManager, EmotionBubble, **RepeaterSystem(リピーター)**
+**来場者**: VisitorAI(欲求駆動FSM), VisitorParameters, VIPVisitorSystem, Hooligan/HooliganManager, EmotionBubble, **RepeaterSystem(リピーター)**, **GroupBehaviorSystem(グループ行動)**
 **スタッフ**: 8職種(Mechanic/Cleaner/Entertainer/Guard/Scientist/Doctor/Vendor/Gardener), ストライキシステム, **シフト管理(M4)**
-**アトラクション**: 6カテゴリ × 5ゾーン + 新規3種(24基), アップグレードパス, 事故/故障システム, **経年劣化(H6)**, **ファストパス(M3)**
-**経済**: PricingSystem, SaleCampaignSystem, LoanInvestmentUI, FinancialReport, **FastPassSystem**
+**アトラクション**: 6カテゴリ × 5ゾーン + 新規3種(24基), アップグレードパス, 事故/故障システム, **経年劣化(H6)**, **ファストパス(M3)**, **インタラクティブアトラクション(M8)**
+**経済**: PricingSystem, SaleCampaignSystem, LoanInvestmentUI, FinancialReport, **FastPassSystem**, **MarketingSystem**
 **AI連携**: LLM会話(Claude/OpenAI/Gemini), NPCDialogue, DynamicQuestSystem, WordOfMouth, SNSReputation
 **パレード/デコ**: **ParadeSystem(ナイトパレード)**, **DecorationSystem(季節デコレーション)**, **フォトスポット**
+**災害/交通**: **DisasterEventSystem(5種災害)**, **ParkTransportSystem(3路線)**
 **その他**: RivalParkSystem, ParkExpansion(土地購入), ParkEventSystem(4種), ChallengeSystem, AchievementSystem(107件), TutorialSystem(15ステップ), CoopManager, LeaderboardManager, SocialShareSystem, AccessibilitySystem(色覚/テキスト/フラッシュ軽減/ナレーション)
 
 ---
@@ -32,7 +33,7 @@
 **影響範囲**: StaffMember拡張(XP,Level,Skills) / 各Staff職種クラス / StaffManager / RuntimeStaffPanel / SaveSystem
 **工数目安**: 大
 
-### H3. 災害イベントシステム（地震・停電・パンデミック） ⬜ 未実装（Phase 5予定）
+### H3. 災害イベントシステム（地震・停電・パンデミック） ✅ Phase 5完了
 **概要**: 低確率で発生する大規模災害イベント。地震(アトラクション損傷+来場者パニック)、停電(夜間営業不能+アトラクション停止)、パンデミック(来場者激減+Doctor需要急増)。事前投資（耐震工事・非常電源・衛生設備）で被害軽減可能。
 **理由**: 台風/雷雨の天候システムが整ったが、プレイヤーの危機管理を試すイベントがまだ少ない。AccidentEventSystemは個別事故のみで、パーク全体を揺るがすイベントがない。投資判断のジレンマが戦略性を深める。
 **影響範囲**: 新規 DisasterSystem.cs / AccidentEventSystem連携 / ParkManager / EconomyManager / VisitorAI(パニック行動) / DoctorStaff拡張
@@ -61,7 +62,7 @@
 
 ## MEDIUM優先度（ゲームプレイの幅を拡張）
 
-### M1. 来場者グループ行動システム ⬜ 未実装（Phase 5予定）
+### M1. 来場者グループ行動システム ✅ Phase 5完了
 **概要**: 現在の来場者は全員個人行動。家族(2-5人)やカップル(2人)、学校遠足(10-20人)などのグループ単位で来場し、グループリーダーの意思決定に追従。グループ割引・グループ写真スポットなどの連動。
 **理由**: VisitorTypeにFamily/Coupleがあるが行動は全員バラバラで不自然。グループ行動で「家族向けパーク」「デート向けパーク」などのコンセプト経営が意味を持つ。
 **影響範囲**: 新規 VisitorGroup.cs / VisitorAI拡張 / VisitorManager拡張 / PricingSystem(グループ割引)
@@ -103,7 +104,7 @@
 **影響範囲**: VisitorType追加(Influencer) / VisitorProfile拡張 / VisitorAI(DecideNextAction全面見直し) / SNSReputationSystem(インフルエンサー投稿) / WordOfMouthSystem / PricingSystem(倹約度連動)
 **工数目安**: 中〜大
 
-### M8. インタラクティブアトラクション種別（参加型ライド） ⬜ 未実装（Phase 5予定）
+### M8. インタラクティブアトラクション種別（参加型ライド） ✅ Phase 5完了
 **概要**: 新AttractionCategory「Interactive」を追加。シューティングライド（ライド中にターゲットを撃ちスコア取得）、脱出ゲーム型（制限時間内に謎解き）、ARトレジャーハント（パーク内を歩き回り宝探し）など、来場者の行動がスコア・報酬に影響するアトラクション群。来場者の好奇心(Curiosity)・冒険心(Adventurousness)特性と連動し、高スコアで幸福度ボーナス。SNSでスコア自慢→バイラル効果。
 **理由**: 現在の6カテゴリ（GForce/VerticalRotation/HorizontalRotation/Observation/Show/Ride）はすべて「乗るだけ」の受動型で、来場者が能動的に参加する要素がゼロ。現代のテーマパークでは体験型アトラクションが主流（USJのハリポッター、TDRのバズ・ライトイヤー等）。DynamicQuestSystemのクエスト生成基盤を活用すれば、ARトレジャーハントの実装コストを抑えられる。
 **影響範囲**: AttractionCategory追加(Interactive) / AttractionDatabase(3-4種追加) / attractions.json / Attraction.cs(スコアシステム) / VisitorAI(参加行動) / DynamicQuestSystem連携(トレジャーハント) / SNSReputationSystem(スコアシェア)
@@ -115,7 +116,7 @@
 **影響範囲**: 新規 MarketingSystem.cs / SaleCampaignSystem連携 / EconomyManager拡張(Marketing支出) / VisitorManager(キャンペーンスポーンブースト) / FinancialReport拡張 / SNSReputationSystem連携 / RuntimeHUD(キャンペーンパネル)
 **工数目安**: 中
 
-### M10. 園内交通システム（モノレール・パークトレイン） ⬜ 未実装（Phase 5予定）
+### M10. 園内交通システム（モノレール・パークトレイン） ✅ Phase 5完了
 **概要**: 大規模パーク向けの内部交通手段。モノレール(高コスト・高速・高定員・駅2-4箇所設置)とパークトレイン(低コスト・低速・8駅まで・景観ルート)の2種。来場者はゾーン間移動時に疲労度(Fatigue)閾値を超えると自動的に乗車を選択。乗車中は疲労度回復＋幸福度微増（車窓パーク観覧効果）。路線はPathwaySystem上にプレイヤーが設定。混雑セグメントを通る路線は利用率が高く、混雑緩和に貢献。建設コスト・維持費はあるが、来場者の滞在時間延長（疲労で早期退園を防ぐ）→収益増のリターンあり。
 **理由**: PathwaySystemが混雑度をリアルタイム追跡しているが、混雑緩和手段がゼロ。広大なパーク（ParkExpansionで3段階拡張済み）では端から端への移動で疲労度が限界に達し、まだ体験していないゾーンを諦めて退園する来場者が発生する。VisitorParametersの疲労度ペナルティが厳しいため、交通システムは「疲労対策」として経営上の意味を持つ。FirstPersonCameraで乗車ビューも提供でき没入感もUP。
 **影響範囲**: 新規 ParkTransitSystem.cs, TransitRoute.cs / PathwaySystem連携(路線設定) / VisitorAI拡張(乗車判断・疲労回復行動) / VisitorParameters(乗車中の疲労回復) / ParkExpansionSystem連携 / RuntimeBuildPanel(路線建設UI) / FirstPersonCamera(乗車ビュー)
@@ -188,16 +189,16 @@
 | Phase 2 | H6(経年劣化) + M3(ファストパス) + M4(シフト管理) + L4(チュートリアル) | ✅ **完了** `553f4c9` |
 | Phase 3 | H1(ナイトパレード) + M2(デコレーション) + L2(フォトスポット) + L8(リピーター) | ✅ **完了** `abaa549` |
 | Phase 4 | H2(スタッフ育成) + M7(AIパーソナリティ) + M5(レビュー) + M9(マーケティング) | ✅ **完了** |
-| Phase 5 | H3(災害イベント) + M8(インタラクティブ) + M1(グループ行動) + M10(園内交通) | ⬜ 未着手 |
+| Phase 5 | H3(災害イベント) + M8(インタラクティブ) + M1(グループ行動) + M10(園内交通) | ✅ **完了** |
 | Phase 6 | M6(ライバル強化) + L5(Co-op) + H5(対戦モード) + L7(モバイルUI) | ⬜ 未着手 |
 | Phase 7 | H4(コースター設計) | ⬜ 未着手 |
 
 ### 進捗サマリー（全25件）
-- **完了**: 18件 / 25件（72%）
-  - HIGH: 3/6完了（H1✅ H2✅ H6✅ / H3⬜ H4⬜ H5⬜）
-  - MEDIUM: 7/10完了（M2✅ M3✅ M4✅ M5✅ M7✅ M9✅ / M1⬜ M6⬜ M8⬜ M10⬜）
-  - LOW: 8/9完了（L1✅ L2✅ L3✅ L4✅ L6✅ L8✅ L9✅ / L5⬜ L7⬜）
-- **未実装**: 7件（HIGH×3 + MEDIUM×4 + LOW×2）
+- **完了**: 20件 / 25件（80%）
+  - HIGH: 4/6完了（H1✅ H2✅ H3✅ H6✅ / H4⬜ H5⬜）
+  - MEDIUM: 9/10完了（M1✅ M2✅ M3✅ M4✅ M5✅ M7✅ M8✅ M9✅ M10✅ / M6⬜）
+  - LOW: 7/9完了（L1✅ L2✅ L3✅ L4✅ L6✅ L8✅ L9✅ / L5⬜ L7⬜）
+- **未実装**: 5件（HIGH×2 + MEDIUM×1 + LOW×2）
 
 ---
 
@@ -722,3 +723,114 @@
 | 9 | `Assets/Scripts/Visitor/VisitorManager.cs` | Influencerスポーン判定+マーケティング倍率連携 |
 | 10 | `Assets/Scripts/AI/SNSReputationSystem.cs` | ApplyInfluencerViralPost()追加 |
 | 11 | `status-report.md` | Phase 4完了レポート追加 |
+
+---
+
+# Part G: Phase 5 実装完了レポート（2026-03-01）
+
+## Phase 5: H3(災害イベント) + M8(インタラクティブ) + M1(グループ行動) + M10(園内交通) — 全完了
+
+### H3. 災害イベントシステム
+
+**DisasterEventSystem.cs (新規: ~600行)**
+
+| 災害タイプ | 持続時間 | 来場者影響 | パーク影響 |
+|---|---|---|---|
+| Earthquake (地震) | 30秒 | パニック、幸福度-20 | アトラクション損傷、修理費増大 |
+| PowerOutage (停電) | 60秒 | 幸福度-20 | 全アトラクション停止、照明消失 |
+| Pandemic (パンデミック) | 300秒 | 幸福度-20、スポーン激減 | スタッフ欠勤、Doctor需要増 |
+| Fire (火災) | 45秒 | パニック避難、幸福度-20 | ゾーン封鎖、緊急対応 |
+| Flood (洪水) | 60秒 | 幸福度-20 | 低地ゾーン浸水、屋外停止 |
+
+**3段階フェーズ**: Warning(事前通知) → Active(被害進行) → Recovery(復旧作業)
+
+**VisitorAI連携**:
+- 災害Active中 → CheckEmergencyConditions()で即座にEvacuating状態へ遷移
+- 幸福度-20の即時ペナルティ
+- 避難行動は出口へのナビゲーション（LeavingParkと同じ移動ロジック）
+
+**VisitorManager連携**:
+- 災害中のスポーンブロック率をCalculateSpawnIntervalに反映
+
+### M8. インタラクティブアトラクション種別
+
+**InteractiveAttractionSystem.cs (新規: 541行)**
+
+| アトラクション名 | モード | ゾーン | 定員 | 時間 | 価格 |
+|---|---|---|---|---|---|
+| ダークハント | ShootingRide | HalloweenWorld | 12 | 180s | $350 |
+| アドベンチャーナビ | SteeringRide | LostKingdom | 8 | 150s | $400 |
+| ストーリーシアター | VoteShow | Wonderland | 30 | 200s | $300 |
+| レーシングサンダー | CompetitiveRide | SpaceZone | 8 | 120s | $450 |
+| スプラッシュバトル | ShootingRide | Wonderland | 16 | 150s | $350 |
+| ミステリーラビリンス | SteeringRide | FutureCity | 6 | 240s | $500 |
+
+**InteractiveMode enum**: ShootingRide / SteeringRide / VoteShow / CompetitiveRide
+
+**スコアシステム**: セッション管理、スコア計算、満足度ボーナス
+
+### M1. 来場者グループ行動システム
+
+**GroupBehaviorSystem.cs (新規: ~530行)**
+
+| グループタイプ | 人数 | リーダー | 行動パターン |
+|---|---|---|---|
+| Family | 2-5人 | 親1人 | 子供のペースに合わせる、休憩頻度高 |
+| Couple | 2人 | ランダム | 同一行動、ロマンチックスポット優先 |
+| FriendGroup | 2-6人 | 最外向的 | スリル系優先、分裂可能 |
+| SchoolTrip | 10-20人 | 先生1人 | 教育系優先、集団行動厳守 |
+
+**GroupRole enum**: Leader(意思決定者) / Follower(追従) / Child(特別行動)
+
+**機能**:
+- リーダー追従による集団移動
+- グループ同期意思決定
+- グループ分裂・再合流メカニクス
+
+### M10. 園内交通システム
+
+**ParkTransportSystem.cs (新規: 640行)**
+
+| 路線名 | タイプ | 建設費 | 運賃 | 定員 | 幸福度ボーナス |
+|---|---|---|---|---|---|
+| パークモノレール | Monorail | $20,000 | $50 | 40人 | +8 |
+| おさんぽトレイン | ParkTrain | $10,000 | $20 | 60人 | +5 |
+| フューチャーシャトル | Shuttle | $8,000 | $30 | 20人 | +3 |
+
+**TransportType enum**: Monorail / ParkTrain / Shuttle
+
+**駅管理**: ゾーン別駅、待ち時間追跡、乗車統計
+
+**VisitorAI連携**:
+- 疲労時(幸福度70未満)に8%の確率で園内交通を利用判断
+- TransportStation施設タグでナビゲーション
+- RidingTransport状態(15秒) → 乗車完了で幸福度+3〜8
+
+**日次処理**: 維持費自動支払い、乗客数・収入レポート
+
+### GameEnums.cs 追加項目
+
+| enum | 追加値 |
+|---|---|
+| VisitorBehaviorState | RidingTransport, Evacuating |
+| FacilityType | TransportStation |
+| DisasterType | Earthquake, PowerOutage, Pandemic, Fire, Flood |
+| DisasterPhase | Warning, Active, Recovery |
+| TransportType | Monorail, ParkTrain, Shuttle |
+| InteractiveMode | ShootingRide, SteeringRide, VoteShow, CompetitiveRide |
+| GroupRole | Leader, Follower, Child |
+| ParkEventType | Disaster |
+
+## Phase 5 修正ファイル一覧
+
+| # | ファイル | 変更内容 |
+|---|---|---|
+| 1 | `Assets/Scripts/Core/GameEnums.cs` | DisasterType/Phase, TransportType, InteractiveMode, GroupRole, RidingTransport/Evacuating, TransportStation追加 |
+| 2 | `Assets/Scripts/Park/DisasterEventSystem.cs` | **新規**: 5種災害イベント管理（3フェーズ、難易度連動） |
+| 3 | `Assets/Scripts/Attraction/InteractiveAttractionSystem.cs` | **新規**: 6種インタラクティブアトラクション（スコア、セッション管理） |
+| 4 | `Assets/Scripts/Visitor/GroupBehaviorSystem.cs` | **新規**: 4種グループ行動（リーダー追従、分裂、同期意思決定） |
+| 5 | `Assets/Scripts/Park/ParkTransportSystem.cs` | **新規**: 3路線園内交通（駅管理、運賃、統計） |
+| 6 | `Assets/Scripts/Park/ParkEventSystem.cs` | ParkEventTypeにDisaster追加 |
+| 7 | `Assets/Scripts/Visitor/VisitorAI.cs` | RidingTransport/Evacuating状態、災害避難チェック、交通利用判断、施設タグマップ拡張 |
+| 8 | `Assets/Scripts/Visitor/VisitorManager.cs` | 災害時スポーンブロック率連携 |
+| 9 | `status-report.md` | Phase 5完了レポート追加 |

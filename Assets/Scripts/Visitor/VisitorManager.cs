@@ -548,6 +548,14 @@ namespace ThemeParkGame.Visitor
                 }
             }
 
+            // 災害時のスポーン抑制
+            var disasterSystem = Park.DisasterEventSystem.Instance;
+            if (disasterSystem != null && disasterSystem.IsDisasterActive)
+            {
+                float blockRate = disasterSystem.GetCurrentSpawnBlockRate();
+                interval *= blockRate; // 災害中はスポーン間隔を大幅延長
+            }
+
             // 混雑抑制（上限に近いほどスポーン間隔が延びる）
             float capacityRatio = (float)activeVisitors.Count / maxVisitors;
             if (capacityRatio > 0.8f)

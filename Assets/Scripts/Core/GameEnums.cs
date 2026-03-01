@@ -59,7 +59,9 @@ namespace ThemeParkGame.Core
         LeavingPark,
         TalkingToPlayer,  // AI会話中
         WatchingParade,   // パレード鑑賞中
-        TakingPhoto       // フォトスポットで撮影中
+        TakingPhoto,      // フォトスポットで撮影中
+        RidingTransport,  // 園内交通に乗車中
+        Evacuating        // 災害時避難中
     }
 
     /// <summary>感情バブルの色</summary>
@@ -175,7 +177,8 @@ namespace ThemeParkGame.Core
         Decoration,
         StaffRoom,
         ResearchLab,
-        PhotoSpot       // フォトスポット
+        PhotoSpot,          // フォトスポット
+        TransportStation    // 園内交通駅
     }
 
     /// <summary>天候</summary>
@@ -350,5 +353,53 @@ namespace ThemeParkGame.Core
         WebAdvertising,     // Web広告（Young/Couple特化）
         FlyerDistribution,  // チラシ配布（Family/Kids特化）
         InfluencerInvite    // インフルエンサー招待（SNS拡散倍増）
+    }
+
+    /// <summary>
+    /// 災害イベント種別。パーク運営に深刻な影響を与える緊急事態。
+    /// </summary>
+    public enum DisasterType
+    {
+        Earthquake,     // 地震 — アトラクション損傷、来場者パニック
+        PowerOutage,    // 停電 — 全アトラクション停止、照明消失
+        Pandemic,       // パンデミック — 来場者激減、スタッフ欠勤
+        Fire,           // 火災 — ゾーン封鎖、緊急避難
+        Flood           // 洪水 — 低地ゾーン浸水、屋外アトラクション停止
+    }
+
+    /// <summary>災害の進行フェーズ</summary>
+    public enum DisasterPhase
+    {
+        Warning,        // 警告（事前通知、準備時間あり）
+        Active,         // 発生中（被害進行中）
+        Recovery        // 復旧中（修復作業）
+    }
+
+    /// <summary>園内交通機関の種別</summary>
+    public enum TransportType
+    {
+        Monorail,       // モノレール — 高速、高コスト、ゾーン間直通
+        ParkTrain,      // パークトレイン — 低速、低コスト、周遊型
+        Shuttle         // シャトルバス — 中速、中コスト、2拠点往復
+    }
+
+    /// <summary>
+    /// インタラクティブアトラクションの参加モード。
+    /// 来場者が能動的に操作・選択できるアトラクション種別。
+    /// </summary>
+    public enum InteractiveMode
+    {
+        ShootingRide,       // シューティングライド（的を撃つ）
+        SteeringRide,       // 操縦ライド（進路を選択）
+        VoteShow,           // 投票型ショー（観客が展開を選ぶ）
+        CompetitiveRide     // 対戦型ライド（搭乗者同士の競争）
+    }
+
+    /// <summary>来場者グループの行動ロール</summary>
+    public enum GroupRole
+    {
+        Leader,         // リーダー（意思決定者）
+        Follower,       // フォロワー（リーダーに追従）
+        Child           // 子供（特別な行動パターン）
     }
 }
