@@ -1,6 +1,6 @@
 # ThemeParkGame ステータスレポート
 
-## 最終更新: 2026-03-01（PS1仕様ギャップ5機能実装）
+## 最終更新: 2026-03-01（Phase 7: H4カスタムコースター設計ツール）
 
 ---
 
@@ -1036,3 +1036,57 @@
 | 6 | `Assets/Scripts/Core/RuntimeHUD.cs` | BuildAnnualReportPanel統合+年末イベント購読 |
 | 7 | `Assets/Scripts/Park/BusSystem.cs` | **新規**: バスシステム（逓減ボーナス+維持費） |
 | 8 | `Assets/Scripts/Park/ParkEventSystem.cs` | 消費者団体視察イベント（3段階評価結果） |
+
+---
+
+# Part I: Phase 7 実装完了レポート（2026-03-01）
+
+## Phase 7 (最終フェーズ): H4カスタムコースター設計ツール — 全完了
+
+### CoasterDesignSystem.cs 新規作成 ✅ (~747行)
+- **RailElementType** 14種（直線/緩カーブ/急カーブ/小丘/中丘/大丘/ループ/コークスクリュー/ヘリックス/ブレーキ/加速ブースト/急降下/トンネル/スプラッシュ）
+- **CoasterSpeedClass** 4段階（低速30km/h〜超高速120km/h）
+- **CoasterHeightClass** 4段階（低5m〜超高50m）
+- **RailElement** クラス: 各要素がExcitement/Nausea/Costを自動寄与
+- **CoasterDesign** クラス: Recalculate()で全スペック自動計算
+  - 興奮度（0-10）: 要素合計 × 速度倍率 × 高低差倍率
+  - 嘔吐率（0-1）: 要素合計 × 速度係数
+  - 建設費: 要素コスト × 速度 × 高低差 × 車両数（最低$2,000）
+  - 月間維持費: 建設費の2.5%
+  - 推定乗車時間: 要素数×3秒 × 速度係数
+  - 推奨チケット価格: 興奮度ベース
+  - 設計品質スコア（0-100）: バラエティ・長さ・バランス・安全性で評価
+- **CoasterDesignSystem** Singleton:
+  - レール要素の追加/削除（最大20要素）
+  - 速度/高低差/車両数の設定
+  - 解放済み要素管理（初期6種 + 研究解放8種）
+  - FinalizeAndBuild(): 資金チェック→AttractionData動的生成→パーク登録
+  - 自動説明文生成（ループ/コークスクリュー/急降下数を含む）
+
+### RuntimeHUD_CoasterDesign.cs 新規作成 ✅
+- 620x700 設計パネル（コード生成uGUI）
+- レール要素14種のボタンパレット（6列配置）
+- 速度クラス4段階ボタン / 高低差4段階ボタン
+- 現在のレール構成テキスト表示（要素名 > 要素名 形式）
+- 末尾削除/全削除/車両数変更ボタン
+- リアルタイムスペック表示（興奮度/嘔吐率/乗車時間/車両数）
+- コスト表示（建設費/維持費/チケット価格）
+- 設計品質スコア（色分け表示 + 評価コメント）
+- 建設ボタン → FinalizeAndBuild()呼び出し
+
+### 関連ファイル変更
+- **AttractionManager.cs**: `RegisterCustomAttraction()` メソッド追加
+- **GameBootstrapper.cs**: `EnsureCoasterDesignSystem()` + `EnsureBusSystem()` 追加
+- **RuntimeHUD.cs**: BuildCoasterDesignPanel統合、_coasterBtn表示制御
+- **RuntimeHUD_Menu.cs**: 「コースター設計」ボタン追加(紫, x=510)
+
+## Phase 7 修正ファイル一覧
+
+| # | ファイル | 変更内容 |
+|---|---|---|
+| 1 | `Assets/Scripts/Attraction/CoasterDesignSystem.cs` | **新規**: レール14種+設計計算+建設システム |
+| 2 | `Assets/Scripts/Core/RuntimeHUD_CoasterDesign.cs` | **新規**: 620x700設計パネルUI |
+| 3 | `Assets/Scripts/Attraction/AttractionManager.cs` | RegisterCustomAttraction()追加 |
+| 4 | `Assets/Scripts/Core/GameBootstrapper.cs` | BusSystem+CoasterDesignSystem初期化 |
+| 5 | `Assets/Scripts/Core/RuntimeHUD.cs` | 設計パネル統合+ボタン表示制御 |
+| 6 | `Assets/Scripts/Core/RuntimeHUD_Menu.cs` | コースター設計ボタン追加 |
